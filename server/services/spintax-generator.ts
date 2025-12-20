@@ -1,2 +1,3 @@
 // Re-export from modular structure for backward compatibility
-export { SpintaxVariation, GenerateVariationsOptions, GenerateUniqueVariationOptions, generateEmailVariations, generateUniqueVariationForContact, recordVariationUsage, getVariationStats, generateBatchVariations, updateVariationOutcome } from "./spintax/index";
+export type { SpintaxVariation, GenerateVariationsOptions, GenerateUniqueVariationOptions } from "./spintax/index";
+export { generateEmailVariations, generateUniqueVariationForContact, recordVariationUsage, getVariationStats, generateBatchVariations, updateVariationOutcome } from "./spintax/index";
