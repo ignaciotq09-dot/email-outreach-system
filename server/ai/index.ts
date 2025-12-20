@@ -8,11 +8,11 @@ export type { EmailVariant, PersonalizeEmailParams } from "./openai-client";
 export { generateEmailVariants, regenerateEmailVariants } from "./email-variants";
 
 // Re-export from email-variants-optimized (faster with caching)
-export { 
-  generateEmailVariantsOptimized, 
+export {
+  generateEmailVariantsOptimized,
   regenerateEmailVariantsOptimized,
   getCacheStats as getEmailVariantCacheStats,
-  clearVariantCache 
+  clearVariantCache
 } from "./email-variants-optimized";
 
 // Re-export from email-variants-ultimate (best quality with all optimizations)
@@ -47,5 +47,5 @@ export { emailOptimizationOrchestrator, EmailIntent } from "./optimization-orche
 export type { OptimizationContext, OptimizationResult } from "./optimization-orchestrator";
 export { performancePredictor } from "./performance-predictor";
 export type { PerformanceMetrics } from "./performance-predictor";
-export { generateOptimizedFollowUp, calculateOptimalFollowUpTime, shouldSendFollowUp } from "./follow-up-optimizer";
+export { optimizeFollowUp, calculateOptimalFollowUpTime, shouldSendFollowUp } from "./follow-up-optimizer";
 export type { FollowUpConfig } from "./follow-up-optimizer";
