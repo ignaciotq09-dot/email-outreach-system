@@ -1,0 +1,2 @@
+export interface HistoryListResponse { history?: Array<{ id: string; messages?: Array<{ id: string; threadId: string }>; messagesAdded?: Array<{ message: { id: string; threadId: string; labelIds?: string[] } }> }>; historyId?: string; nextPageToken?: string; }
+export interface MessageResponse { id: string; threadId: string; payload: { headers: Array<{ name: string; value: string }>; parts?: Array<{ mimeType: string; body?: { data: string }; parts?: Array<{ mimeType: string; body?: { data: string } }> }>; body?: { data: string } }; snippet: string; internalDate: string; }

@@ -1,0 +1,802 @@
+Here are the final remaining component files to complete your landing page:
+
+`/components/PricingSection.tsx`
+
+```tsx
+import { useState } from 'react';
+import { Button } from './ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Check, Zap, Rocket, Crown } from 'lucide-react';
+import { motion } from 'motion/react';
+import { TiltCard } from './TiltCard';
+import { MagneticButton } from './MagneticButton';
+
+export function PricingSection() {
+  const [isAnnual, setIsAnnual] = useState(false);
+
+  const plans = [
+    {
+      name: 'Free',
+      icon: Zap,
+      price: 0,
+      features: [
+        '50 emails/month',
+        'Basic personalization',
+        'Reply detection',
+        'Email support',
+      ],
+      cta: 'Start Free',
+      popular: false,
+      gradient: 'from-gray-500 to-gray-600',
+      bg: 'from-gray-50 to-gray-100',
+    },
+    {
+      name: 'Pro',
+      icon: Rocket,
+      monthlyPrice: 49,
+      annualPrice: 39,
+      features: [
+        '2,000 emails/month',
+        'Advanced AI personalization',
+        'All features included',
+        'Priority support',
+      ],
+      cta: 'Start Building Campaigns',
+      popular: true,
+      gradient: 'from-violet-500 to-fuchsia-600',
+      bg: 'from-violet-50 to-fuchsia-50',
+    },
+    {
+      name: 'Scale',
+      icon: Crown,
+      monthlyPrice: 149,
+      annualPrice: 119,
+      features: [
+        'Unlimited emails',
+        'Custom AI training',
+        'Dedicated success manager',
+        'API access',
+      ],
+      cta: 'Book a Demo',
+      popular: false,
+      gradient: 'from-blue-500 to-cyan-600',
+      bg: 'from-blue-50 to-cyan-50',
+    },
+  ];
+
+  const getPrice = (plan: typeof plans[0]) => {
+    if (plan.price !== undefined) return plan.price;
+    return isAnnual ? plan.annualPrice : plan.monthlyPrice;
+  };
+
+  const handleCTA = (planName: string) => {
+    if (planName === 'Scale') {
+      window.open('https://calendly.com', '_blank');
+    } else {
+      window.location.href = '/app';
+    }
+  };
+
+  const scrollToPricing = () => {
+    const element = document.getElementById('pricing');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  return (
+    <section id="pricing" className="py-24 px-4 bg-gradient-to-br from-gray-50 via-white to-violet-50/30 relative overflow-hidden">
+      {/* Decorative Elements */}
+      <div className="absolute top-0 right-0 w-96 h-96 bg-violet-200 rounded-full filter blur-3xl opacity-20"></div>
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-fuchsia-200 rounded-full filter blur-3xl opacity-20"></div>
+
+      <div className="max-w-7xl mx-auto relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-12"
+        >
+          <div className="inline-block px-4 py-1 rounded-full bg-gradient-to-r from-violet-100 to-fuchsia-100 text-violet-700 mb-4">
+            Flexible Pricing
+          </div>
+          <h2 className="text-4xl md:text-5xl text-gray-900 mb-4">Simple, Transparent Pricing</h2>
+          <p className="text-xl text-gray-600 mb-8">
+            Start free. Upgrade when you're ready.
+          </p>
+
+          {/* Pricing Toggle */}
+          <div className="flex items-center justify-center gap-4 mb-12">
+            <span className={!isAnnual ? 'text-gray-900' : 'text-gray-500'}>
+              Monthly
+            </span>
+            <button
+              onClick={() => setIsAnnual(!isAnnual)}
+              className={`relative w-16 h-8 rounded-full transition-all duration-300 ${
+                isAnnual 
+                  ? 'bg-gradient-to-r from-violet-500 to-fuchsia-600 shadow-lg shadow-violet-500/50' 
+                  : 'bg-gray-300'
+              }`}
+            >
+              <motion.div
+                className="absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow-md"
+                animate={{ x: isAnnual ? 32 : 0 }}
+                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+              />
+            </button>
+            <span className={isAnnual ? 'text-gray-900' : 'text-gray-500'}>
+              Annual
+              <span className="ml-2 text-sm px-2 py-1 rounded-full bg-gradient-to-r from-green-100 to-emerald-100 text-green-700">
+                Save 20%
+              </span>
+            </span>
+          </div>
+        </motion.div>
+
+        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-12">
+          {plans.map((plan, index) => {
+            const Icon = plan.icon;
+            return (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                className="relative h-full"
+              >
+                <TiltCard className="h-full">
+                  <Card
+                    className={`relative group border-0 shadow-xl hover:shadow-2xl transition-all duration-300 h-full overflow-hidden ${
+                      plan.popular ? 'scale-105 md:scale-110' : ''
+                    }`}
+                  >
+                  {/* Gradient Background */}
+                  <div className={`absolute inset-0 bg-gradient-to-br ${plan.bg} opacity-50`}></div>
+                  
+                  {/* Popular Badge */}
+                  {plan.popular && (
+                    <div className={`absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r ${plan.gradient} text-white text-sm shadow-lg z-20`}>
+                      Most Popular
+                    </div>
+                  )}
+
+                  {/* Border Gradient */}
+                  <div className={`absolute inset-0 bg-gradient-to-r ${plan.gradient} ${plan.popular ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity duration-300 -z-10`}></div>
+                  <div className="absolute inset-[2px] bg-white rounded-lg z-0"></div>
+                  
+                  {/* Shimmer effect on hover */}
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent opacity-0 group-hover:opacity-100 -z-10"
+                    animate={{ x: ['-200%', '200%'] }}
+                    transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 2 }}
+                  />
+
+                  <CardHeader className="relative z-10 pb-8">
+                    {/* Icon */}
+                    <div className="relative inline-block mb-4">
+                      <div className={`absolute inset-0 bg-gradient-to-r ${plan.gradient} rounded-xl blur opacity-50`}></div>
+                      <div className={`relative w-12 h-12 bg-gradient-to-r ${plan.gradient} rounded-xl flex items-center justify-center shadow-lg`}>
+                        <Icon className="w-6 h-6 text-white" />
+                      </div>
+                    </div>
+
+                    <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                    <div className="mt-4">
+                      <span className="text-5xl text-gray-900">${getPrice(plan)}</span>
+                      <span className="text-gray-600">/month</span>
+                    </div>
+                    {isAnnual && plan.monthlyPrice && (
+                      <div className="text-sm text-gray-500 mt-1">
+                        Billed ${getPrice(plan)! * 12}/year
+                      </div>
+                    )}
+                  </CardHeader>
+
+                  <CardContent className="relative z-10">
+                    <ul className="space-y-3 mb-6">
+                      {plan.features.map((feature, fIndex) => (
+                        <motion.li
+                          key={fIndex}
+                          initial={{ opacity: 0, x: -20 }}
+                          whileInView={{ opacity: 1, x: 0 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: 0.3 + fIndex * 0.1 }}
+                          className="flex items-start gap-3"
+                        >
+                          <div className={`w-5 h-5 rounded-full bg-gradient-to-r ${plan.gradient} flex items-center justify-center flex-shrink-0 mt-0.5`}>
+                            <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                          </div>
+                          <span className="text-gray-700">{feature}</span>
+                        </motion.li>
+                      ))}
+                    </ul>
+
+                    <MagneticButton
+                      className={`w-full relative overflow-hidden ${
+                        plan.popular
+                          ? `bg-gradient-to-r ${plan.gradient} hover:shadow-lg hover:shadow-violet-500/50 text-white`
+                          : 'bg-white hover:bg-gray-50 border-2 border-gray-200'
+                      } transition-all duration-300 px-6 py-3 rounded-lg`}
+                      onClick={() => handleCTA(plan.name)}
+                    >
+                      <span className="relative z-10">{plan.cta}</span>
+                      {plan.popular && (
+                        <>
+                          <div className={`absolute inset-0 bg-gradient-to-r from-fuchsia-600 to-violet-600 opacity-0 group-hover:opacity-100 transition-opacity`}></div>
+                          <motion.div
+                            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                            animate={{ x: ['-200%', '200%'] }}
+                            transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
+                          />
+                        </>
+                      )}
+                    </MagneticButton>
+                  </CardContent>
+                  </Card>
+                </TiltCard>
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {/* Secondary CTAs */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="flex flex-wrap justify-center gap-4"
+        >
+          <Button
+            variant="outline"
+            size="lg"
+            className="border-2 border-violet-200 hover:border-violet-400 hover:bg-violet-50"
+            onClick={() => handleCTA('Scale')}
+          >
+            Book a Demo
+          </Button>
+          <Button
+            variant="ghost"
+            size="lg"
+            className="hover:bg-violet-50 hover:text-violet-600"
+            onClick={scrollToPricing}
+          >
+            View Pricing
+          </Button>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+```
+
+`/components/SocialProofSection.tsx`
+
+```tsx
+import { useEffect, useRef, useState } from 'react';
+import { Card, CardContent } from './ui/card';
+import { ImageWithFallback } from './figma/ImageWithFallback';
+import { Star, Quote } from 'lucide-react';
+import { motion } from 'motion/react';
+
+const testimonials = [
+  {
+    quote: 'Booked 47 meetings in our first week. The AI personalization is scary good.',
+    author: 'Sarah Chen',
+    title: 'Head of Sales at TechCorp',
+    image: 'https://images.unsplash.com/photo-1543132220-7bc04a0e790a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxidXNpbmVzcyUyMHBlcnNvbiUyMHBvcnRyYWl0fGVufDF8fHx8MTc2Mjc0MjY1NHww&ixlib=rb-4.1.0&q=80&w=1080',
+    gradient: 'from-violet-500 to-purple-600',
+  },
+  {
+    quote: "Reply detection actually works. We haven't missed a single response in 3 months.",
+    author: 'Marcus Johnson',
+    title: 'Founder at GrowthLabs',
+    image: 'https://images.unsplash.com/photo-1630344745908-ed5ffd73199a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzdWNjZXNzZnVsJTIwZW50cmVwcmVuZXVyfGVufDF8fHx8MTc2MjY0MTg3MHww&ixlib=rb-4.1.0&q=80&w=1080',
+    gradient: 'from-fuchsia-500 to-pink-600',
+  },
+];
+
+const stats = [
+  { value: 3200000, label: 'Emails Sent', suffix: 'M', gradient: 'from-violet-500 to-purple-600' },
+  { value: 847000, label: 'Replies Detected', suffix: 'K', gradient: 'from-fuchsia-500 to-pink-600' },
+  { value: 92000, label: 'Meetings Booked', suffix: 'K', gradient: 'from-blue-500 to-cyan-600' },
+  { value: 4.8, label: 'Average Rating', suffix: '/5', decimals: 1, gradient: 'from-emerald-500 to-teal-600' },
+];
+
+function AnimatedCounter({ value, suffix, decimals = 0, gradient }: { value: number; suffix: string; decimals?: number; gradient: string }) {
+  const [count, setCount] = useState(0);
+  const [hasAnimated, setHasAnimated] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !hasAnimated) {
+          setHasAnimated(true);
+          const duration = 2000;
+          const steps = 60;
+          const increment = value / steps;
+          let current = 0;
+
+          const timer = setInterval(() => {
+            current += increment;
+            if (current >= value) {
+              setCount(value);
+              clearInterval(timer);
+            } else {
+              setCount(current);
+            }
+          }, duration / steps);
+
+          return () => clearInterval(timer);
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
+
+    return () => observer.disconnect();
+  }, [value, hasAnimated]);
+
+  const displayValue = () => {
+    if (suffix === 'M') {
+      return (count / 1000000).toFixed(1);
+    } else if (suffix === 'K') {
+      return (count / 1000).toFixed(0);
+    } else {
+      return count.toFixed(decimals);
+    }
+  };
+
+  return (
+    <div ref={ref} className={`text-5xl md:text-6xl bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>
+      {displayValue()}
+      {suffix}
+    </div>
+  );
+}
+
+export function SocialProofSection() {
+  return (
+    <section className="py-24 px-4 bg-white relative overflow-hidden">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(139,92,246,0.05)_0%,transparent_50%),radial-gradient(circle_at_70%_80%,rgba(217,70,239,0.05)_0%,transparent_50%)]"></div>
+
+      <div className="max-w-7xl mx-auto relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-16"
+        >
+          <div className="inline-block px-4 py-1 rounded-full bg-gradient-to-r from-violet-100 to-fuchsia-100 text-violet-700 mb-4">
+            Social Proof
+          </div>
+          <h2 className="text-4xl md:text-5xl text-center text-gray-900 mb-4">
+            Join 2,847+ Teams Getting Results
+          </h2>
+        </motion.div>
+
+        {/* Testimonials */}
+        <div className="grid md:grid-cols-2 gap-8 mb-20">
+          {testimonials.map((testimonial, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+            >
+              <Card className="group border-0 shadow-xl hover:shadow-2xl transition-all duration-300 bg-white h-full overflow-hidden relative hover:-translate-y-1">
+                {/* Gradient Border on Hover */}
+                <div className={`absolute inset-0 bg-gradient-to-r ${testimonial.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10`}></div>
+                <div className="absolute inset-[2px] bg-white rounded-lg z-0"></div>
+
+                <CardContent className="pt-8 pb-8 px-8 relative z-10">
+                  {/* Quote Icon */}
+                  <div className={`w-12 h-12 rounded-full bg-gradient-to-r ${testimonial.gradient} flex items-center justify-center mb-6 shadow-lg`}>
+                    <Quote className="w-6 h-6 text-white" />
+                  </div>
+
+                  {/* Stars */}
+                  <div className="flex gap-1 mb-4">
+                    {[...Array(5)].map((_, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, scale: 0 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: 0.5 + i * 0.1 }}
+                      >
+                        <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  {/* Quote */}
+                  <p className="text-lg text-gray-700 mb-6 leading-relaxed">
+                    "{testimonial.quote}"
+                  </p>
+
+                  {/* Author */}
+                  <div className="flex items-center gap-4">
+                    <div className="relative">
+                      <div className={`absolute inset-0 bg-gradient-to-r ${testimonial.gradient} rounded-full blur opacity-50`}></div>
+                      <ImageWithFallback
+                        src={testimonial.image}
+                        alt={testimonial.author}
+                        className="relative w-14 h-14 rounded-full object-cover ring-2 ring-white"
+                      />
+                    </div>
+                    <div>
+                      <div className="text-gray-900">{testimonial.author}</div>
+                      <div className="text-sm text-gray-600">{testimonial.title}</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Stats */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="grid grid-cols-2 md:grid-cols-4 gap-8 p-8 md:p-12 rounded-3xl bg-gradient-to-br from-violet-50/50 via-white to-fuchsia-50/50 border border-violet-100 shadow-xl"
+        >
+          {stats.map((stat, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              className="text-center"
+            >
+              <AnimatedCounter
+                value={stat.value}
+                suffix={stat.suffix}
+                decimals={stat.decimals}
+                gradient={stat.gradient}
+              />
+              <div className="text-gray-600 mt-3">{stat.label}</div>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+```
+
+`/components/TiltCard.tsx`
+
+```tsx
+import { useRef, useState, ReactNode } from 'react';
+import { motion, useSpring } from 'motion/react';
+
+interface TiltCardProps {
+  children: ReactNode;
+  className?: string;
+}
+
+export function TiltCard({ children, className = '' }: TiltCardProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [isHovered, setIsHovered] = useState(false);
+
+  const x = useSpring(0, { stiffness: 300, damping: 30 });
+  const y = useSpring(0, { stiffness: 300, damping: 30 });
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!ref.current) return;
+
+    const rect = ref.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    const rotateX = (e.clientY - centerY) / 20;
+    const rotateY = (centerX - e.clientX) / 20;
+
+    x.set(rotateX);
+    y.set(rotateY);
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    x.set(0);
+    y.set(0);
+  };
+
+  return (
+    <motion.div
+      ref={ref}
+      className={className}
+      style={{
+        rotateX: x,
+        rotateY: y,
+        transformStyle: 'preserve-3d',
+      }}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={handleMouseLeave}
+      whileHover={{ scale: 1.02 }}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+    >
+      <div style={{ transform: 'translateZ(20px)' }}>
+        {children}
+      </div>
+    </motion.div>
+  );
+}
+```
+
+`/styles/globals.css`
+
+```css
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --font-size: 16px;
+  --background: #ffffff;
+  --foreground: oklch(0.145 0 0);
+  --card: #ffffff;
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: #030213;
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.95 0.0058 264.53);
+  --secondary-foreground: #030213;
+  --muted: #ececf0;
+  --muted-foreground: #717182;
+  --accent: #e9ebef;
+  --accent-foreground: #030213;
+  --destructive: #d4183d;
+  --destructive-foreground: #ffffff;
+  --border: rgba(0, 0, 0, 0.1);
+  --input: transparent;
+  --input-background: #f3f3f5;
+  --switch-background: #cbced4;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: #030213;
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { 
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+  }
+  50% { 
+    box-shadow: 0 0 40px rgba(139, 92, 246, 0.8);
+  }
+}
+
+@keyframes rotate-gradient {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #8b5cf6, #d946ef);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #7c3aed, #c026d3);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.145 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.145 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.985 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.396 0.141 25.723);
+  --destructive-foreground: oklch(0.637 0.237 25.331);
+  --border: oklch(0.269 0 0);
+  --input: oklch(0.269 0 0);
+  --ring: oklch(0.439 0 0);
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(0.269 0 0);
+  --sidebar-ring: oklch(0.439 0 0);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+{
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/**
+Base typography. This is not applied to elements which have an ancestor with a Tailwind text class.
+ */
+@layer base {
+  :where(:not(:has([class*=' text-']), :not(:has([class^='text-'])))) {
+    h1 {
+      font-size: var(--text-2xl);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h2 {
+      font-size: var(--text-xl);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h3 {
+      font-size: var(--text-lg);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h4 {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    p {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-normal);
+      line-height: 1.5;
+    }
+
+    label {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    button {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    input {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-normal);
+      line-height: 1.5;
+    }
+  }
+}
+
+html {
+  font-size: var(--font-size);
+}
+```
+
+---
+
+That's it! You now have the complete code for your high-converting landing page with all the advanced animations, branding elements, and interactive components. Simply copy and paste each file into its corresponding location in your project structure.
+
+The landing page includes:
+Animated neural network logo
+Mesh gradient backgrounds with floating particles
+Magnetic buttons with 3D tilt effects
+Email flow visualization
+Cursor glow effect
+Premium micro-interactions throughout
+Fully responsive design
+All sections with complete functionality
+
+Everything is ready to copy and paste! 🚀

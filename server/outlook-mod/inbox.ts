@@ -1,0 +1,12 @@
+import { graphApiRequest } from './tokens';
+
+export async function checkInboxForContactEmails(userId: number, contactEmail: string, afterDate?: Date, originalSubject?: string) {
+  try { let filter = `from/emailAddress/address eq '${contactEmail}'`; if (afterDate) { const isoDate = afterDate.toISOString(); filter += ` and receivedDateTime ge ${isoDate}`; } const response = await graphApiRequest(userId, `/me/messages?$filter=${encodeURIComponent(filter)}&$top=10&$orderby=receivedDateTime desc&$select=id,conversationId,subject,bodyPreview,body,receivedDateTime,from`); const messages = response.value || [];
+  if (messages.length === 0) return { hasReply: false, emails: [] }; let filteredMessages = messages; if (originalSubject) { const cleanSubject = originalSubject.replace(/^(Re:|RE:|Fwd:|FWD:)\s*/gi, '').trim().toLowerCase(); if (cleanSubject) filteredMessages = messages.filter((msg: any) => { const msgSubject = (msg.subject || '').replace(/^(Re:|RE:|Fwd:|FWD:)\s*/gi, '').trim().toLowerCase(); return msgSubject.includes(cleanSubject) || cleanSubject.includes(msgSubject); }); }
+  const emailDetails = filteredMessages.map((msg: any) => ({ messageId: msg.id, threadId: msg.conversationId, subject: msg.subject || '', content: msg.body?.content || msg.bodyPreview || '', receivedDate: new Date(msg.receivedDateTime), sender: msg.from?.emailAddress?.address?.toLowerCase() || '' })); return { hasReply: emailDetails.length > 0, emails: emailDetails, latestEmail: emailDetails[0] }; } catch (error) { console.error('Error checking Outlook inbox for contact emails:', error); return { hasReply: false, emails: [], error: error instanceof Error ? error.message : 'Unknown error' }; }
+}
+
+export async function checkThreadForReplies(userId: number, conversationId: string, originalMessageId: string) {
+  try { const response = await graphApiRequest(userId, `/me/messages?$filter=conversationId eq '${conversationId}'&$orderby=receivedDateTime desc&$select=id,subject,bodyPreview,body,receivedDateTime,from`); const messages = response.value || []; const replyMessages = messages.filter((m: any) => m.id !== originalMessageId);
+  if (replyMessages.length > 0) { const latestReply = replyMessages[0]; return { hasReply: true, replyMessageId: latestReply.id, replyContent: latestReply.body?.content || latestReply.bodyPreview || '' }; } return { hasReply: false }; } catch (error) { console.error('Error checking Outlook thread for replies:', error); return { hasReply: false, error: error instanceof Error ? error.message : 'Unknown error' }; }
+}

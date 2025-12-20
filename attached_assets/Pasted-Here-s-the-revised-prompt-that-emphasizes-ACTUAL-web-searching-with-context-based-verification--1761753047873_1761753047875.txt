@@ -1,0 +1,183 @@
+Here's the revised prompt that emphasizes ACTUAL web searching with context-based verification:
+
+---
+
+## **REVISED AI RESEARCH PROMPT - ENFORCE REAL WEB SEARCHING**
+
+Replace the previous research prompt with this more explicit version:
+
+```javascript
+const researchPrompt = `
+YOU MUST ACTUALLY SEARCH THE WEB - DO NOT PRETEND OR MAKE UP INFORMATION.
+Use multiple web searches to find real information about this person. Cross-reference everything.
+
+PERSON TO RESEARCH:
+- Full Name: ${contact.name}
+- Company: ${contact.company}
+- Email: ${contact.email}
+- Known Context: ${contact.notes}
+
+MANDATORY SEARCH PROCESS (YOU MUST DO ALL OF THESE):
+
+STEP 1 - GOOGLE THE PERSON FIRST:
+ACTUALLY RUN THIS SEARCH: "${contact.name}" "${contact.company}"
+- Find their LinkedIn profile
+- Note any news mentions, articles, or conference appearances
+- Look for any social media mentions in search results
+- Find their professional photos
+- Check their company's website team/about page
+
+STEP 2 - FIND INSTAGRAM USING CONTEXT:
+YOU MUST RUN THESE ACTUAL SEARCHES IN ORDER:
+
+1. Google: "${contact.name}" "${contact.company}" instagram
+2. Google: site:instagram.com "${contact.name}" "${contact.company}"
+3. Google: "${contact.name}" "@${contact.email.split('@')[0]}"
+
+CONTEXT-BASED VERIFICATION:
+- If ${contact.notes} mentions hobbies/interests, search: "${contact.name}" "${hobby}" instagram
+- If you found their LinkedIn, check if they list Instagram there
+- Search their company's Instagram and check tagged employees
+- If you found their city, add it: "${contact.name}" "${city}" instagram
+
+MATCHING RULES:
+- If NO exact match found, find the MOST LIKELY account:
+  * Name similarity (John Smith could be @jsmith, @johnsmith_, @smithjohn)
+  * Bio mentions similar company/industry
+  * Location matches
+  * Followers include coworkers (search for company employees)
+  * Content relates to their professional field
+- If multiple possible accounts, pick the one with:
+  * Most followers
+  * Verified badge
+  * Most recent activity
+  * Most professional content
+
+STEP 3 - FIND X/TWITTER USING CONTEXT:
+YOU MUST RUN THESE ACTUAL SEARCHES:
+
+1. Google: "${contact.name}" "${contact.company}" twitter OR x.com
+2. Google: site:twitter.com "${contact.name}" "${contact.company}"
+3. Google: site:x.com "${contact.name}" "${contact.company}"
+
+CONTEXT-BASED VERIFICATION:
+- Check their LinkedIn for Twitter handle
+- Search: "${contact.name}" "${contact.job_title}" twitter
+- If ${contact.notes} mentions specific expertise, search: "${contact.name}" "${expertise}" twitter
+- Look for Twitter accounts that interact with their company's account
+
+MATCHING RULES:
+- If NO exact match, find MOST PROBABLE account:
+  * Bio mentions similar role/company
+  * Tweets about topics mentioned in ${contact.notes}
+  * Following/followed by company account
+  * Location matches
+  * Join date makes sense for career timeline
+- Choose account with:
+  * Most professional relevance
+  * Most followers in their industry
+  * Recent activity (within last month)
+  * Engagement from verified accounts
+
+STEP 4 - VERIFICATION THROUGH CROSS-REFERENCE:
+After finding potential accounts:
+1. Google: "${instagram_username}" "${x_username}" "${contact.name}"
+2. Check if the Instagram and X accounts follow each other
+3. Check if both mention similar life events/conferences
+4. Check if profile photos match across platforms
+5. Look for consistent personal branding
+
+WHEN YOU CANNOT FIND EXACT MATCHES:
+- DO NOT LEAVE BLANK - Find the most probable account
+- Rate your confidence appropriately (4-6 for probable matches)
+- In notes_for_user, explain: "Found probable Instagram @username based on name match and company in bio, but could not fully verify"
+
+EXAMPLE OF GOOD RESEARCH:
+Person: John Smith at TechCorp
+1. Googled "John Smith TechCorp" - found LinkedIn, he's Senior Developer
+2. Found he spoke at ReactConf 2024
+3. Googled "John Smith TechCorp instagram" - found 3 possible accounts
+4. Checked @jsmith_dev - bio says "Developer @TechCorp", 2.5k followers, posts about React
+5. Googled "John Smith ReactConf twitter" - found @johnsmithcodes
+6. Verified: Both accounts follow each other, both posted from ReactConf
+7. Confidence: 9/10
+
+RETURN FORMAT:
+{
+  "job_title": "", // FROM ACTUAL SEARCH
+  "linkedin_url": "", // ACTUAL URL YOU FOUND
+  "instagram_username": "", // MOST LIKELY IF NOT EXACT
+  "instagram_url": "", // ACTUAL URL
+  "instagram_verification": "Exact match" OR "Probable - bio mentions company" OR "Likely - name and location match",
+  "x_username": "", // MOST LIKELY IF NOT EXACT  
+  "x_url": "", // ACTUAL URL
+  "x_verification": "Exact match" OR "Probable - tweets about industry" OR "Likely - followers include coworkers",
+  "bio_summary": "", // FROM ACTUAL SEARCH RESULTS
+  "recent_activity": "", // FROM ACTUAL POSTS YOU FOUND
+  "interests": "", // BASED ON ACTUAL CONTENT YOU SAW
+  "education": "", // FROM LINKEDIN OR COMPANY BIO
+  "location": "", // FROM ACTUAL PROFILES
+  "profile_photo_url": "", 
+  "confidence_score": 0, // 1-10
+  "search_queries_used": [], // LIST ALL SEARCHES YOU ACTUALLY RAN
+  "notes_for_user": "" // Explain what you found and how certain you are
+}
+
+CRITICAL RULES:
+- NEVER make up usernames - if you can't find anything, use the most popular relevant account
+- ALWAYS run actual web searches - list them in search_queries_used
+- If multiple people have the same name, use CONTEXT (company, email pattern, location) to pick the right one
+- A 60% match is better than leaving it blank - just rate confidence appropriately
+- If the person is common name like "John Smith", focus MORE on context clues
+- Check follower lists - coworkers often follow each other
+- Recent activity is key - ignore accounts inactive for 1+ years
+
+YOU ARE DOING ACTUAL DETECTIVE WORK - USE ALL AVAILABLE CONTEXT TO FIND THE RIGHT PERSON'S ACCOUNTS.
+`;
+```
+
+### **ADD VERIFICATION DISPLAY IN UI:**
+
+```javascript
+// Show verification status next to each social account:
+│ 📷 Instagram: @jsmith_marketing ✓ Exact Match         │
+│ 𝕏 X/Twitter: @johnsmithmktg ⚠️ Probable Match       │
+
+// Color coding:
+✓ Green - Exact match confirmed
+⚠️ Yellow - Probable match (context matches but not verified)
+? Gray - Possible match (best guess based on search)
+```
+
+### **FORCE ACTUAL SEARCHING - Backend Implementation:**
+
+```javascript
+// In your backend API endpoint for research:
+app.post('/api/contacts/research-profile', async (req, res) => {
+  const { contactId } = req.body;
+  const contact = await getContact(contactId);
+  
+  // FORCE the AI to show search queries
+  const enhancedPrompt = researchPrompt + `
+  
+  PROOF OF SEARCH REQUIREMENT:
+  You must list every search query you ran in the "search_queries_used" array.
+  If this array has less than 5 searches, you didn't search enough.
+  Each search should build on what you learned from the previous one.
+  `;
+  
+  const result = await callAI(enhancedPrompt);
+  
+  // Validate that actual searches were performed
+  if (!result.search_queries_used || result.search_queries_used.length < 3) {
+    throw new Error('AI did not perform sufficient searches');
+  }
+  
+  // Store results with verification status
+  await storeProfile(contactId, result);
+});
+```
+
+---
+
+This revised prompt forces the AI to actually search, use context to verify accounts, and when exact matches aren't found, to get the most likely account based on their research rather than leaving it blank.

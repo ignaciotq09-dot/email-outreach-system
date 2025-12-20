@@ -1,0 +1,2 @@
+export interface VoiceCharacteristics { wordCount: number; sentenceCount: number; averageSentenceLength: number; hasGreeting: boolean; greetingUsed: string | null; hasClosing: boolean; closingUsed: string | null; hasQuestion: boolean; questionCount: number; formalityScore: number; warmthScore: number; notablePatterns: string[]; }
+export interface ExtractedPatterns { averageSentenceLength: number; commonPhrases: string[]; greetingStyle: string; closingStyle: string; punctuationStyle: string; formalityScore: number; warmthScore: number; keyCharacteristics: string[]; }

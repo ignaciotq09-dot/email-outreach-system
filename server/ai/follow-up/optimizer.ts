@@ -1,0 +1,16 @@
+import { callOpenAIWithTimeout } from '../openai-client';
+import type { FollowUpConfig } from './types';
+import { FOLLOW_UP_STRATEGIES } from './strategies';
+
+export async function optimizeFollowUp(originalEmail: { subject: string; body: string }, config: FollowUpConfig, recipientData?: { name?: string; company?: string; industry?: string; recentActivity?: string }): Promise<{ subject: string; body: string; approach: string }> {
+  const strategy = getFollowUpStrategy(config.sequenceNumber); const prompt = buildOptimizationPrompt(originalEmail, config, recipientData, strategy);
+  try { const response = await callOpenAIWithTimeout([{ role: 'system', content: 'You are an expert at crafting follow-up emails that get responses. Apply proven psychology and timing strategies.' }, { role: 'user', content: prompt }], { responseFormat: { type: 'json_object' } }); const result = JSON.parse(response); return { subject: result.subject, body: result.body, approach: result.approach || strategy.tone }; } catch (error) { console.error('Follow-up optimization error:', error); return { subject: `Re: ${originalEmail.subject}`, body: `Following up on my previous email. ${originalEmail.body}`, approach: 'Simple Follow-up' }; }
+}
+
+function buildOptimizationPrompt(originalEmail: any, config: FollowUpConfig, recipientData: any, strategy: any): string {
+  return `Optimize this ${getOrdinal(config.sequenceNumber)} follow-up email:\n\nORIGINAL:\nSubject: ${originalEmail.subject}\nBody: ${originalEmail.body}\n\nCONTEXT:\n- Days since last: ${config.daysSinceLast}\n- Previous opened: ${config.previousOpened}\n- Previous clicked: ${config.previousClicked}\n- Engagement level: ${config.recipientEngagement}\n\nRECIPIENT:\n- Name: ${recipientData?.name || 'Unknown'}\n- Company: ${recipientData?.company || 'Unknown'}\n- Industry: ${recipientData?.industry || 'Unknown'}\n${recipientData?.recentActivity ? `- Recent Activity: ${recipientData.recentActivity}` : ''}\n\nSTRATEGY: ${strategy.tone}\n- Structure: ${strategy.structure}\n- Psychology: ${strategy.psychology}\n- Patterns: ${strategy.patterns.join(', ')}\n\nRULES:\n1. Subject: ${getSubjectStrategy(config.sequenceNumber, originalEmail.subject)}\n2. Body: 50-75 words max, apply ${strategy.tone} tone\n3. CTA: Different from original, ${config.recipientEngagement === 'cold' ? 'lower commitment' : 'more direct'}\n\nReturn JSON: {"subject":"...","body":"...","approach":"${strategy.tone}"}`;
+}
+
+function getFollowUpStrategy(sequenceNumber: number) { const strategies = FOLLOW_UP_STRATEGIES.contentProgression; switch (sequenceNumber) { case 1: return strategies.sequence1; case 2: return strategies.sequence2; case 3: return strategies.sequence3; case 4: return strategies.sequence4; default: return strategies.breakup; } }
+function getSubjectStrategy(sequenceNumber: number, originalSubject: string): string { switch (sequenceNumber) { case 1: return `Use "Re: ${originalSubject}" for +52% open rate`; case 2: return 'Question format for +44% open rate'; case 3: return 'Mention competitor or industry insight'; case 4: return 'Add urgency or deadline'; default: return 'Breakup subject for +67% open rate'; } }
+function getOrdinal(n: number): string { return ['1st', '2nd', '3rd', '4th', '5th'][n - 1] || `${n}th`; }

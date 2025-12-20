@@ -1,0 +1,1 @@
+export { registerInboxRoutes } from "./register";

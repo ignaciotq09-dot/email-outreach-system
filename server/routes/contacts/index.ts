@@ -1,0 +1,1 @@
+export { registerContactRoutes } from "./register";

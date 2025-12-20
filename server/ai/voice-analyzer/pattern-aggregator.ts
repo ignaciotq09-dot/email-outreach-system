@@ -1,0 +1,15 @@
+import { callOpenAIWithTimeout } from "../openai-client";
+import type { VoiceCharacteristics, ExtractedPatterns } from "./types";
+
+export async function aggregatePatterns(characteristics: VoiceCharacteristics[]): Promise<ExtractedPatterns> {
+  if (characteristics.length === 0) return { averageSentenceLength: 15, commonPhrases: [], greetingStyle: "casual", closingStyle: "brief", punctuationStyle: "standard", formalityScore: 5, warmthScore: 5, keyCharacteristics: [] };
+  const avgFormality = characteristics.reduce((sum, c) => sum + c.formalityScore, 0) / characteristics.length;
+  const avgWarmth = characteristics.reduce((sum, c) => sum + c.warmthScore, 0) / characteristics.length;
+  const allPatterns = characteristics.flatMap(c => c.notablePatterns).filter(Boolean);
+  const allGreetings = characteristics.map(c => c.greetingUsed).filter(Boolean);
+  const allClosings = characteristics.map(c => c.closingUsed).filter(Boolean);
+  const avgSentenceLen = characteristics.reduce((sum, c) => sum + c.averageSentenceLength, 0) / characteristics.length;
+  const samplesText = characteristics.slice(0, 5).map((c, i) => `Sample ${i + 1}: Formality ${c.formalityScore}/10, Warmth ${c.warmthScore}/10, Patterns: ${c.notablePatterns.join(', ')}`).join("\n");
+  const prompt = `Analyze these email writing characteristics and extract consistent patterns.\n\n${samplesText}\n\nGreetings used: ${allGreetings.join(', ') || 'none detected'}\nClosings used: ${allClosings.join(', ') || 'none detected'}\n\nRespond with JSON:\n{\n  "commonPhrases": [<3-5 phrases this writer commonly uses>],\n  "greetingStyle": "<casual|warm|formal|professional>",\n  "closingStyle": "<brief|warm|professional|minimal>",\n  "punctuationStyle": "<minimal|standard|expressive>",\n  "formalityScore": <1-10>,\n  "warmthScore": <1-10>,\n  "keyCharacteristics": [<5-7 key characteristics>]\n}`;
+  try { const response = await callOpenAIWithTimeout([{ role: "system", content: "You are an expert writing style analyst." }, { role: "user", content: prompt }], { responseFormat: { type: "json_object" }, maxTokens: 800 }); const patterns = JSON.parse(response); return { averageSentenceLength: patterns.averageSentenceLength || Math.round(avgSentenceLen), commonPhrases: patterns.commonPhrases || [], greetingStyle: patterns.greetingStyle || "casual", closingStyle: patterns.closingStyle || "brief", punctuationStyle: patterns.punctuationStyle || "standard", formalityScore: Math.max(1, Math.min(10, patterns.formalityScore || Math.round(avgFormality))), warmthScore: Math.max(1, Math.min(10, patterns.warmthScore || Math.round(avgWarmth))), keyCharacteristics: patterns.keyCharacteristics || [] }; } catch (error) { console.error("[VoiceAnalyzer] Error aggregating patterns:", error); return { averageSentenceLength: Math.round(avgSentenceLen), commonPhrases: [], greetingStyle: "casual", closingStyle: "brief", punctuationStyle: "standard", formalityScore: Math.round(avgFormality), warmthScore: Math.round(avgWarmth), keyCharacteristics: [] }; }
+}

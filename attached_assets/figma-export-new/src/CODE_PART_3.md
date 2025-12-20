@@ -1,0 +1,900 @@
+# VELOCITY Landing Page - Complete Code Part 3 of 5
+
+## ✅ This file contains EVERY SINGLE LINE for:
+- Component 9: EmailPreviewCarousel.tsx
+- Component 10: ROICalculator.tsx
+- Component 11: SocialProofSection.tsx
+- Component 12: ComparisonTable.tsx
+
+---
+
+## Component 9: `/components/EmailPreviewCarousel.tsx`
+
+```tsx
+import { useState } from 'react';
+import { Card, CardContent } from './ui/card';
+import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { Button } from './ui/button';
+import { motion, AnimatePresence } from 'motion/react';
+
+const emailExamples = [
+  {
+    subject: 'Quick question about TechCorp\'s Q4 initiatives',
+    preview:
+      'Hi Sarah,\n\nI noticed TechCorp recently announced your expansion into the European market—congrats on the growth! I\'m reaching out because we\'ve helped similar B2B SaaS companies scale their outbound during international expansion.\n\nWould you be open to a 15-minute chat next week about how we reduced CAC by 40% for a company in your space?\n\nBest,\nAlex',
+    color: 'violet',
+  },
+  {
+    subject: 'Loved your recent post on AI in sales',
+    preview:
+      'Hey Marcus,\n\nYour LinkedIn article on "Why Sales Teams Still Need Humans" really resonated with me—especially the part about empathy in discovery calls. That\'s exactly the balance we\'re trying to strike with our platform.\n\nI\'d love to get your take on how AI could support (not replace) your team at GrowthLabs. Coffee chat?\n\nCheers,\nAlex',
+    color: 'fuchsia',
+  },
+  {
+    subject: 'Following up on our intro from Jennifer',
+    preview:
+      'Hi David,\n\nJennifer mentioned you\'re looking to streamline your outbound process before the new quarter. I completely understand—hiring SDRs is expensive and training takes forever.\n\nWe\'ve built something that might help. Would Thursday at 2pm work for a quick demo?\n\nThanks,\nAlex',
+    color: 'blue',
+  },
+];
+
+export function EmailPreviewCarousel() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [direction, setDirection] = useState(0);
+
+  const next = () => {
+    setDirection(1);
+    setCurrentIndex((prev) => (prev + 1) % emailExamples.length);
+  };
+
+  const prev = () => {
+    setDirection(-1);
+    setCurrentIndex((prev) => (prev - 1 + emailExamples.length) % emailExamples.length);
+  };
+
+  const slideVariants = {
+    enter: (direction: number) => ({
+      x: direction > 0 ? 1000 : -1000,
+      opacity: 0,
+    }),
+    center: {
+      zIndex: 1,
+      x: 0,
+      opacity: 1,
+    },
+    exit: (direction: number) => ({
+      zIndex: 0,
+      x: direction < 0 ? 1000 : -1000,
+      opacity: 0,
+    }),
+  };
+
+  return (
+    <section className="py-24 px-4 bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 relative overflow-hidden">
+      {/* Decorative Elements */}
+      <div className="absolute top-1/4 left-0 w-72 h-72 bg-violet-200 rounded-full filter blur-3xl opacity-20"></div>
+      <div className="absolute bottom-1/4 right-0 w-72 h-72 bg-fuchsia-200 rounded-full filter blur-3xl opacity-20"></div>
+
+      <div className="max-w-5xl mx-auto relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-12"
+        >
+          <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-gradient-to-r from-violet-100 to-fuchsia-100 text-violet-700 mb-4">
+            <Sparkles className="w-4 h-4" />
+            <span>AI-Powered Personalization</span>
+          </div>
+          <h2 className="text-4xl md:text-5xl text-center text-gray-900 mb-4">
+            See AI Personalization In Action
+          </h2>
+          <p className="text-center text-gray-600 text-lg">
+            Every email is uniquely written—no templates, no copy-paste
+          </p>
+        </motion.div>
+
+        <div className="relative">
+          <div className="relative h-[400px] md:h-[380px]">
+            <AnimatePresence initial={false} custom={direction}>
+              <motion.div
+                key={currentIndex}
+                custom={direction}
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{
+                  x: { type: "spring", stiffness: 300, damping: 30 },
+                  opacity: { duration: 0.2 },
+                }}
+                className="absolute inset-0"
+              >
+                <Card className="border-0 shadow-2xl bg-white/90 backdrop-blur-sm h-full overflow-hidden group">
+                  {/* Card Gradient Border */}
+                  <div className={`absolute inset-0 bg-gradient-to-r from-${emailExamples[currentIndex].color}-500 to-${emailExamples[currentIndex].color}-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10`}></div>
+                  <div className="absolute inset-[2px] bg-white rounded-lg z-0"></div>
+
+                  <CardContent className="p-8 relative z-10 h-full flex flex-col">
+                    {/* Email Header */}
+                    <div className="mb-6 pb-6 border-b border-gray-100">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className={`w-2 h-2 rounded-full bg-gradient-to-r from-${emailExamples[currentIndex].color}-500 to-${emailExamples[currentIndex].color}-600`}></div>
+                        <span className="text-xs uppercase tracking-wide text-gray-500">Subject</span>
+                      </div>
+                      <div className="text-lg text-gray-900">
+                        {emailExamples[currentIndex].subject}
+                      </div>
+                    </div>
+
+                    {/* Email Body */}
+                    <div className="flex-1 overflow-y-auto">
+                      <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">
+                        {emailExamples[currentIndex].preview}
+                      </div>
+                    </div>
+
+                    {/* AI Badge */}
+                    <div className="mt-4 pt-4 border-t border-gray-100">
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-violet-50 to-fuchsia-50 text-xs text-violet-700">
+                        <Sparkles className="w-3 h-3" />
+                        <span>100% AI-Generated Personalization</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          {/* Navigation */}
+          <div className="flex items-center justify-center gap-6 mt-8">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={prev}
+              className="w-12 h-12 rounded-full border-2 border-violet-200 hover:border-violet-400 hover:bg-violet-50 transition-all shadow-lg"
+            >
+              <ChevronLeft className="w-5 h-5 text-violet-600" />
+            </Button>
+
+            <div className="flex gap-2">
+              {emailExamples.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => {
+                    setDirection(index > currentIndex ? 1 : -1);
+                    setCurrentIndex(index);
+                  }}
+                  className="relative group"
+                >
+                  <div
+                    className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                      index === currentIndex
+                        ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 scale-110'
+                        : 'bg-gray-300 hover:bg-gray-400'
+                    }`}
+                  />
+                  {index === currentIndex && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-full blur opacity-50"></div>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={next}
+              className="w-12 h-12 rounded-full border-2 border-violet-200 hover:border-violet-400 hover:bg-violet-50 transition-all shadow-lg"
+            >
+              <ChevronRight className="w-5 h-5 text-violet-600" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+```
+
+---
+
+## Component 10: `/components/ROICalculator.tsx`
+
+```tsx
+import { useState } from 'react';
+import { motion } from 'motion/react';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Slider } from './ui/slider';
+import { TrendingUp, Users, Mail, DollarSign } from 'lucide-react';
+
+export function ROICalculator() {
+  const [emailsPerMonth, setEmailsPerMonth] = useState(1000);
+  const [responseRate, setResponseRate] = useState(5);
+  const [dealValue, setDealValue] = useState(5000);
+  
+  // Calculations
+  const responses = Math.round(emailsPerMonth * (responseRate / 100));
+  const meetingsBooked = Math.round(responses * 0.3); // 30% of responses become meetings
+  const deals = Math.round(meetingsBooked * 0.25); // 25% close rate
+  const monthlyRevenue = deals * dealValue;
+  const annualRevenue = monthlyRevenue * 12;
+  const velocityCost = emailsPerMonth > 2000 ? 149 : 49; // Pro or Scale plan
+  const roi = Math.round(((monthlyRevenue - velocityCost) / velocityCost) * 100);
+
+  return (
+    <section className="py-24 px-4 relative overflow-hidden">
+      {/* Background */}
+      <div 
+        className="absolute inset-0 opacity-30"
+        style={{
+          background: 'radial-gradient(circle at 20% 50%, rgba(6, 182, 212, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 50%, rgba(15, 23, 42, 0.1) 0%, transparent 50%)'
+        }}
+      ></div>
+
+      <div className="max-w-7xl mx-auto relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-12"
+        >
+          <div 
+            className="inline-block px-4 py-1 rounded-full mb-4"
+            style={{ 
+              background: 'linear-gradient(to right, rgba(6, 182, 212, 0.1), rgba(15, 23, 42, 0.1))',
+              color: 'var(--electric-teal)'
+            }}
+          >
+            ROI Calculator
+          </div>
+          <h2 className="text-4xl md:text-5xl mb-4" style={{ color: 'var(--deep-navy)' }}>
+            Calculate Your Potential ROI
+          </h2>
+          <p className="text-xl max-w-2xl mx-auto" style={{ color: 'var(--slate-600)' }}>
+            See how much revenue you could generate with VELOCITY
+          </p>
+        </motion.div>
+
+        <div className="grid lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+          {/* Calculator Controls */}
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+          >
+            <Card className="shadow-brand-strong border-2" style={{ borderColor: 'var(--slate-200)' }}>
+              <CardHeader>
+                <CardTitle style={{ color: 'var(--deep-navy)' }}>Your Inputs</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-8">
+                {/* Emails per month */}
+                <div>
+                  <div className="flex justify-between mb-4">
+                    <label className="flex items-center gap-2" style={{ color: 'var(--slate-600)' }}>
+                      <Mail className="w-5 h-5" style={{ color: 'var(--electric-teal)' }} />
+                      Emails per month
+                    </label>
+                    <span className="px-3 py-1 rounded-full" style={{ 
+                      background: 'var(--slate-50)',
+                      color: 'var(--deep-navy)'
+                    }}>
+                      {emailsPerMonth.toLocaleString()}
+                    </span>
+                  </div>
+                  <Slider
+                    value={[emailsPerMonth]}
+                    onValueChange={(value) => setEmailsPerMonth(value[0])}
+                    min={100}
+                    max={10000}
+                    step={100}
+                    className="w-full"
+                  />
+                </div>
+
+                {/* Response rate */}
+                <div>
+                  <div className="flex justify-between mb-4">
+                    <label className="flex items-center gap-2" style={{ color: 'var(--slate-600)' }}>
+                      <TrendingUp className="w-5 h-5" style={{ color: 'var(--electric-teal)' }} />
+                      Expected response rate
+                    </label>
+                    <span className="px-3 py-1 rounded-full" style={{ 
+                      background: 'var(--slate-50)',
+                      color: 'var(--deep-navy)'
+                    }}>
+                      {responseRate}%
+                    </span>
+                  </div>
+                  <Slider
+                    value={[responseRate]}
+                    onValueChange={(value) => setResponseRate(value[0])}
+                    min={1}
+                    max={20}
+                    step={1}
+                    className="w-full"
+                  />
+                </div>
+
+                {/* Average deal value */}
+                <div>
+                  <div className="flex justify-between mb-4">
+                    <label className="flex items-center gap-2" style={{ color: 'var(--slate-600)' }}>
+                      <DollarSign className="w-5 h-5" style={{ color: 'var(--electric-teal)' }} />
+                      Average deal value
+                    </label>
+                    <span className="px-3 py-1 rounded-full" style={{ 
+                      background: 'var(--slate-50)',
+                      color: 'var(--deep-navy)'
+                    }}>
+                      ${dealValue.toLocaleString()}
+                    </span>
+                  </div>
+                  <Slider
+                    value={[dealValue]}
+                    onValueChange={(value) => setDealValue(value[0])}
+                    min={1000}
+                    max={50000}
+                    step={1000}
+                    className="w-full"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Results */}
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="space-y-6"
+          >
+            {/* Main ROI Card */}
+            <Card 
+              className="shadow-brand-strong border-0 relative overflow-hidden"
+            >
+              <div 
+                className="absolute inset-0"
+                style={{
+                  background: 'linear-gradient(135deg, var(--electric-teal), var(--deep-navy))'
+                }}
+              ></div>
+              <CardContent className="pt-8 pb-8 relative z-10">
+                <div className="text-center text-white">
+                  <p className="mb-2 text-white/80">Estimated Monthly ROI</p>
+                  <motion.div
+                    key={roi}
+                    initial={{ scale: 1.2, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: 'spring', stiffness: 200 }}
+                  >
+                    <div className="flex items-baseline justify-center gap-2 mb-4">
+                      <TrendingUp className="w-8 h-8" />
+                      <span className="text-6xl">{roi > 0 ? roi : 0}%</span>
+                    </div>
+                  </motion.div>
+                  <p className="text-sm text-white/80">
+                    Return on investment
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 gap-4">
+              <Card className="shadow-brand-medium">
+                <CardContent className="pt-6 pb-6 text-center">
+                  <motion.div
+                    key={responses}
+                    initial={{ scale: 1.1, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                  >
+                    <div className="text-3xl mb-1 bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+                      {responses}
+                    </div>
+                  </motion.div>
+                  <div className="text-sm" style={{ color: 'var(--slate-600)' }}>
+                    Responses
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-brand-medium">
+                <CardContent className="pt-6 pb-6 text-center">
+                  <motion.div
+                    key={meetingsBooked}
+                    initial={{ scale: 1.1, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                  >
+                    <div className="text-3xl mb-1 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+                      {meetingsBooked}
+                    </div>
+                  </motion.div>
+                  <div className="text-sm" style={{ color: 'var(--slate-600)' }}>
+                    Meetings
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-brand-medium">
+                <CardContent className="pt-6 pb-6 text-center">
+                  <motion.div
+                    key={deals}
+                    initial={{ scale: 1.1, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                  >
+                    <div className="text-3xl mb-1 bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+                      {deals}
+                    </div>
+                  </motion.div>
+                  <div className="text-sm" style={{ color: 'var(--slate-600)' }}>
+                    Closed Deals
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-brand-medium">
+                <CardContent className="pt-6 pb-6 text-center">
+                  <motion.div
+                    key={monthlyRevenue}
+                    initial={{ scale: 1.1, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                  >
+                    <div className="text-3xl mb-1" style={{ color: 'var(--success-green)' }}>
+                      ${(monthlyRevenue / 1000).toFixed(0)}K
+                    </div>
+                  </motion.div>
+                  <div className="text-sm" style={{ color: 'var(--slate-600)' }}>
+                    Monthly Revenue
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Annual projection */}
+            <Card 
+              className="shadow-brand-medium border-2"
+              style={{ borderColor: 'var(--success-green)' }}
+            >
+              <CardContent className="pt-6 pb-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm mb-1" style={{ color: 'var(--slate-600)' }}>
+                      Annual Revenue Projection
+                    </p>
+                    <motion.div
+                      key={annualRevenue}
+                      initial={{ scale: 1.1, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                    >
+                      <p className="text-4xl" style={{ color: 'var(--success-green)' }}>
+                        ${(annualRevenue / 1000).toFixed(0)}K
+                      </p>
+                    </motion.div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm" style={{ color: 'var(--slate-600)' }}>
+                      VELOCITY Cost
+                    </p>
+                    <p className="text-2xl" style={{ color: 'var(--deep-navy)' }}>
+                      ${velocityCost}/mo
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
+}
+```
+
+---
+
+## Component 11: `/components/SocialProofSection.tsx`
+
+```tsx
+import { useEffect, useRef, useState } from 'react';
+import { Card, CardContent } from './ui/card';
+import { ImageWithFallback } from './figma/ImageWithFallback';
+import { Star, Quote } from 'lucide-react';
+import { motion } from 'motion/react';
+
+const testimonials = [
+  {
+    quote: 'Booked 47 meetings in our first week. The AI personalization is scary good.',
+    author: 'Sarah Chen',
+    title: 'Head of Sales at TechCorp',
+    image: 'https://images.unsplash.com/photo-1543132220-7bc04a0e790a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxidXNpbmVzcyUyMHBlcnNvbiUyMHBvcnRyYWl0fGVufDF8fHx8MTc2Mjc0MjY1NHww&ixlib=rb-4.1.0&q=80&w=1080',
+    gradient: 'from-violet-500 to-purple-600',
+  },
+  {
+    quote: "Reply detection actually works. We haven't missed a single response in 3 months.",
+    author: 'Marcus Johnson',
+    title: 'Founder at GrowthLabs',
+    image: 'https://images.unsplash.com/photo-1630344745908-ed5ffd73199a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzdWNjZXNzZnVsJTIwZW50cmVwcmVuZXVyfGVufDF8fHx8MTc2MjY0MTg3MHww&ixlib=rb-4.1.0&q=80&w=1080',
+    gradient: 'from-fuchsia-500 to-pink-600',
+  },
+];
+
+const stats = [
+  { value: 3200000, label: 'Emails Sent', suffix: 'M', gradient: 'from-violet-500 to-purple-600' },
+  { value: 847000, label: 'Replies Detected', suffix: 'K', gradient: 'from-fuchsia-500 to-pink-600' },
+  { value: 92000, label: 'Meetings Booked', suffix: 'K', gradient: 'from-blue-500 to-cyan-600' },
+  { value: 4.8, label: 'Average Rating', suffix: '/5', decimals: 1, gradient: 'from-emerald-500 to-teal-600' },
+];
+
+function AnimatedCounter({ value, suffix, decimals = 0, gradient }: { value: number; suffix: string; decimals?: number; gradient: string }) {
+  const [count, setCount] = useState(0);
+  const [hasAnimated, setHasAnimated] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !hasAnimated) {
+          setHasAnimated(true);
+          const duration = 2000;
+          const steps = 60;
+          const increment = value / steps;
+          let current = 0;
+
+          const timer = setInterval(() => {
+            current += increment;
+            if (current >= value) {
+              setCount(value);
+              clearInterval(timer);
+            } else {
+              setCount(current);
+            }
+          }, duration / steps);
+
+          return () => clearInterval(timer);
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
+
+    return () => observer.disconnect();
+  }, [value, hasAnimated]);
+
+  const displayValue = () => {
+    if (suffix === 'M') {
+      return (count / 1000000).toFixed(1);
+    } else if (suffix === 'K') {
+      return (count / 1000).toFixed(0);
+    } else {
+      return count.toFixed(decimals);
+    }
+  };
+
+  return (
+    <div ref={ref} className={`text-5xl md:text-6xl bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>
+      {displayValue()}
+      {suffix}
+    </div>
+  );
+}
+
+export function SocialProofSection() {
+  return (
+    <section className="py-24 px-4 bg-white relative overflow-hidden">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(139,92,246,0.05)_0%,transparent_50%),radial-gradient(circle_at_70%_80%,rgba(217,70,239,0.05)_0%,transparent_50%)]"></div>
+
+      <div className="max-w-7xl mx-auto relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-16"
+        >
+          <div className="inline-block px-4 py-1 rounded-full bg-gradient-to-r from-violet-100 to-fuchsia-100 text-violet-700 mb-4">
+            Social Proof
+          </div>
+          <h2 className="text-4xl md:text-5xl text-center text-gray-900 mb-4">
+            Join 2,847+ Teams Getting Results
+          </h2>
+        </motion.div>
+
+        {/* Testimonials */}
+        <div className="grid md:grid-cols-2 gap-8 mb-20">
+          {testimonials.map((testimonial, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+            >
+              <Card className="group border-0 shadow-xl hover:shadow-2xl transition-all duration-300 bg-white h-full overflow-hidden relative hover:-translate-y-1">
+                {/* Gradient Border on Hover */}
+                <div className={`absolute inset-0 bg-gradient-to-r ${testimonial.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10`}></div>
+                <div className="absolute inset-[2px] bg-white rounded-lg z-0"></div>
+
+                <CardContent className="pt-8 pb-8 px-8 relative z-10">
+                  {/* Quote Icon */}
+                  <div className={`w-12 h-12 rounded-full bg-gradient-to-r ${testimonial.gradient} flex items-center justify-center mb-6 shadow-lg`}>
+                    <Quote className="w-6 h-6 text-white" />
+                  </div>
+
+                  {/* Stars */}
+                  <div className="flex gap-1 mb-4">
+                    {[...Array(5)].map((_, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, scale: 0 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: 0.5 + i * 0.1 }}
+                      >
+                        <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  {/* Quote */}
+                  <p className="text-lg text-gray-700 mb-6 leading-relaxed">
+                    "{testimonial.quote}"
+                  </p>
+
+                  {/* Author */}
+                  <div className="flex items-center gap-4">
+                    <div className="relative">
+                      <div className={`absolute inset-0 bg-gradient-to-r ${testimonial.gradient} rounded-full blur opacity-50`}></div>
+                      <ImageWithFallback
+                        src={testimonial.image}
+                        alt={testimonial.author}
+                        className="relative w-14 h-14 rounded-full object-cover ring-2 ring-white"
+                      />
+                    </div>
+                    <div>
+                      <div className="text-gray-900">{testimonial.author}</div>
+                      <div className="text-sm text-gray-600">{testimonial.title}</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Stats */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="grid grid-cols-2 md:grid-cols-4 gap-8 p-8 md:p-12 rounded-3xl bg-gradient-to-br from-violet-50/50 via-white to-fuchsia-50/50 border border-violet-100 shadow-xl"
+        >
+          {stats.map((stat, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              className="text-center"
+            >
+              <AnimatedCounter
+                value={stat.value}
+                suffix={stat.suffix}
+                decimals={stat.decimals}
+                gradient={stat.gradient}
+              />
+              <div className="text-gray-600 mt-3">{stat.label}</div>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+```
+
+---
+
+## Component 12: `/components/ComparisonTable.tsx`
+
+```tsx
+import { motion } from 'motion/react';
+import { Check, X, Zap } from 'lucide-react';
+import { Card } from './ui/card';
+import React from 'react';
+
+const features = [
+  { 
+    category: 'Core Features',
+    items: [
+      { name: 'AI Personalization', velocity: true, competitor1: 'Basic', competitor2: false },
+      { name: 'Reply Detection', velocity: 'Real-time', competitor1: 'Delayed', competitor2: 'Basic' },
+      { name: 'Gmail Integration', velocity: true, competitor1: true, competitor2: false },
+      { name: 'Auto-scheduling', velocity: true, competitor1: false, competitor2: false },
+    ]
+  },
+  {
+    category: 'Limits & Scale',
+    items: [
+      { name: 'Email Sending', velocity: 'Unlimited*', competitor1: '1,000/mo', competitor2: '500/mo' },
+      { name: 'Team Members', velocity: 'Unlimited', competitor1: '5 users', competitor2: '3 users' },
+      { name: 'API Access', velocity: true, competitor1: 'Enterprise only', competitor2: false },
+    ]
+  },
+  {
+    category: 'Support & Training',
+    items: [
+      { name: 'Support', velocity: '24/7 Chat', competitor1: 'Email only', competitor2: 'Email only' },
+      { name: 'Onboarding', velocity: 'Dedicated', competitor1: 'Self-serve', competitor2: 'Self-serve' },
+      { name: 'Custom Training', velocity: true, competitor1: false, competitor2: false },
+    ]
+  },
+];
+
+function CellValue({ value }: { value: boolean | string }) {
+  if (typeof value === 'boolean') {
+    return value ? (
+      <Check className="w-6 h-6 mx-auto" style={{ color: 'var(--success-green)' }} />
+    ) : (
+      <X className="w-6 h-6 mx-auto" style={{ color: 'var(--slate-400)' }} />
+    );
+  }
+  return (
+    <span className="text-sm" style={{ color: 'var(--deep-navy)' }}>
+      {value}
+    </span>
+  );
+}
+
+export function ComparisonTable() {
+  return (
+    <section className="py-24 px-4 bg-gradient-to-br from-slate-50 via-white to-slate-50">
+      <div className="max-w-6xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-12"
+        >
+          <div 
+            className="inline-block px-4 py-1 rounded-full mb-4"
+            style={{ 
+              background: 'linear-gradient(to right, rgba(6, 182, 212, 0.1), rgba(15, 23, 42, 0.1))',
+              color: 'var(--electric-teal)'
+            }}
+          >
+            Why VELOCITY
+          </div>
+          <h2 className="text-4xl md:text-5xl mb-4" style={{ color: 'var(--deep-navy)' }}>
+            See How We Compare
+          </h2>
+          <p className="text-xl max-w-2xl mx-auto" style={{ color: 'var(--slate-600)' }}>
+            More features, better support, and unbeatable value
+          </p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+        >
+          <Card className="overflow-hidden shadow-brand-strong border-0">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b-2" style={{ borderColor: 'var(--slate-200)' }}>
+                    <th className="text-left p-6 w-1/3" style={{ color: 'var(--slate-600)' }}>
+                      Features
+                    </th>
+                    <th className="p-6 w-1/4">
+                      <div className="flex flex-col items-center">
+                        <div 
+                          className="flex items-center gap-2 px-4 py-2 rounded-lg mb-2"
+                          style={{ 
+                            background: 'linear-gradient(to right, var(--electric-teal), var(--deep-navy))'
+                          }}
+                        >
+                          <Zap className="w-5 h-5 text-white" />
+                          <span className="velocity-logo text-white">VELOCITY</span>
+                        </div>
+                        <span className="text-xs" style={{ color: 'var(--success-green)' }}>
+                          Best Value
+                        </span>
+                      </div>
+                    </th>
+                    <th className="p-6 w-1/4 text-center" style={{ color: 'var(--slate-600)' }}>
+                      Competitor A
+                    </th>
+                    <th className="p-6 w-1/4 text-center" style={{ color: 'var(--slate-600)' }}>
+                      Competitor B
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {features.map((category, catIndex) => (
+                    <React.Fragment key={`category-${catIndex}`}>
+                      <tr>
+                        <td 
+                          colSpan={4} 
+                          className="p-4 text-sm uppercase tracking-wide"
+                          style={{ 
+                            backgroundColor: 'var(--slate-50)',
+                            color: 'var(--slate-600)'
+                          }}
+                        >
+                          {category.category}
+                        </td>
+                      </tr>
+                      {category.items.map((item, itemIndex) => (
+                        <motion.tr
+                          key={`item-${catIndex}-${itemIndex}`}
+                          initial={{ opacity: 0, x: -20 }}
+                          whileInView={{ opacity: 1, x: 0 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: itemIndex * 0.05 }}
+                          className="border-b hover:bg-slate-50/50 transition-colors"
+                          style={{ borderColor: 'var(--slate-200)' }}
+                        >
+                          <td className="p-4" style={{ color: 'var(--deep-navy)' }}>
+                            {item.name}
+                          </td>
+                          <td 
+                            className="p-4 text-center"
+                            style={{ backgroundColor: 'rgba(6, 182, 212, 0.05)' }}
+                          >
+                            <CellValue value={item.velocity} />
+                          </td>
+                          <td className="p-4 text-center" style={{ color: 'var(--slate-600)' }}>
+                            <CellValue value={item.competitor1} />
+                          </td>
+                          <td className="p-4 text-center" style={{ color: 'var(--slate-600)' }}>
+                            <CellValue value={item.competitor2} />
+                          </td>
+                        </motion.tr>
+                      ))}
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Footer note */}
+            <div 
+              className="p-4 text-center text-sm border-t"
+              style={{ 
+                backgroundColor: 'var(--slate-50)',
+                color: 'var(--slate-600)',
+                borderColor: 'var(--slate-200)'
+              }}
+            >
+              * On Scale plan. All plans include core features with different volume limits.
+            </div>
+          </Card>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+```
+
+---
+
+## ✅ END OF PART 3
+
+**Next files:**
+- CODE_PART_4.md will contain Components 13-16
+- CODE_PART_5.md will contain Components 17-20

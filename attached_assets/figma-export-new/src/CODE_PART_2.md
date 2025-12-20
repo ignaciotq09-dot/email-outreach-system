@@ -1,0 +1,1374 @@
+# VELOCITY Landing Page - Complete Code Part 2 of 5
+
+## ✅ This file contains EVERY SINGLE LINE for:
+- Component 5: AIBrainVisualization.tsx
+- Component 6: Floating3DEmailCards.tsx
+- Component 7: HowItWorksSection.tsx
+- Component 8: BeforeAfterSlider.tsx
+- Supporting: EmailFlowVisualization.tsx (used by HowItWorksSection)
+
+---
+
+## Component 5: `/components/AIBrainVisualization.tsx`
+
+```tsx
+import { useEffect, useRef, useState } from 'react';
+import { motion } from 'motion/react';
+import { Card } from './ui/card';
+import { Brain, Zap, Mail, User } from 'lucide-react';
+
+interface Node {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  connections: number[];
+  active: boolean;
+}
+
+export function AIBrainVisualization() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isInView, setIsInView] = useState(false);
+  const sectionRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsInView(entry.isIntersecting);
+      },
+      { threshold: 0.3 }
+    );
+
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!isInView) return;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animationFrameId: number;
+
+    const resize = () => {
+      canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+      canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    };
+    resize();
+
+    // Create neural network nodes
+    const nodeCount = 24;
+    const nodes: Node[] = [];
+    const centerX = canvas.offsetWidth / 2;
+    const centerY = canvas.offsetHeight / 2;
+
+    for (let i = 0; i < nodeCount; i++) {
+      const angle = (i / nodeCount) * Math.PI * 2;
+      const radius = 80 + Math.random() * 100;
+      nodes.push({
+        x: centerX + Math.cos(angle) * radius,
+        y: centerY + Math.sin(angle) * radius,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: (Math.random() - 0.5) * 0.5,
+        connections: [],
+        active: false,
+      });
+    }
+
+    // Create connections
+    nodes.forEach((node, i) => {
+      const connectionCount = 2 + Math.floor(Math.random() * 3);
+      for (let j = 0; j < connectionCount; j++) {
+        const targetIndex = Math.floor(Math.random() * nodeCount);
+        if (targetIndex !== i && !node.connections.includes(targetIndex)) {
+          node.connections.push(targetIndex);
+        }
+      }
+    });
+
+    let pulsePhase = 0;
+    let activationWave = 0;
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
+
+      // Update nodes
+      nodes.forEach((node) => {
+        node.x += node.vx;
+        node.y += node.vy;
+
+        // Bounce off edges
+        if (node.x < 0 || node.x > canvas.offsetWidth) node.vx *= -1;
+        if (node.y < 0 || node.y > canvas.offsetHeight) node.vy *= -1;
+
+        // Drift toward center
+        const dx = centerX - node.x;
+        const dy = centerY - node.y;
+        node.vx += dx * 0.0001;
+        node.vy += dy * 0.0001;
+      });
+
+      // Draw connections
+      nodes.forEach((node, i) => {
+        node.connections.forEach((targetIndex) => {
+          const target = nodes[targetIndex];
+          const distance = Math.sqrt(
+            Math.pow(target.x - node.x, 2) + Math.pow(target.y - node.y, 2)
+          );
+
+          // Activation pulse
+          const pulseValue = Math.sin(pulsePhase + i * 0.3) * 0.5 + 0.5;
+          const isActive = pulseValue > 0.7;
+
+          // Draw connection
+          ctx.beginPath();
+          ctx.moveTo(node.x, node.y);
+          ctx.lineTo(target.x, target.y);
+
+          if (isActive) {
+            ctx.strokeStyle = `rgba(6, 182, 212, ${0.6 * pulseValue})`;
+            ctx.lineWidth = 2;
+            
+            // Draw glow
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = 'rgba(6, 182, 212, 0.8)';
+          } else {
+            ctx.strokeStyle = 'rgba(6, 182, 212, 0.2)';
+            ctx.lineWidth = 1;
+            ctx.shadowBlur = 0;
+          }
+
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+
+          // Draw pulse traveling along line
+          if (isActive) {
+            const progress = (pulsePhase * 10 + i) % 1;
+            const pulseX = node.x + (target.x - node.x) * progress;
+            const pulseY = node.y + (target.y - node.y) * progress;
+
+            const gradient = ctx.createRadialGradient(
+              pulseX, pulseY, 0,
+              pulseX, pulseY, 8
+            );
+            gradient.addColorStop(0, 'rgba(6, 182, 212, 1)');
+            gradient.addColorStop(1, 'rgba(6, 182, 212, 0)');
+
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(pulseX, pulseY, 8, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        });
+      });
+
+      // Draw nodes
+      nodes.forEach((node, i) => {
+        const pulseValue = Math.sin(pulsePhase + i * 0.3) * 0.5 + 0.5;
+        const isActive = pulseValue > 0.6;
+        const size = isActive ? 6 + pulseValue * 3 : 4;
+
+        // Glow
+        if (isActive) {
+          const gradient = ctx.createRadialGradient(
+            node.x, node.y, 0,
+            node.x, node.y, size * 3
+          );
+          gradient.addColorStop(0, `rgba(6, 182, 212, ${pulseValue * 0.8})`);
+          gradient.addColorStop(1, 'rgba(6, 182, 212, 0)');
+          
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(node.x, node.y, size * 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Node
+        ctx.fillStyle = isActive 
+          ? `rgba(6, 182, 212, ${pulseValue})`
+          : 'rgba(6, 182, 212, 0.6)';
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, size, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Inner glow
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, size * 0.4, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      pulsePhase += 0.02;
+      activationWave += 0.01;
+
+      animationFrameId = requestAnimationFrame(draw);
+    };
+
+    draw();
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [isInView]);
+
+  const steps = [
+    { icon: User, label: 'User Data', color: 'rgba(139, 92, 246, 0.8)' },
+    { icon: Brain, label: 'AI Processing', color: 'rgba(6, 182, 212, 0.8)' },
+    { icon: Zap, label: 'Personalization', color: 'rgba(236, 72, 153, 0.8)' },
+    { icon: Mail, label: 'Perfect Email', color: 'rgba(16, 185, 129, 0.8)' },
+  ];
+
+  return (
+    <section ref={sectionRef} className="py-24 px-4 bg-gradient-to-b from-slate-900 to-slate-950 relative overflow-hidden">
+      {/* Animated background */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(6,182,212,0.1),transparent_50%)]"></div>
+      </div>
+
+      <div className="max-w-7xl mx-auto relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-16"
+        >
+          <div 
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4 border"
+            style={{ 
+              background: 'rgba(6, 182, 212, 0.1)',
+              borderColor: 'rgba(6, 182, 212, 0.3)',
+              color: 'var(--electric-teal)'
+            }}
+          >
+            <Brain className="w-4 h-4" />
+            <span>AI Engine</span>
+          </div>
+          <h2 className="text-4xl md:text-5xl mb-4 text-white">
+            See The AI Brain In Action
+          </h2>
+          <p className="text-xl max-w-2xl mx-auto text-slate-400">
+            Watch how our neural network processes data to create perfectly personalized emails
+          </p>
+        </motion.div>
+
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          {/* Neural Network Visualization */}
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <Card 
+              className="relative overflow-hidden border-2 shadow-2xl"
+              style={{ 
+                background: 'rgba(15, 23, 42, 0.5)',
+                borderColor: 'rgba(6, 182, 212, 0.3)',
+                backdropFilter: 'blur(10px)'
+              }}
+            >
+              <canvas
+                ref={canvasRef}
+                className="w-full"
+                style={{ height: '400px' }}
+              />
+              
+              {/* Scanline effect */}
+              <div 
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(6, 182, 212, 0.03) 2px, rgba(6, 182, 212, 0.03) 4px)'
+                }}
+              />
+            </Card>
+          </motion.div>
+
+          {/* Process Steps */}
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="space-y-6"
+          >
+            {steps.map((step, index) => {
+              const Icon = step.icon;
+              return (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, x: 20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                  className="flex items-start gap-4 group"
+                >
+                  {/* Icon */}
+                  <div 
+                    className="relative flex-shrink-0"
+                  >
+                    <div 
+                      className="absolute inset-0 rounded-xl blur-xl opacity-50 group-hover:opacity-100 transition-opacity"
+                      style={{ backgroundColor: step.color }}
+                    />
+                    <div 
+                      className="relative w-14 h-14 rounded-xl flex items-center justify-center border-2"
+                      style={{ 
+                        backgroundColor: 'rgba(15, 23, 42, 0.8)',
+                        borderColor: step.color
+                      }}
+                    >
+                      <Icon className="w-7 h-7" style={{ color: step.color }} />
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 pt-2">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span 
+                        className="text-xs px-2 py-1 rounded"
+                        style={{ 
+                          backgroundColor: step.color + '20',
+                          color: step.color
+                        }}
+                      >
+                        Step {index + 1}
+                      </span>
+                      <h3 className="text-xl text-white">{step.label}</h3>
+                    </div>
+                    <p className="text-slate-400">
+                      {index === 0 && "Collects recipient data from LinkedIn, website, and social signals"}
+                      {index === 1 && "Neural network analyzes patterns and context to understand intent"}
+                      {index === 2 && "AI generates unique content tailored to each recipient"}
+                      {index === 3 && "Delivers a perfectly crafted, personalized message"}
+                    </p>
+
+                    {/* Progress bar */}
+                    <div className="mt-3 h-1 bg-slate-800 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        whileInView={{ width: '100%' }}
+                        viewport={{ once: true }}
+                        transition={{ delay: index * 0.1 + 0.3, duration: 1 }}
+                        className="h-full rounded-full"
+                        style={{ backgroundColor: step.color }}
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        </div>
+
+        {/* Stats */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.5 }}
+          className="grid grid-cols-3 gap-6 mt-16"
+        >
+          {[
+            { value: '150M+', label: 'Data Points Analyzed' },
+            { value: '<2s', label: 'Processing Time' },
+            { value: '99.7%', label: 'Accuracy Rate' },
+          ].map((stat, index) => (
+            <div key={index} className="text-center">
+              <div 
+                className="text-3xl md:text-4xl mb-2 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent"
+              >
+                {stat.value}
+              </div>
+              <div className="text-sm text-slate-400">{stat.label}</div>
+            </div>
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+```
+
+---
+
+## Component 6: `/components/Floating3DEmailCards.tsx`
+
+```tsx
+import { motion } from 'motion/react';
+import { Mail, CheckCircle, Clock, TrendingUp } from 'lucide-react';
+
+const emails = [
+  {
+    id: 1,
+    subject: 'Congrats on the Series B!',
+    preview: 'Hi Sarah, saw your announcement...',
+    status: 'replied',
+    icon: CheckCircle,
+    color: 'rgba(16, 185, 129, 1)',
+    rotation: -5,
+    delay: 0,
+  },
+  {
+    id: 2,
+    subject: 'Quick question about your Q4 goals',
+    preview: 'Hey Marcus, I noticed your LinkedIn...',
+    status: 'opened',
+    icon: Clock,
+    color: 'rgba(245, 158, 11, 1)',
+    rotation: 3,
+    delay: 0.1,
+  },
+  {
+    id: 3,
+    subject: 'Loved your recent podcast episode',
+    preview: 'Hi Emma, your insights on AI were...',
+    status: 'interested',
+    icon: TrendingUp,
+    color: 'rgba(6, 182, 212, 1)',
+    rotation: -3,
+    delay: 0.2,
+  },
+];
+
+export function Floating3DEmailCards() {
+  return (
+    <section className="py-24 px-4 bg-gradient-to-b from-slate-950 to-slate-900 relative overflow-hidden">
+      {/* Background effects */}
+      <div className="absolute inset-0">
+        <div className="absolute top-20 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full filter blur-[120px] animate-pulse"></div>
+        <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-violet-500/10 rounded-full filter blur-[120px] animate-pulse" style={{ animationDelay: '2s' }}></div>
+      </div>
+
+      <div className="max-w-7xl mx-auto relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-16"
+        >
+          <div 
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4 border"
+            style={{ 
+              background: 'rgba(6, 182, 212, 0.1)',
+              borderColor: 'rgba(6, 182, 212, 0.3)',
+              color: 'var(--electric-teal)'
+            }}
+          >
+            <Mail className="w-4 h-4" />
+            <span>Live Campaigns</span>
+          </div>
+          <h2 className="text-4xl md:text-6xl mb-6 text-white">
+            Every Email Is
+            <br />
+            <span className="bg-gradient-to-r from-cyan-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
+              Uniquely Crafted
+            </span>
+          </h2>
+          <p className="text-xl max-w-2xl mx-auto text-slate-400">
+            Watch AI personalization in real-time
+          </p>
+        </motion.div>
+
+        {/* 3D Floating Email Cards */}
+        <div className="relative h-[600px] flex items-center justify-center perspective-1000">
+          {emails.map((email, index) => {
+            const Icon = email.icon;
+            return (
+              <motion.div
+                key={email.id}
+                initial={{ opacity: 0, y: 100, rotateX: -20 }}
+                whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
+                viewport={{ once: true }}
+                transition={{ 
+                  duration: 0.8, 
+                  delay: email.delay,
+                  type: 'spring',
+                  stiffness: 100,
+                }}
+                whileHover={{ 
+                  z: 100,
+                  rotateY: 0,
+                  scale: 1.05,
+                  transition: { duration: 0.3 }
+                }}
+                style={{
+                  position: 'absolute',
+                  left: `${30 + index * 15}%`,
+                  transformStyle: 'preserve-3d',
+                  transform: `rotateY(${email.rotation}deg)`,
+                }}
+                animate={{
+                  y: [0, -20, 0],
+                  rotateZ: [email.rotation, email.rotation + 2, email.rotation],
+                }}
+                transition={{
+                  y: {
+                    duration: 4 + index,
+                    repeat: Infinity,
+                    ease: 'easeInOut',
+                  },
+                  rotateZ: {
+                    duration: 6 + index,
+                    repeat: Infinity,
+                    ease: 'easeInOut',
+                  }
+                }}
+                className="w-[340px] cursor-pointer group"
+              >
+                {/* Card */}
+                <div 
+                  className="relative rounded-2xl p-6 border-2 backdrop-blur-xl shadow-2xl overflow-hidden"
+                  style={{
+                    background: 'rgba(15, 23, 42, 0.8)',
+                    borderColor: email.color + '40',
+                    boxShadow: `0 20px 60px ${email.color}20`,
+                  }}
+                >
+                  {/* Glow effect */}
+                  <div 
+                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl -z-10"
+                    style={{ backgroundColor: email.color + '40' }}
+                  />
+
+                  {/* Scanlines */}
+                  <div 
+                    className="absolute inset-0 pointer-events-none opacity-20"
+                    style={{
+                      backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(6, 182, 212, 0.1) 2px, rgba(6, 182, 212, 0.1) 4px)'
+                    }}
+                  />
+
+                  {/* Status badge */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div 
+                      className="flex items-center gap-2 px-3 py-1 rounded-full text-xs"
+                      style={{ 
+                        backgroundColor: email.color + '20',
+                        color: email.color,
+                        border: `1px solid ${email.color}40`
+                      }}
+                    >
+                      <Icon className="w-3 h-3" />
+                      <span className="capitalize">{email.status}</span>
+                    </div>
+
+                    {/* Pulse */}
+                    <div className="relative flex h-3 w-3">
+                      <span 
+                        className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+                        style={{ backgroundColor: email.color }}
+                      ></span>
+                      <span 
+                        className="relative inline-flex rounded-full h-3 w-3"
+                        style={{ backgroundColor: email.color }}
+                      ></span>
+                    </div>
+                  </div>
+
+                  {/* Email content */}
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div 
+                        className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style={{ 
+                          background: email.color + '15',
+                          border: `1px solid ${email.color}30`
+                        }}
+                      >
+                        <Mail className="w-5 h-5" style={{ color: email.color }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-white mb-1 truncate">
+                          {email.subject}
+                        </h4>
+                        <p className="text-sm text-slate-400 truncate">
+                          {email.preview}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Progress bar */}
+                    <div className="space-y-2 pt-3 border-t border-slate-700">
+                      <div className="flex justify-between text-xs text-slate-400">
+                        <span>Personalization</span>
+                        <span>98%</span>
+                      </div>
+                      <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          whileInView={{ width: '98%' }}
+                          viewport={{ once: true }}
+                          transition={{ duration: 1.5, delay: email.delay + 0.5 }}
+                          className="h-full rounded-full"
+                          style={{ 
+                            background: `linear-gradient(to right, ${email.color}, rgba(139, 92, 246, 0.8))`
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Stats */}
+                    <div className="grid grid-cols-3 gap-2 pt-3 border-t border-slate-700">
+                      <div className="text-center">
+                        <div className="text-lg" style={{ color: email.color }}>
+                          94%
+                        </div>
+                        <div className="text-xs text-slate-500">Match</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg text-cyan-400">
+                          2.3s
+                        </div>
+                        <div className="text-xs text-slate-500">Response</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg text-violet-400">
+                          A+
+                        </div>
+                        <div className="text-xs text-slate-500">Quality</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Holographic shimmer */}
+                  <motion.div
+                    className="absolute inset-0 opacity-0 group-hover:opacity-100"
+                    style={{
+                      background: 'linear-gradient(110deg, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%)',
+                    }}
+                    animate={{ x: ['-200%', '200%'] }}
+                    transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
+                  />
+                </div>
+
+                {/* 3D depth shadow */}
+                <div 
+                  className="absolute inset-0 rounded-2xl -z-10 blur-2xl opacity-50"
+                  style={{
+                    transform: 'translateZ(-50px)',
+                    backgroundColor: email.color + '30',
+                  }}
+                />
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {/* Bottom CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.6 }}
+          className="text-center mt-16"
+        >
+          <p className="text-slate-400 mb-6">
+            Join thousands of teams sending personalized emails at scale
+          </p>
+          <button
+            onClick={() => window.location.href = '/app'}
+            className="group relative px-8 py-4 rounded-xl overflow-hidden"
+            style={{
+              background: 'linear-gradient(to right, var(--electric-teal), rgba(139, 92, 246, 1))',
+              boxShadow: '0 0 40px rgba(6, 182, 212, 0.4)',
+            }}
+          >
+            <span className="relative z-10 flex items-center gap-2 text-white">
+              Start Creating AI Emails
+              <motion.span
+                animate={{ x: [0, 5, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                →
+              </motion.span>
+            </span>
+          </button>
+        </motion.div>
+      </div>
+
+      <style>{`
+        .perspective-1000 {
+          perspective: 1000px;
+        }
+      `}</style>
+    </section>
+  );
+}
+```
+
+---
+
+## Component 7: `/components/HowItWorksSection.tsx`
+
+```tsx
+import { Upload, Wand2, Send, Bell } from 'lucide-react';
+import { motion } from 'motion/react';
+import { EmailFlowVisualization } from './EmailFlowVisualization';
+
+const steps = [
+  {
+    icon: Upload,
+    title: 'Import Your Contacts',
+    description: 'Paste from any source. AI extracts names, emails, companies automatically.',
+    gradient: 'from-violet-500 to-purple-600',
+    color: 'violet',
+  },
+  {
+    icon: Wand2,
+    title: 'Write Once, Personalize for All',
+    description: 'Create your base message. AI generates unique versions for each contact.',
+    gradient: 'from-fuchsia-500 to-pink-600',
+    color: 'fuchsia',
+  },
+  {
+    icon: Send,
+    title: 'Hit Send & Relax',
+    description: 'Emails go out from your Gmail. Track everything in real-time.',
+    gradient: 'from-blue-500 to-cyan-600',
+    color: 'blue',
+  },
+  {
+    icon: Bell,
+    title: 'Watch Replies Roll In',
+    description: 'Get SMS alerts for replies. AI books meetings automatically.',
+    gradient: 'from-emerald-500 to-teal-600',
+    color: 'emerald',
+  },
+];
+
+export function HowItWorksSection() {
+  return (
+    <section id="how-it-works" className="py-24 px-4 bg-gradient-to-br from-gray-50 to-violet-50/30 relative overflow-hidden">
+      {/* Decorative Grid */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:64px_64px]"></div>
+
+      <div className="max-w-7xl mx-auto relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-12"
+        >
+          <div className="inline-block px-4 py-1 rounded-full bg-gradient-to-r from-violet-100 to-fuchsia-100 text-violet-700 mb-4">
+            Simple Process
+          </div>
+          <h2 className="text-4xl md:text-5xl text-center text-gray-900 mb-8">
+            From List to Meetings in 4 Steps
+          </h2>
+        </motion.div>
+
+        {/* Email Flow Visualization */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="mb-20"
+        >
+          <EmailFlowVisualization />
+        </motion.div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-4">
+          {steps.map((step, index) => {
+            const Icon = step.icon;
+            return (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.15 }}
+                className="relative"
+              >
+                {/* Connection Line - Desktop only */}
+                {index < steps.length - 1 && (
+                  <div className="hidden lg:block absolute top-16 left-[60%] w-[calc(100%-20%)] z-0">
+                    <svg className="w-full h-4" viewBox="0 0 100 20" preserveAspectRatio="none">
+                      <motion.path
+                        d="M0,10 Q50,0 100,10"
+                        stroke="url(#gradient)"
+                        strokeWidth="2"
+                        fill="none"
+                        strokeDasharray="5,5"
+                        initial={{ pathLength: 0 }}
+                        whileInView={{ pathLength: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 1, delay: index * 0.2 }}
+                      />
+                      <defs>
+                        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                          <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.3" />
+                          <stop offset="100%" stopColor="#c084fc" stopOpacity="0.3" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                  </div>
+                )}
+
+                <div className="relative z-10 text-center">
+                  {/* Icon Container with Enhanced Animation */}
+                  <div className="relative inline-block mb-6">
+                    <motion.div 
+                      className={`absolute inset-0 bg-gradient-to-r ${step.gradient} rounded-2xl blur-xl opacity-60`}
+                      animate={{
+                        scale: [1, 1.2, 1],
+                        opacity: [0.6, 0.8, 0.6],
+                      }}
+                      transition={{
+                        duration: 3,
+                        repeat: Infinity,
+                        delay: index * 0.5,
+                      }}
+                    />
+                    <motion.div 
+                      className={`relative w-32 h-32 bg-gradient-to-r ${step.gradient} rounded-2xl flex items-center justify-center shadow-2xl`}
+                      whileHover={{ 
+                        scale: 1.15,
+                        rotate: [0, -5, 5, -5, 0],
+                      }}
+                      transition={{ duration: 0.6 }}
+                    >
+                      <motion.div
+                        animate={{
+                          y: [0, -10, 0],
+                        }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                          delay: index * 0.3,
+                        }}
+                      >
+                        <Icon className="w-14 h-14 text-white" strokeWidth={1.5} />
+                      </motion.div>
+                    </motion.div>
+                    
+                    {/* Step Number Badge with Pulse */}
+                    <motion.div 
+                      className={`absolute -top-3 -right-3 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center border-2 border-${step.color}-200`}
+                      animate={{
+                        scale: [1, 1.1, 1],
+                      }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        delay: index * 0.4,
+                      }}
+                    >
+                      <span className={`bg-gradient-to-r ${step.gradient} bg-clip-text text-transparent`}>
+                        {index + 1}
+                      </span>
+                    </motion.div>
+                  </div>
+
+                  <h3 className="text-xl text-gray-900 mb-3">{step.title}</h3>
+                  <p className="text-gray-600 leading-relaxed">{step.description}</p>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+```
+
+---
+
+## Component 8: `/components/BeforeAfterSlider.tsx`
+
+```tsx
+import { useState } from 'react';
+import { motion } from 'motion/react';
+import { Card } from './ui/card';
+import { ArrowLeftRight, Mail } from 'lucide-react';
+
+export function BeforeAfterSlider() {
+  const [sliderPosition, setSliderPosition] = useState(25);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleMouseDown = () => setIsDragging(true);
+  const handleMouseUp = () => setIsDragging(false);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percentage = (x / rect.width) * 100;
+    setSliderPosition(Math.min(Math.max(percentage, 0), 100));
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.touches[0].clientX - rect.left;
+    const percentage = (x / rect.width) * 100;
+    setSliderPosition(Math.min(Math.max(percentage, 0), 100));
+  };
+
+  return (
+    <section className="py-24 px-4 bg-gradient-to-b from-slate-900 to-slate-950 relative overflow-hidden">
+      {/* Background effects */}
+      <div className="absolute inset-0 opacity-30">
+        <div className="absolute top-1/2 left-1/4 w-96 h-96 bg-cyan-500/20 rounded-full filter blur-[120px]"></div>
+        <div className="absolute top-1/2 right-1/4 w-96 h-96 bg-violet-500/20 rounded-full filter blur-[120px]"></div>
+      </div>
+
+      <div className="max-w-5xl mx-auto relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-12"
+        >
+          <div 
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4 border"
+            style={{ 
+              background: 'rgba(6, 182, 212, 0.1)',
+              borderColor: 'rgba(6, 182, 212, 0.3)',
+              color: 'var(--electric-teal)'
+            }}
+          >
+            <ArrowLeftRight className="w-4 h-4" />
+            <span>AI Transformation</span>
+          </div>
+          <h2 className="text-4xl md:text-5xl mb-4 text-white">
+            Before & After AI Personalization
+          </h2>
+          <p className="text-xl max-w-2xl mx-auto text-slate-400">
+            Drag the slider to see the transformation
+          </p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+        >
+          <div 
+            className="relative rounded-2xl overflow-hidden select-none cursor-col-resize border-2"
+            onMouseDown={handleMouseDown}
+            onMouseUp={handleMouseUp}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseUp}
+            onTouchStart={handleMouseDown}
+            onTouchEnd={handleMouseUp}
+            onTouchMove={handleTouchMove}
+            style={{ 
+              height: '600px',
+              borderColor: 'rgba(6, 182, 212, 0.3)',
+              boxShadow: '0 0 60px rgba(6, 182, 212, 0.2)'
+            }}
+          >
+            {/* BEFORE (Generic Email) - Full background */}
+            <div className="absolute inset-0 p-8 flex flex-col" style={{ background: 'rgba(30, 41, 59, 0.5)' }}>
+              <div className="flex items-center gap-2 mb-6">
+                <div 
+                  className="px-3 py-1 rounded text-sm"
+                  style={{ 
+                    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                    color: 'rgba(239, 68, 68, 1)',
+                    border: '1px solid rgba(239, 68, 68, 0.3)'
+                  }}
+                >
+                  BEFORE
+                </div>
+                <span className="text-sm text-slate-400">Generic Template</span>
+              </div>
+              
+              <Card 
+                className="flex-1 p-6 shadow-lg border"
+                style={{ 
+                  background: 'rgba(15, 23, 42, 0.8)',
+                  borderColor: 'rgba(100, 116, 139, 0.3)'
+                }}
+              >
+                <div className="flex items-center gap-3 mb-4 pb-4 border-b" style={{ borderColor: 'rgba(100, 116, 139, 0.3)' }}>
+                  <Mail className="w-5 h-5 text-slate-400" />
+                  <div>
+                    <div className="text-sm text-white">
+                      Product Demo Request
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      to: prospect@company.com
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-4 text-sm text-slate-300">
+                  <p>Hi there,</p>
+                  <p className="opacity-75">
+                    I wanted to reach out and see if you'd be interested in learning more about our product. We help companies like yours improve their sales process.
+                  </p>
+                  <p className="opacity-75">
+                    Would you be available for a quick 15-minute call this week to discuss?
+                  </p>
+                  <p className="opacity-75">Let me know if you're interested.</p>
+                  <p>Best regards,<br />Sales Team</p>
+                </div>
+              </Card>
+
+              <div className="mt-4 text-sm text-slate-400 space-y-1">
+                <div>❌ Generic greeting</div>
+                <div>❌ No personalization</div>
+                <div>❌ Vague value proposition</div>
+                <div>❌ Low response rate</div>
+              </div>
+            </div>
+
+            {/* AFTER (AI Personalized) - Revealed by slider */}
+            <div 
+              className="absolute inset-0 p-8 flex flex-col"
+              style={{ 
+                clipPath: `inset(0 ${100 - sliderPosition}% 0 0)`,
+                background: 'rgba(15, 23, 42, 0.5)'
+              }}
+            >
+              <div className="flex items-center gap-2 mb-6">
+                <div 
+                  className="px-3 py-1 rounded text-sm"
+                  style={{ 
+                    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                    color: 'rgba(16, 185, 129, 1)',
+                    border: '1px solid rgba(16, 185, 129, 0.3)'
+                  }}
+                >
+                  AFTER
+                </div>
+                <span className="text-sm text-cyan-400">AI-Powered VELOCITY</span>
+              </div>
+              
+              <Card 
+                className="flex-1 p-6 shadow-lg border-2"
+                style={{ 
+                  background: 'rgba(15, 23, 42, 0.9)',
+                  borderColor: 'rgba(6, 182, 212, 0.5)',
+                  boxShadow: '0 0 30px rgba(6, 182, 212, 0.2)'
+                }}
+              >
+                <div className="flex items-center gap-3 mb-4 pb-4 border-b" style={{ borderColor: 'rgba(6, 182, 212, 0.3)' }}>
+                  <Mail className="w-5 h-5 text-cyan-400" />
+                  <div>
+                    <div className="text-sm text-white">
+                      Congrats on the Series B - Quick Question
+                    </div>
+                    <div className="text-xs text-slate-400">
+                      to: sarah.chen@techcorp.com
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-4 text-sm text-slate-200">
+                  <p>Hi Sarah,</p>
+                  <p>
+                    Congrats on TechCorp's recent $12M Series B! I saw the announcement on TechCrunch and noticed you're planning to expand your sales team by 40%.
+                  </p>
+                  <p>
+                    Given your focus on enterprise SaaS sales, I thought you might be interested in how we helped GrowthLabs increase their meeting bookings by 3x after their Series A.
+                  </p>
+                  <p>
+                    I have a 2-minute video showing exactly how they did it. Would it be helpful if I sent it over?
+                  </p>
+                  <p>
+                    P.S. - Loved your recent post on LinkedIn about AI in sales. The point about maintaining human connection really resonated.
+                  </p>
+                  <p>Best,<br />Marcus Johnson</p>
+                </div>
+              </Card>
+
+              <div className="mt-4 text-sm text-cyan-400 space-y-1">
+                <div>✅ Personalized to recipient</div>
+                <div>✅ Relevant context & timing</div>
+                <div>✅ Specific value proposition</div>
+                <div>✅ 5x higher response rate</div>
+              </div>
+            </div>
+
+            {/* Slider handle */}
+            <div 
+              className="absolute top-0 bottom-0 w-1 pointer-events-none z-20"
+              style={{ 
+                left: `${sliderPosition}%`,
+                backgroundColor: 'rgba(6, 182, 212, 1)',
+                boxShadow: '0 0 20px rgba(6, 182, 212, 0.8), 0 0 40px rgba(6, 182, 212, 0.4)'
+              }}
+            >
+              {/* Glow effect */}
+              <div 
+                className="absolute inset-0 blur-sm"
+                style={{ 
+                  backgroundColor: 'rgba(6, 182, 212, 0.5)',
+                  width: '3px',
+                  left: '-1px'
+                }}
+              />
+              
+              {/* Handle */}
+              <div 
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full flex items-center justify-center pointer-events-auto cursor-col-resize shadow-xl border-4 border-white"
+                style={{ 
+                  background: 'linear-gradient(135deg, rgba(6, 182, 212, 1), rgba(139, 92, 246, 1))',
+                  boxShadow: '0 0 30px rgba(6, 182, 212, 0.6), 0 4px 20px rgba(0, 0, 0, 0.3)'
+                }}
+              >
+                <ArrowLeftRight className="w-6 h-6 text-white" />
+              </div>
+
+              {/* Top arrow indicator */}
+              <div 
+                className="absolute -top-8 left-1/2 -translate-x-1/2 text-xs px-3 py-1 rounded-full text-white whitespace-nowrap"
+                style={{ 
+                  background: 'rgba(6, 182, 212, 0.9)',
+                  boxShadow: '0 0 20px rgba(6, 182, 212, 0.4)'
+                }}
+              >
+                {Math.round(sliderPosition)}%
+              </div>
+            </div>
+          </div>
+
+          {/* Instructions */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1 }}
+            className="text-center mt-6 text-sm text-slate-400"
+          >
+            👆 Drag the slider to reveal AI transformation
+          </motion.p>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+```
+
+---
+
+## Supporting Component: `/components/EmailFlowVisualization.tsx`
+
+```tsx
+import { motion } from "motion/react";
+import {
+  Mail,
+  User,
+  Sparkles,
+  CheckCircle,
+} from "lucide-react";
+
+export function EmailFlowVisualization() {
+  return (
+    <div className="relative w-full h-64 flex items-center justify-center">
+      {/* Connection lines */}
+      <svg
+        className="absolute inset-0 w-full h-full"
+        viewBox="0 0 600 200"
+        preserveAspectRatio="xMidYMid meet"
+      >
+        <defs>
+          <linearGradient
+            id="flowGradient"
+            x1="0%"
+            y1="0%"
+            x2="100%"
+            y2="0%"
+          >
+            <stop offset="0%" stopColor="#8b5cf6" />
+            <stop offset="50%" stopColor="#d946ef" />
+            <stop offset="100%" stopColor="#3b82f6" />
+          </linearGradient>
+          <path
+            id="flowPath"
+            d="M 100 100 Q 200 50, 300 100 Q 400 150, 500 100"
+          />
+        </defs>
+
+        {/* Animated path */}
+        <motion.path
+          d="M 100 100 Q 200 50, 300 100 Q 400 150, 500 100"
+          stroke="url(#flowGradient)"
+          strokeWidth="3"
+          fill="none"
+          strokeLinecap="round"
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={{
+            pathLength: 1,
+            opacity: [0, 1, 1, 0],
+          }}
+          transition={{
+            duration: 3,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+
+        {/* Animated dots flowing */}
+        {[0, 0.33, 0.66].map((offset, i) => (
+          <motion.circle
+            key={i}
+            r="4"
+            fill="#d946ef"
+            initial={{ opacity: 0 }}
+            animate={{
+              opacity: [0, 1, 1, 0],
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              delay: offset * 3,
+              ease: "linear",
+            }}
+          >
+            <animateMotion
+              dur="3s"
+              repeatCount="indefinite"
+              begin={`${offset * 3}s`}
+            >
+              <mpath href="#flowPath" />
+            </animateMotion>
+          </motion.circle>
+        ))}
+      </svg>
+
+      {/* Nodes */}
+      <div className="relative z-10 flex items-center justify-between w-full max-w-xl px-8">
+        {/* Step 1: User */}
+        <motion.div
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.2, type: "spring" }}
+          className="flex flex-col items-center"
+        >
+          <div className="relative">
+            <div className="absolute inset-0 bg-violet-500 rounded-full blur-xl opacity-50"></div>
+            <motion.div
+              className="relative w-16 h-16 bg-gradient-to-br from-violet-500 to-purple-600 rounded-full flex items-center justify-center shadow-xl"
+              whileHover={{ scale: 1.1, rotate: 360 }}
+              transition={{ duration: 0.6 }}
+            >
+              <User className="w-8 h-8 text-white" />
+            </motion.div>
+          </div>
+          <span className="mt-2 text-sm text-gray-600">
+            You
+          </span>
+        </motion.div>
+
+        {/* Step 2: AI Processing */}
+        <motion.div
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.4, type: "spring" }}
+          className="flex flex-col items-center"
+        >
+          <div className="relative">
+            <div className="absolute inset-0 bg-fuchsia-500 rounded-full blur-xl opacity-50"></div>
+            <motion.div
+              className="relative w-16 h-16 bg-gradient-to-br from-fuchsia-500 to-pink-600 rounded-full flex items-center justify-center shadow-xl"
+              animate={{
+                rotate: 360,
+                scale: [1, 1.1, 1],
+              }}
+              transition={{
+                rotate: {
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: "linear",
+                },
+                scale: {
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                },
+              }}
+            >
+              <Sparkles className="w-8 h-8 text-white" />
+            </motion.div>
+          </div>
+          <span className="mt-2 text-sm text-gray-600">
+            AI Magic
+          </span>
+        </motion.div>
+
+        {/* Step 3: Email Sent */}
+        <motion.div
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.6, type: "spring" }}
+          className="flex flex-col items-center"
+        >
+          <div className="relative">
+            <div className="absolute inset-0 bg-blue-500 rounded-full blur-xl opacity-50"></div>
+            <motion.div
+              className="relative w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-full flex items-center justify-center shadow-xl"
+              whileHover={{
+                scale: 1.1,
+                y: [-5, 5, -5],
+              }}
+              transition={{ duration: 0.5 }}
+            >
+              <Mail className="w-8 h-8 text-white" />
+            </motion.div>
+          </div>
+          <span className="mt-2 text-sm text-gray-600">
+            Personalized
+          </span>
+        </motion.div>
+
+        {/* Step 4: Success */}
+        <motion.div
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.8, type: "spring" }}
+          className="flex flex-col items-center"
+        >
+          <div className="relative">
+            <div className="absolute inset-0 bg-emerald-500 rounded-full blur-xl opacity-50"></div>
+            <motion.div
+              className="relative w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center shadow-xl"
+              whileHover={{ scale: 1.1 }}
+              animate={{
+                boxShadow: [
+                  "0 0 20px rgba(16, 185, 129, 0.4)",
+                  "0 0 40px rgba(16, 185, 129, 0.6)",
+                  "0 0 20px rgba(16, 185, 129, 0.4)",
+                ],
+              }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <CheckCircle className="w-8 h-8 text-white" />
+            </motion.div>
+          </div>
+          <span className="mt-2 text-sm text-gray-600">
+            Delivered
+          </span>
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+```
+
+---
+
+## ✅ END OF PART 2
+
+**Next files:**
+- CODE_PART_3.md will contain Components 9-12
+- CODE_PART_4.md will contain Components 13-16
+- CODE_PART_5.md will contain Components 17-20

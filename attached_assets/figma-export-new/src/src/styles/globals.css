@@ -1,0 +1,318 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap');
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Brand Colors - Primary */
+  --deep-navy: #0F172A;
+  --electric-teal: #0EA5E9;
+  --pure-white: #FFFFFF;
+  
+  /* Brand Colors - Secondary */
+  --slate-600: #475569;
+  --slate-400: #94A3B8;
+  --slate-200: #E2E8F0;
+  --slate-50: #F8FAFC;
+  --slate-100: #F1F5F9;
+  
+  /* Brand Colors - Semantic */
+  --success-green: #10B981;
+  --warning-amber: #F59E0B;
+  --error-red: #EF4444;
+  --info-blue: #3B82F6;
+  
+  /* Typography Sizes */
+  --text-hero: 56px;
+  --text-h1: 36px;
+  --text-h2: 24px;
+  --text-h3: 20px;
+  --text-body: 16px;
+  --text-small: 14px;
+  --text-tiny: 12px;
+  
+  /* Font Weights */
+  --font-weight-black: 900;
+  --font-weight-bold: 700;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  
+  /* Border Radius */
+  --radius-small: 4px;
+  --radius-medium: 8px;
+  --radius-large: 12px;
+  
+  /* Shadows */
+  --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.12);
+  --shadow-medium: 0 4px 6px rgba(0, 0, 0, 0.15);
+  --shadow-strong: 0 10px 15px rgba(0, 0, 0, 0.20);
+  
+  /* Spacing Scale */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-2xl: 32px;
+  --space-3xl: 48px;
+  --space-4xl: 64px;
+  
+  /* System Colors (mapped to brand) */
+  --font-size: 16px;
+  --background: var(--pure-white);
+  --foreground: var(--deep-navy);
+  --card: var(--pure-white);
+  --card-foreground: var(--deep-navy);
+  --popover: var(--pure-white);
+  --popover-foreground: var(--deep-navy);
+  --primary: var(--deep-navy);
+  --primary-foreground: var(--pure-white);
+  --secondary: var(--slate-50);
+  --secondary-foreground: var(--deep-navy);
+  --muted: var(--slate-50);
+  --muted-foreground: var(--slate-600);
+  --accent: var(--electric-teal);
+  --accent-foreground: var(--pure-white);
+  --destructive: var(--error-red);
+  --destructive-foreground: var(--pure-white);
+  --border: var(--slate-200);
+  --input: transparent;
+  --input-background: var(--slate-50);
+  --switch-background: var(--slate-400);
+  --ring: var(--electric-teal);
+  --chart-1: var(--electric-teal);
+  --chart-2: var(--info-blue);
+  --chart-3: var(--success-green);
+  --chart-4: var(--warning-amber);
+  --chart-5: var(--deep-navy);
+  --radius: var(--radius-medium);
+  --sidebar: var(--slate-50);
+  --sidebar-foreground: var(--deep-navy);
+  --sidebar-primary: var(--deep-navy);
+  --sidebar-primary-foreground: var(--pure-white);
+  --sidebar-accent: var(--slate-200);
+  --sidebar-accent-foreground: var(--slate-600);
+  --sidebar-border: var(--slate-200);
+  --sidebar-ring: var(--electric-teal);
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { 
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+  }
+  50% { 
+    box-shadow: 0 0 40px rgba(6, 182, 212, 0.8);
+  }
+}
+
+@keyframes rotate-gradient {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar with brand colors */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--slate-50);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, var(--electric-teal), var(--deep-navy));
+  border-radius: var(--radius-small);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--electric-teal);
+}
+
+.dark {
+  --background: var(--deep-navy);
+  --foreground: var(--pure-white);
+  --card: #1E293B;
+  --card-foreground: var(--pure-white);
+  --popover: #1E293B;
+  --popover-foreground: var(--pure-white);
+  --primary: var(--pure-white);
+  --primary-foreground: var(--deep-navy);
+  --secondary: #1E293B;
+  --secondary-foreground: var(--pure-white);
+  --muted: #334155;
+  --muted-foreground: var(--slate-400);
+  --accent: var(--electric-teal);
+  --accent-foreground: var(--pure-white);
+  --destructive: var(--error-red);
+  --destructive-foreground: var(--pure-white);
+  --border: #334155;
+  --input: #334155;
+  --ring: var(--electric-teal);
+  --sidebar: #1E293B;
+  --sidebar-foreground: var(--pure-white);
+  --sidebar-primary: var(--electric-teal);
+  --sidebar-primary-foreground: var(--pure-white);
+  --sidebar-accent: #334155;
+  --sidebar-accent-foreground: var(--pure-white);
+  --sidebar-border: #334155;
+  --sidebar-ring: var(--electric-teal);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: var(--radius-small);
+  --radius-md: var(--radius-medium);
+  --radius-lg: var(--radius-large);
+  --radius-xl: calc(var(--radius-large) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+}
+
+/**
+ * Base typography with brand-specific sizes and weights
+ */
+@layer base {
+  :where(:not(:has([class*=' text-']), :not(:has([class^='text-'])))) {
+    h1 {
+      font-size: var(--text-h1);
+      font-weight: var(--font-weight-bold);
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+    }
+
+    h2 {
+      font-size: var(--text-h2);
+      font-weight: var(--font-weight-bold);
+      line-height: 1.3;
+      letter-spacing: -0.01em;
+    }
+
+    h3 {
+      font-size: var(--text-h3);
+      font-weight: var(--font-weight-bold);
+      line-height: 1.4;
+    }
+
+    h4 {
+      font-size: var(--text-body);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    p {
+      font-size: var(--text-body);
+      font-weight: var(--font-weight-normal);
+      line-height: 1.6;
+    }
+
+    label {
+      font-size: var(--text-body);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    button {
+      font-size: var(--text-body);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    input {
+      font-size: var(--text-body);
+      font-weight: var(--font-weight-normal);
+      line-height: 1.5;
+    }
+  }
+}
+
+html {
+  font-size: var(--font-size);
+}
+
+/* Brand-specific utility classes */
+.text-hero {
+  font-size: var(--text-hero);
+  font-weight: var(--font-weight-bold);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.velocity-logo {
+  font-family: 'Inter', sans-serif;
+  font-weight: var(--font-weight-black);
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.shadow-brand-subtle {
+  box-shadow: var(--shadow-subtle);
+}
+
+.shadow-brand-medium {
+  box-shadow: var(--shadow-medium);
+}
+
+.shadow-brand-strong {
+  box-shadow: var(--shadow-strong);
+}

@@ -1,0 +1,10 @@
+export { analyzeAndOptimizeEmail } from "./optimize";
+export { EmailIntent, type OptimizationResult, type RecipientData, type DetailedAnalysisResult, type EmailType, type CategoryScore, type DetailedImprovement, type EmailWritingTip } from "./types";
+export { OPTIMIZATION_RULES } from "./rules";
+export { analyzeEmailComprehensive, detectEmailType, runFullAnalysis } from "./comprehensive-analyzer";
+export { analyzeSalesEmail } from "./sales-analyzer";
+export { analyzeEmailBestPractices } from "./best-practices-analyzer";
+export { optimizeSubjectLine } from "./subject-line-optimizer";
+export { analyzeEmailStructure } from "./structure-analyzer";
+export { safeOptimizeEmail, type SafeSuggestion, type SafeOptimizationResult } from "./safe-optimizer";
+export { validateSuggestion, validateOptimizationResult } from "./content-validator";

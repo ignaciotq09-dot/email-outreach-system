@@ -1,0 +1,23 @@
+import type { UserEmailPersonalization } from "@shared/schema";
+import type { ExtractedPatterns } from "./types";
+
+const baseStyleDescriptions: Record<string, string> = { "ultra-direct": "Be extremely concise. Get to the point immediately. No fluff. Action-oriented.", "warm": "Be warm and friendly. Show genuine interest. Use conversational language.", "value-first": "Lead with value. Focus on benefits. Make the pitch clear but not pushy.", "professional": "Maintain a professional tone. Be respectful and courteous. Clear and structured.", "casual": "Write casually. Like talking to a friend. Relaxed but still professional.", "balanced": "Balance professionalism with approachability. Clear and friendly." };
+
+export function buildPersonalizationPrompt(params: { personalization: UserEmailPersonalization | null; voicePatterns: ExtractedPatterns | null; personaInstructions: string | null; baseStyle: string; }): string {
+  const { personalization, voicePatterns, personaInstructions, baseStyle } = params;
+  const sections: string[] = [];
+  sections.push(`## BASE WRITING STYLE: ${baseStyle.toUpperCase()}`);
+  sections.push(baseStyleDescriptions[baseStyle] || baseStyleDescriptions["balanced"]);
+  if (personalization?.personalInstructions) { sections.push(`\n## USER'S PERSONAL INSTRUCTIONS (MUST FOLLOW):`); sections.push(personalization.personalInstructions); }
+  if (personalization) { const formality = personalization.toneFormality ?? 5; const warmth = personalization.toneWarmth ?? 5; const directness = personalization.toneDirectness ?? 5; const humor = personalization.toneHumor ?? 3; const urgency = personalization.toneUrgency ?? 3; sections.push(`\n## TONE SETTINGS:`); sections.push(`- Formality: ${formality}/10 (${formality <= 3 ? 'very casual' : formality <= 6 ? 'balanced' : 'formal'})`); sections.push(`- Warmth: ${warmth}/10 (${warmth <= 3 ? 'direct' : warmth <= 6 ? 'friendly' : 'very warm'})`); sections.push(`- Directness: ${directness}/10 (${directness <= 3 ? 'subtle' : directness <= 6 ? 'clear' : 'very direct'})`); if (humor > 3) sections.push(`- Include light humor or wit`); if (urgency > 6) sections.push(`- Create a sense of urgency`); }
+  if (voicePatterns && voicePatterns.keyCharacteristics.length > 0) { sections.push(`\n## LEARNED WRITING PATTERNS (from user's samples):`); sections.push(`Emulate these characteristics:`); voicePatterns.keyCharacteristics.forEach(c => { sections.push(`- ${c}`); }); if (voicePatterns.commonPhrases.length > 0) { sections.push(`\nPhrases this user commonly uses (incorporate naturally):`); voicePatterns.commonPhrases.slice(0, 3).forEach(p => { sections.push(`- "${p}"`); }); } sections.push(`\nTypical sentence length: ~${Math.round(voicePatterns.averageSentenceLength)} words`); }
+  if (personalization?.avoidWords && personalization.avoidWords.length > 0) { sections.push(`\n## WORDS TO NEVER USE:`); sections.push(personalization.avoidWords.join(", ")); }
+  if (personalization?.preferredWords && personalization.preferredWords.length > 0) { sections.push(`\n## PREFERRED WORDS (use when appropriate):`); sections.push(personalization.preferredWords.join(", ")); }
+  if (personaInstructions) { sections.push(`\n## PERSONA-SPECIFIC GUIDANCE:`); sections.push(personaInstructions); }
+  if (personalization) { const structureNotes: string[] = []; if (personalization.preferBulletPoints) structureNotes.push("use bullet points where helpful"); if (personalization.preferNumberedLists) structureNotes.push("use numbered lists for steps"); if (personalization.preferQuestions) structureNotes.push("end with a question"); if (personalization.preferSingleCTA) structureNotes.push("have ONE clear call-to-action"); if (structureNotes.length > 0) { sections.push(`\n## STRUCTURE PREFERENCES:`); sections.push(structureNotes.join(", ")); } const minLen = personalization.minEmailLength ?? 50; const maxLen = personalization.maxEmailLength ?? 150; sections.push(`\n## LENGTH: ${minLen}-${maxLen} words`); }
+  if (personalization?.preferredGreetings && personalization.preferredGreetings.length > 0) sections.push(`\n## GREETING: Use one of: ${personalization.preferredGreetings.join(", ")}`);
+  if (personalization?.avoidGreetings && personalization.avoidGreetings.length > 0) sections.push(`## AVOID GREETINGS: ${personalization.avoidGreetings.join(", ")}`);
+  if (personalization?.preferredClosings && personalization.preferredClosings.length > 0) sections.push(`## CLOSING: Use one of: ${personalization.preferredClosings.join(", ")}`);
+  if (personalization?.avoidClosings && personalization.avoidClosings.length > 0) sections.push(`## AVOID CLOSINGS: ${personalization.avoidClosings.join(", ")}`);
+  return sections.join("\n");
+}

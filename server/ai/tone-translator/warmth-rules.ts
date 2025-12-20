@@ -1,0 +1,12 @@
+export const WARMTH_RULEBOOK: Record<number, string | null> = {
+  1: `WARMTH: Very Cold/Impersonal (Level 1)\nWrite with pure clinical detachment.\nTONE: Factual, almost robotic, zero personality\nDO: State facts only, avoid any emotional language, be matter-of-fact\nDON'T: Express feelings, use warm words, or show personal interest\nEXAMPLE: "The report is attached. Review by Friday."`,
+  2: `WARMTH: Cold/Detached (Level 2)\nWrite with minimal emotional engagement.\nTONE: Businesslike, reserved, efficient\nDO: Keep it brief and factual, minimal small talk\nDON'T: Add unnecessary pleasantries or emotional phrases\nEXAMPLE: "Please find the attached document. Let me know if you have questions."`,
+  3: `WARMTH: Cool/Reserved (Level 3)\nWrite with polite distance.\nTONE: Professional, courteous but not warm\nDO: Include basic courtesies, stay businesslike\nDON'T: Get too personal or effusive\nEXAMPLE: "Thank you for your email. I'll review and respond by end of week."`,
+  4: null,
+  5: null,
+  6: null,
+  7: `WARMTH: Warm/Friendly (Level 7)\nWrite with genuine friendliness.\nTONE: Warm, personable, caring\nDO: Show interest in them, use friendly phrases, express appreciation\nDON'T: Be cold or purely transactional\nEXAMPLE: "Thanks so much for thinking of me! I'd love to help with this. How are things going on your end?"`,
+  8: `WARMTH: Very Warm/Caring (Level 8)\nWrite with obvious warmth and care.\nTONE: Genuinely caring, supportive, encouraging\nDO: Express real interest, offer support, show you value the relationship\nDON'T: Be impersonal or rushed\nEXAMPLE: "I really appreciate you reaching out. This means a lot to me, and I want to make sure I give it my full attention."`,
+  9: `WARMTH: Deeply Warm/Affectionate (Level 9)\nWrite with deep warmth and personal connection.\nTONE: Heartfelt, genuinely caring, relationship-first\nDO: Express sincere appreciation, show emotional investment, be supportive\nDON'T: Be transactional or hurried\nEXAMPLE: "It's wonderful to hear from you! I've been thinking about our last conversation and how much I appreciated your insights."`,
+  10: `WARMTH: Extremely Warm/Effusive (Level 10)\nWrite with maximum warmth and emotional expression.\nTONE: Overflowing with genuine care, deeply personal\nDO: Express strong positive emotions, show deep appreciation, be maximally supportive\nDON'T: Hold back on warmth or seem reserved\nEXAMPLE: "I cannot tell you how thrilled I am to hear from you! Your message absolutely made my day, and I feel so grateful for our connection."`
+};

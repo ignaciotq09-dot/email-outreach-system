@@ -1,0 +1,419 @@
+Based on your requirements, here's an extremely detailed and specific prompt for Replit with every single feature explicitly defined:
+
+---
+
+## **COMPLETE PROMPT FOR REPLIT: Gmail-Connected Email Outreach System**
+
+**Build a web application that connects to Gmail, sends personalized bulk emails, tracks replies automatically, and maintains a persistent database of all interactions.**
+
+### **EXACT DATABASE STRUCTURE (PostgreSQL/SQLite):**
+
+```sql
+CREATE TABLE contacts (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    company VARCHAR(255) NOT NULL,
+    phone VARCHAR(50),
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE sent_emails (
+    id SERIAL PRIMARY KEY,
+    contact_id INTEGER REFERENCES contacts(id),
+    subject VARCHAR(500),
+    body TEXT,
+    gmail_message_id VARCHAR(255),
+    gmail_thread_id VARCHAR(255),
+    sent_at TIMESTAMP DEFAULT NOW(),
+    reply_received BOOLEAN DEFAULT FALSE,
+    last_reply_check TIMESTAMP,
+    writing_style VARCHAR(50)
+);
+
+CREATE TABLE replies (
+    id SERIAL PRIMARY KEY,
+    sent_email_id INTEGER REFERENCES sent_emails(id),
+    reply_received_at TIMESTAMP,
+    reply_content TEXT,
+    gmail_message_id VARCHAR(255)
+);
+
+CREATE TABLE follow_ups (
+    id SERIAL PRIMARY KEY,
+    original_email_id INTEGER REFERENCES sent_emails(id),
+    follow_up_body TEXT,
+    sent_at TIMESTAMP DEFAULT NOW(),
+    gmail_message_id VARCHAR(255)
+);
+```
+
+### **PAGE LAYOUT - EXACT SPECIFICATIONS:**
+
+**MAIN PAGE (Single Page Application - Never Navigates Away):**
+
+```
++----------------------------------------------------------+
+|  HEADER (60px height, white background)                  |
+|  Logo: "Email Outreach System" (left)                   |
+|  Gmail Status: "✓ Connected to: [user@gmail.com]" (right)|
++----------------------------------------------------------+
+|                                                          |
+|  TAB NAVIGATION (50px height)                           |
+|  [Compose & Send] [Sent Emails] [Settings]             |
+|                                                          |
++----------------------------------------------------------+
+```
+
+### **TAB 1: COMPOSE & SEND (Default View)**
+
+```
+LEFT SIDE (45% width, light gray border-right):
++--------------------------------+
+| ADD CONTACTS TO QUEUE          |
+| Name: [___________________]    |
+| Email: [___________________]   |
+| Company: [________________]    |
+| Phone: [___________________]   |
+| Notes about this person:       |
+| [________________________]     |
+| [________________________]     |
+| [________________________]     |
+| [+ Add to Queue] button (blue) |
++--------------------------------+
+| QUEUED CONTACTS (scrollable)   |
+| ✓ John Smith - ABC Corp [X]    |
+| ✓ Jane Doe - XYZ Inc [X]       |
+| ✓ Bob Wilson - Tech Co [X]     |
+| (Shows as chips with X delete) |
++--------------------------------+
+
+RIGHT SIDE (55% width):
++--------------------------------+
+| COMPOSE MESSAGE                |
+| Writing Style:                 |
+| ○ Professional & Adult-like    |
+| ○ Professional & Humble        |
+|    (Learning-oriented)         |
+|                                |
+| Base Message:                  |
+| [________________________]     |
+| [________________________]     |
+| [________________________]     |
+| [________________________]     |
+| (Large textarea 200px height)  |
+|                                |
+| [Generate Personalized] button |
+|                                |
+| PREVIEW PERSONALIZED EMAILS:   |
+| +----------------------------+ |
+| | To: John Smith             | |
+| | Subject: [auto-generated]  | |
+| | Body: [AI personalized     | |
+| | version shown here...]     | |
+| | [Edit] button              | |
+| +----------------------------+ |
+| | To: Jane Doe              | |
+| | Subject: [auto-generated]  | |
+| | Body: [AI personalized     | |
+| | version shown here...]     | |
+| | [Edit] button              | |
+| +----------------------------+ |
+|                                |
+| [SEND ALL EMAILS] button (big) |
++--------------------------------+
+```
+
+### **TAB 2: SENT EMAILS (Timeline View)**
+
+```
+LAYOUT:
++----------------------------------------------------------+
+| SENT EMAILS (Sorted by Latest First)                     |
+| +------------------------------------------------------+ |
+| | John Smith | ABC Corp | john@abc.com | 2 min ago    | |
+| | Status: 🔴 No Reply                    [Expand ▼]   | |
+| +------------------------------------------------------+ |
+| | Jane Doe | XYZ Inc | jane@xyz.com | 1 hour ago      | |
+| | Status: 🟢 REPLIED                     [Expand ▼]   | |
+| +------------------------------------------------------+ |
+| | Bob Wilson | Tech Co | bob@tech.com | Yesterday     | |
+| | Status: 🔴 No Reply                    [Expand ▼]   | |
+| +------------------------------------------------------+ |
+
+WHEN EXPANDED (Click on any row):
+| +------------------------------------------------------+ |
+| | FULL EMAIL CONTENT:                                  | |
+| | Subject: [Subject line shown here]                   | |
+| | Sent: December 25, 2024 at 3:45 PM                  | |
+| | To: john@abc.com                                    | |
+| | Phone: 555-0123                                     | |
+| | Notes: Interested in SaaS products, met at conference| |
+| |                                                      | |
+| | Message Body:                                        | |
+| | [Full email content displayed here in gray box]      | |
+| |                                                      | |
+| | [SEND FOLLOW-UP EMAIL] button (orange)              | |
+| +------------------------------------------------------+ |
+```
+
+### **TAB 3: SETTINGS**
+
+```
++--------------------------------+
+| GMAIL CONFIGURATION            |
+| Status: ✓ Connected            |
+| Email: user@gmail.com          |
+| [Reconnect Gmail] button       |
+|                                |
+| OPENAI API CONFIGURATION       |
+| API Key: [***************]     |
+| [Save API Key] button          |
+|                                |
+| AUTO-CHECK FOR REPLIES         |
+| Check every: [30 minutes ▼]    |
+| Options: 15min/30min/1hr/2hr   |
+|                                |
+| DEFAULT SIGNATURE              |
+| [___________________]          |
+| [___________________]          |
+| [Save Signature] button        |
++--------------------------------+
+```
+
+### **GMAIL INTEGRATION - EXACT IMPLEMENTATION:**
+
+**1. OAuth 2.0 Setup:**
+```javascript
+// When user clicks "Connect Gmail":
+1. Redirect to Google OAuth consent screen
+2. Request scopes:
+   - https://www.googleapis.com/auth/gmail.send
+   - https://www.googleapis.com/auth/gmail.readonly
+   - https://www.googleapis.com/auth/gmail.modify
+3. Store refresh_token in database
+4. Use refresh_token to get access_token for each session
+```
+
+**2. Sending Emails:**
+```javascript
+// When "SEND ALL EMAILS" is clicked:
+FOR EACH contact in queue:
+  1. Create email using Gmail API
+  2. Store gmail_message_id and gmail_thread_id
+  3. Save to sent_emails table
+  4. Remove from queue
+  5. Show success toast notification
+```
+
+**3. Checking for Replies (Runs every 30 minutes):**
+```javascript
+// Background task:
+1. Get all sent_emails where reply_received = false
+2. For each email:
+   - Use gmail_thread_id to fetch thread
+   - Check if thread has more than 1 message
+   - If yes: 
+     * Set reply_received = true
+     * Store reply content in replies table
+     * Update UI to show green status
+   - If no: Keep red status
+```
+
+### **AI PERSONALIZATION - EXACT PROMPT STRUCTURE:**
+
+**When "Generate Personalized" is clicked, send this to OpenAI:**
+
+```javascript
+const prompt = `
+You are writing an email from me. Here is my base message:
+"${baseMessage}"
+
+Writing Style: ${selectedStyle}
+- If "Professional & Adult-like": Write confidently, directly, assuming expertise
+- If "Professional & Humble": Write as someone learning, asking questions, showing curiosity
+
+Recipient Information:
+- Name: ${contact.name}
+- Company: ${contact.company}
+- Notes: ${contact.notes}
+
+Generate a personalized email that:
+1. Addresses them by first name
+2. References their company naturally in the first 2 sentences
+3. Incorporates any relevant information from the notes
+4. Keeps the core message but adapts tone and details
+5. Adds a relevant subject line
+6. Ends with appropriate call-to-action
+
+Format response as:
+SUBJECT: [subject line here]
+BODY: [email body here]
+`;
+```
+
+### **FOLLOW-UP EMAIL FUNCTIONALITY:**
+
+**When "SEND FOLLOW-UP EMAIL" is clicked:**
+```
+1. Modal opens (600px wide, centered)
+2. Shows:
+   - Original email thread (read-only, gray background)
+   - New text area pre-filled with:
+     "Hi [Name],
+     
+     I wanted to follow up on my previous email about [extracted topic].
+     
+     [Space for custom message]
+     
+     Looking forward to hearing from you."
+   
+3. [Send Follow-up] button
+4. Sends as reply to original gmail_thread_id
+5. Updates database with follow-up record
+6. Changes status indicator to 🟡 (yellow)
+```
+
+### **EXACT COLOR SCHEME & STYLING:**
+
+```css
+/* Exact colors to use */
+--background: #FFFFFF;
+--sidebar-bg: #F9FAFB;
+--border: #E5E7EB;
+--text-primary: #111827;
+--text-secondary: #6B7280;
+--button-primary: #3B82F6;
+--button-hover: #2563EB;
+--status-green: #10B981;
+--status-red: #EF4444;
+--status-yellow: #F59E0B;
+
+/* Exact spacing */
+--padding-small: 8px;
+--padding-medium: 16px;
+--padding-large: 24px;
+
+/* Exact fonts */
+font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+font-size-base: 14px;
+font-size-large: 16px;
+font-size-small: 12px;
+```
+
+### **CRITICAL FUNCTIONAL REQUIREMENTS:**
+
+1. **Multiple People Selection**: 
+   - Checkbox next to each queued contact
+   - "Select All" checkbox at top
+   - Can add unlimited contacts to queue before sending
+
+2. **Automatic Sending**:
+   - ONE click on "SEND ALL EMAILS" sends to everyone in queue
+   - No additional confirmations except one modal: "Send X emails now?"
+   - Progress bar shows sending status
+
+3. **Database Persistence**:
+   - Every page refresh maintains all data
+   - Use PostgreSQL or SQLite with actual file storage
+   - Never use localStorage or sessionStorage
+
+4. **Reply Detection Colors**:
+   - Green (🟢): ANY email received from that email address in your Gmail
+   - Red (🔴): NO email from that address found
+   - Yellow (🟡): Follow-up sent, awaiting response
+
+5. **Sorting & Display**:
+   - ALWAYS show newest sent emails at top
+   - Time display rules:
+     * Less than 1 hour: "X minutes ago"
+     * Less than 24 hours: "X hours ago"  
+     * Less than 7 days: "X days ago"
+     * Older: "Dec 25, 2024"
+
+6. **Line Item Display** (not expanded):
+   - Name (bold) | Company | Email | Time | Status
+   - Single line, no wrapping
+   - Hover shows light gray background
+
+### **API ENDPOINTS - EXACT SPECIFICATIONS:**
+
+```javascript
+// Backend routes (Express.js)
+
+POST /api/gmail/auth
+- Initiates OAuth flow
+- Returns: redirect URL
+
+GET /api/gmail/callback
+- Handles OAuth callback
+- Stores tokens in database
+- Returns: success status
+
+POST /api/contacts/add
+- Body: { name, email, company, phone, notes }
+- Returns: contact object with ID
+
+GET /api/contacts/all
+- Returns: array of all contacts
+
+POST /api/emails/generate
+- Body: { contactIds[], baseMessage, writingStyle }
+- Returns: array of personalized email previews
+
+POST /api/emails/send-bulk
+- Body: { emails[] } // Array of personalized emails
+- Sends via Gmail API
+- Stores in database
+- Returns: success/failure for each
+
+GET /api/emails/sent
+- Query params: ?limit=50&offset=0
+- Returns: paginated sent emails with reply status
+
+POST /api/emails/check-replies
+- No body needed
+- Checks Gmail for all pending replies
+- Updates database
+- Returns: updated count
+
+POST /api/emails/follow-up
+- Body: { originalEmailId, followUpMessage }
+- Sends as thread reply
+- Returns: success status
+
+GET /api/emails/:id
+- Returns: full email details including thread
+```
+
+### **ERROR HANDLING - EXACT MESSAGES:**
+
+```javascript
+// Show these exact toast messages:
+
+"Gmail not connected. Please connect in Settings."
+"Failed to send email to [name]. Saved to drafts."
+"All X emails sent successfully!"
+"No contacts in queue. Add contacts first."
+"API Key invalid. Please check Settings."
+"Rate limit reached. Wait 1 minute."
+"Network error. Please check connection."
+```
+
+### **STARTUP SEQUENCE:**
+
+```javascript
+1. Check database connection
+2. Verify Gmail tokens (refresh if needed)
+3. Load last 50 sent emails
+4. Start background reply checker (every 30 min)
+5. Show main compose tab
+6. Display "Ready" in status bar
+```
+
+**This application must work immediately upon deployment with no additional configuration except entering Gmail auth and OpenAI key. Every button click should have immediate visual feedback. The app should never navigate away from the main page - everything happens in tabs/modals on the same page.**
+
+---
+
+This prompt includes EVERY feature you specified with exact implementation details, leaving absolutely nothing to interpretation.
