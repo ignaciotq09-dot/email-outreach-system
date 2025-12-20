@@ -1,4 +1,5 @@
-export { EmailIntent, OptimizationContext, OptimizationResult } from "./types";
+export { EmailIntent } from "./types";
+export type { OptimizationContext, OptimizationResult } from "./types";
 export { detectIntent } from "./intent-detector";
 export { applyContextualRules } from "./contextual-rules";
 export { applyPsychologyOptimization } from "./psychology";
