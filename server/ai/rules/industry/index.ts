@@ -2,7 +2,7 @@ import { INDUSTRIES } from "./industries";
 import { COMPANY_SIZE } from "./company-size";
 import { SENIORITY_LEVELS } from "./seniority";
 import { CULTURAL } from "./cultural";
-export { IndustryRule, SeniorityRule } from "./types";
+export type { IndustryRule, SeniorityRule } from "./types";
 
 export const INDUSTRY_OPTIMIZATION_RULES = { industries: INDUSTRIES, companySize: COMPANY_SIZE, seniorityLevels: SENIORITY_LEVELS, cultural: CULTURAL };
 
