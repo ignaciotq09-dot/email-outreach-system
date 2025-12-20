@@ -1,0 +1,469 @@
+Continuing with the remaining component files:
+
+`/components/HowItWorksSection.tsx`
+
+```tsx
+import { Upload, Wand2, Send, Bell } from 'lucide-react';
+import { motion } from 'motion/react';
+import { EmailFlowVisualization } from './EmailFlowVisualization';
+
+const steps = [
+  {
+    icon: Upload,
+    title: 'Import Your Contacts',
+    description: 'Paste from any source. AI extracts names, emails, companies automatically.',
+    gradient: 'from-violet-500 to-purple-600',
+    color: 'violet',
+  },
+  {
+    icon: Wand2,
+    title: 'Write Once, Personalize for All',
+    description: 'Create your base message. AI generates unique versions for each contact.',
+    gradient: 'from-fuchsia-500 to-pink-600',
+    color: 'fuchsia',
+  },
+  {
+    icon: Send,
+    title: 'Hit Send & Relax',
+    description: 'Emails go out from your Gmail. Track everything in real-time.',
+    gradient: 'from-blue-500 to-cyan-600',
+    color: 'blue',
+  },
+  {
+    icon: Bell,
+    title: 'Watch Replies Roll In',
+    description: 'Get SMS alerts for replies. AI books meetings automatically.',
+    gradient: 'from-emerald-500 to-teal-600',
+    color: 'emerald',
+  },
+];
+
+export function HowItWorksSection() {
+  return (
+    <section id="how-it-works" className="py-24 px-4 bg-gradient-to-br from-gray-50 to-violet-50/30 relative overflow-hidden">
+      {/* Decorative Grid */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:64px_64px]"></div>
+
+      <div className="max-w-7xl mx-auto relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-12"
+        >
+          <div className="inline-block px-4 py-1 rounded-full bg-gradient-to-r from-violet-100 to-fuchsia-100 text-violet-700 mb-4">
+            Simple Process
+          </div>
+          <h2 className="text-4xl md:text-5xl text-center text-gray-900 mb-8">
+            From List to Meetings in 4 Steps
+          </h2>
+        </motion.div>
+
+        {/* Email Flow Visualization */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="mb-20"
+        >
+          <EmailFlowVisualization />
+        </motion.div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-4">
+          {steps.map((step, index) => {
+            const Icon = step.icon;
+            return (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.15 }}
+                className="relative"
+              >
+                {/* Connection Line - Desktop only */}
+                {index < steps.length - 1 && (
+                  <div className="hidden lg:block absolute top-16 left-[60%] w-[calc(100%-20%)] z-0">
+                    <svg className="w-full h-4" viewBox="0 0 100 20" preserveAspectRatio="none">
+                      <motion.path
+                        d="M0,10 Q50,0 100,10"
+                        stroke="url(#gradient)"
+                        strokeWidth="2"
+                        fill="none"
+                        strokeDasharray="5,5"
+                        initial={{ pathLength: 0 }}
+                        whileInView={{ pathLength: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 1, delay: index * 0.2 }}
+                      />
+                      <defs>
+                        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                          <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.3" />
+                          <stop offset="100%" stopColor="#c084fc" stopOpacity="0.3" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                  </div>
+                )}
+
+                <div className="relative z-10 text-center">
+                  {/* Icon Container with Enhanced Animation */}
+                  <div className="relative inline-block mb-6">
+                    <motion.div 
+                      className={`absolute inset-0 bg-gradient-to-r ${step.gradient} rounded-2xl blur-xl opacity-60`}
+                      animate={{
+                        scale: [1, 1.2, 1],
+                        opacity: [0.6, 0.8, 0.6],
+                      }}
+                      transition={{
+                        duration: 3,
+                        repeat: Infinity,
+                        delay: index * 0.5,
+                      }}
+                    />
+                    <motion.div 
+                      className={`relative w-32 h-32 bg-gradient-to-r ${step.gradient} rounded-2xl flex items-center justify-center shadow-2xl`}
+                      whileHover={{ 
+                        scale: 1.15,
+                        rotate: [0, -5, 5, -5, 0],
+                      }}
+                      transition={{ duration: 0.6 }}
+                    >
+                      <motion.div
+                        animate={{
+                          y: [0, -10, 0],
+                        }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                          delay: index * 0.3,
+                        }}
+                      >
+                        <Icon className="w-14 h-14 text-white" strokeWidth={1.5} />
+                      </motion.div>
+                    </motion.div>
+                    
+                    {/* Step Number Badge with Pulse */}
+                    <motion.div 
+                      className={`absolute -top-3 -right-3 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center border-2 border-${step.color}-200`}
+                      animate={{
+                        scale: [1, 1.1, 1],
+                      }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        delay: index * 0.4,
+                      }}
+                    >
+                      <span className={`bg-gradient-to-r ${step.gradient} bg-clip-text text-transparent`}>
+                        {index + 1}
+                      </span>
+                    </motion.div>
+                  </div>
+
+                  <h3 className="text-xl text-gray-900 mb-3">{step.title}</h3>
+                  <p className="text-gray-600 leading-relaxed">{step.description}</p>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+```
+
+`/components/MagneticButton.tsx`
+
+```tsx
+import { useRef, useState, ReactNode } from 'react';
+import { motion, useSpring, useTransform } from 'motion/react';
+
+interface MagneticButtonProps {
+  children: ReactNode;
+  className?: string;
+  onClick?: () => void;
+}
+
+export function MagneticButton({ children, className = '', onClick }: MagneticButtonProps) {
+  const ref = useRef<HTMLButtonElement>(null);
+  const [isHovered, setIsHovered] = useState(false);
+
+  const x = useSpring(0, { stiffness: 300, damping: 20 });
+  const y = useSpring(0, { stiffness: 300, damping: 20 });
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!ref.current) return;
+
+    const rect = ref.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    const distanceX = e.clientX - centerX;
+    const distanceY = e.clientY - centerY;
+
+    // Magnetic effect - pull button towards cursor
+    x.set(distanceX * 0.3);
+    y.set(distanceY * 0.3);
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    x.set(0);
+    y.set(0);
+  };
+
+  return (
+    <motion.button
+      ref={ref}
+      className={className}
+      style={{ x, y }}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={handleMouseLeave}
+      onClick={onClick}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+    >
+      {children}
+    </motion.button>
+  );
+}
+```
+
+`/components/MeshGradientBackground.tsx`
+
+```tsx
+import { motion } from 'motion/react';
+
+interface MeshGradientBackgroundProps {
+  variant?: 'hero' | 'section' | 'footer';
+  animated?: boolean;
+}
+
+export function MeshGradientBackground({ variant = 'section', animated = true }: MeshGradientBackgroundProps) {
+  const gradients = {
+    hero: {
+      colors: ['violet-400', 'fuchsia-400', 'blue-400', 'purple-400'],
+      bg: 'from-violet-50 via-fuchsia-50 to-blue-50',
+    },
+    section: {
+      colors: ['violet-300', 'fuchsia-300', 'cyan-300'],
+      bg: 'from-gray-50 via-violet-50/30 to-fuchsia-50/30',
+    },
+    footer: {
+      colors: ['violet-600', 'fuchsia-600', 'purple-700'],
+      bg: 'from-gray-900 via-violet-950 to-gray-900',
+    },
+  };
+
+  const config = gradients[variant];
+
+  return (
+    <div className={`absolute inset-0 bg-gradient-to-br ${config.bg} overflow-hidden`}>
+      {/* Mesh gradient blobs */}
+      <div className="absolute inset-0">
+        {config.colors.map((color, i) => (
+          <motion.div
+            key={i}
+            className={`absolute w-96 h-96 bg-${color} rounded-full mix-blend-multiply filter blur-3xl opacity-30`}
+            style={{
+              top: `${(i * 25) % 100}%`,
+              left: `${(i * 33) % 100}%`,
+            }}
+            animate={animated ? {
+              x: [0, 100, -50, 0],
+              y: [0, -100, 50, 0],
+              scale: [1, 1.2, 0.9, 1],
+            } : {}}
+            transition={{
+              duration: 20 + i * 5,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Dot matrix pattern */}
+      <div className="absolute inset-0 opacity-10">
+        <svg width="100%" height="100%">
+          <defs>
+            <pattern id="dots" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+              <circle cx="2" cy="2" r="1" fill="currentColor" className="text-violet-600" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#dots)" />
+        </svg>
+      </div>
+
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white/50" />
+    </div>
+  );
+}
+```
+
+`/components/Navigation.tsx`
+
+```tsx
+import { useState, useEffect } from 'react';
+import { Button } from './ui/button';
+import { ChevronDown, Menu, X } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
+import { AnimatedLogo } from './AnimatedLogo';
+import { motion } from 'motion/react';
+
+export function Navigation() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+      setMobileMenuOpen(false);
+    }
+  };
+
+  return (
+    <motion.nav
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      transition={{ type: "spring", stiffness: 100, damping: 20 }}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+        scrolled
+          ? 'bg-white/80 backdrop-blur-2xl border-b border-violet-100 shadow-2xl shadow-violet-500/10'
+          : 'bg-transparent'
+      }`}
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-20">
+          {/* Logo */}
+          <motion.div 
+            className="flex-shrink-0"
+            whileHover={{ scale: 1.05 }}
+            transition={{ type: "spring", stiffness: 400, damping: 10 }}
+          >
+            <div className="flex items-center gap-3 cursor-pointer">
+              <AnimatedLogo size="default" />
+              <span className="text-xl bg-gradient-to-r from-violet-600 via-fuchsia-600 to-violet-600 bg-clip-text text-transparent bg-[length:200%_auto] animate-[gradient-shift_3s_ease-in-out_infinite]">
+                EmailAI
+              </span>
+            </div>
+          </motion.div>
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center gap-8">
+            <button
+              onClick={() => scrollToSection('features')}
+              className="text-gray-700 hover:text-violet-600 transition-colors relative group"
+            >
+              Features
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 transition-all group-hover:w-full"></span>
+            </button>
+            <button
+              onClick={() => scrollToSection('how-it-works')}
+              className="text-gray-700 hover:text-violet-600 transition-colors relative group"
+            >
+              How It Works
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 transition-all group-hover:w-full"></span>
+            </button>
+            <button
+              onClick={() => scrollToSection('pricing')}
+              className="text-gray-700 hover:text-violet-600 transition-colors relative group"
+            >
+              Pricing
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 transition-all group-hover:w-full"></span>
+            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center gap-1 text-gray-700 hover:text-violet-600 transition-colors">
+                Resources <ChevronDown className="w-4 h-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="bg-white/80 backdrop-blur-xl border-violet-100">
+                <DropdownMenuItem>Blog</DropdownMenuItem>
+                <DropdownMenuItem>API Docs</DropdownMenuItem>
+                <DropdownMenuItem>Support</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button 
+              variant="ghost" 
+              className="hover:bg-violet-50 hover:text-violet-600"
+              asChild
+            >
+              <a href="/app">Login</a>
+            </Button>
+          </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            className="md:hidden p-2 rounded-lg hover:bg-violet-50 transition-colors"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? (
+              <X className="w-6 h-6 text-gray-700" />
+            ) : (
+              <Menu className="w-6 h-6 text-gray-700" />
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-white/95 backdrop-blur-xl border-t border-violet-100 shadow-lg">
+          <div className="px-4 py-4 space-y-3">
+            <button
+              onClick={() => scrollToSection('features')}
+              className="block w-full text-left text-gray-700 hover:text-violet-600 py-2 px-3 rounded-lg hover:bg-violet-50 transition-colors"
+            >
+              Features
+            </button>
+            <button
+              onClick={() => scrollToSection('how-it-works')}
+              className="block w-full text-left text-gray-700 hover:text-violet-600 py-2 px-3 rounded-lg hover:bg-violet-50 transition-colors"
+            >
+              How It Works
+            </button>
+            <button
+              onClick={() => scrollToSection('pricing')}
+              className="block w-full text-left text-gray-700 hover:text-violet-600 py-2 px-3 rounded-lg hover:bg-violet-50 transition-colors"
+            >
+              Pricing
+            </button>
+            <div className="py-2 px-3">
+              <div className="text-gray-700 mb-2">Resources</div>
+              <div className="pl-4 space-y-2">
+                <div className="text-gray-600 hover:text-violet-600 cursor-pointer">Blog</div>
+                <div className="text-gray-600 hover:text-violet-600 cursor-pointer">API Docs</div>
+                <div className="text-gray-600 hover:text-violet-600 cursor-pointer">Support</div>
+              </div>
+            </div>
+            <Button variant="ghost" className="w-full hover:bg-violet-50" asChild>
+              <a href="/app">Login</a>
+            </Button>
+          </div>
+        </div>
+      )}
+    </motion.nav>
+  );
+}
+```
+
+Let me continue with the final components in the next message...

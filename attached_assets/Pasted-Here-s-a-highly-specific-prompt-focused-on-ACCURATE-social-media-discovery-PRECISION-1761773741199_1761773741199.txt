@@ -1,0 +1,250 @@
+Here's a highly specific prompt focused on ACCURATE social media discovery:
+
+---
+
+## **PRECISION SOCIAL MEDIA DISCOVERY PROMPT**
+
+```javascript
+const socialMediaResearchPrompt = `
+STOP GUESSING. I need the ACTUAL social media accounts for this specific person, not random accounts with similar names.
+
+TARGET PERSON:
+- Name: ${contact.name}
+- Company: ${contact.company}
+- Email: ${contact.email}
+- Notes: ${contact.notes}
+
+THE MOST ACCURATE METHOD TO FIND SOCIAL ACCOUNTS (FOLLOW IN EXACT ORDER):
+
+═══════════════════════════════════════════
+METHOD 1: LINKEDIN AS THE SOURCE OF TRUTH
+═══════════════════════════════════════════
+1. First, find their LinkedIn: "${contact.name}" "${contact.company}" site:linkedin.com
+2. On their LinkedIn profile, check:
+   - Contact Info section (many people list social media)
+   - About section (often contains "Find me on Twitter @...")
+   - Featured section (may link to social content)
+   - Activity section (shared posts from other platforms)
+3. If social handles found on LinkedIn = 95% confidence it's correct
+
+═══════════════════════════════════════════
+METHOD 2: EMAIL PREFIX PATTERN MATCHING
+═══════════════════════════════════════════
+Email is ${contact.email}, so their prefix is: ${contact.email.split('@')[0]}
+
+Search these EXACT patterns:
+- Instagram: "${contact.email.split('@')[0]}" site:instagram.com
+- X/Twitter: "${contact.email.split('@')[0]}" site:x.com
+- X/Twitter: "${contact.email.split('@')[0]}" site:twitter.com
+
+WHY THIS WORKS: People often use their work email prefix as their handle
+VERIFICATION: Check if bio mentions ${contact.company} or similar role
+
+═══════════════════════════════════════════
+METHOD 3: COMPANY EMPLOYEE VERIFICATION
+═══════════════════════════════════════════
+1. Find ${contact.company}'s official Instagram: "${contact.company}" official instagram
+2. Go to their followers/following
+3. Search for accounts that:
+   - Have ${contact.name} in the username or bio
+   - Are followed back by the company (mutual follow = likely employee)
+4. Check company's tagged photos for employee features
+
+Do the same for X/Twitter:
+1. Find ${contact.company}'s official X account
+2. Search: from:${company_twitter_handle} "${contact.name}"
+3. Check if company has ever mentioned/retweeted them
+
+═══════════════════════════════════════════
+METHOD 4: CROSS-PLATFORM USERNAME CONSISTENCY
+═══════════════════════════════════════════
+If you found one confirmed account, search that exact username on other platforms:
+- Found @johnsmith_dev on Twitter? Search "johnsmith_dev" site:instagram.com
+- People usually keep consistent usernames
+
+═══════════════════════════════════════════
+METHOD 5: REVERSE VERIFICATION
+═══════════════════════════════════════════
+For any account you think might be them:
+1. Check their followers - do they follow ${contact.company}?
+2. Check who follows them - any confirmed coworkers?
+3. Check their posts - any mentions of:
+   - Work at ${contact.company}
+   - Living in same city as company HQ
+   - Attending same conferences/events
+   - Similar professional interests from ${contact.notes}
+
+═══════════════════════════════════════════
+WHEN TO RETURN "NOT FOUND" VS BEST GUESS
+═══════════════════════════════════════════
+
+RETURN ACTUAL ACCOUNT IF:
+✓ LinkedIn links to it
+✓ Bio explicitly mentions ${contact.company}
+✓ Email prefix matches + professional content matches
+✓ Company account follows them
+✓ Multiple coworkers follow them
+✓ They posted about working at ${contact.company}
+
+RETURN "NOT FOUND" IF:
+✗ No accounts mention ${contact.company} or their industry
+✗ All potential matches are private accounts with no bio
+✗ Name is too common (John Smith) with no distinguishing info
+✗ Accounts found are clearly different people (wrong location/age/industry)
+
+RETURN "PROBABLE MATCH" IF:
+⚠️ Username contains their name + similar industry (but different company)
+⚠️ Location and profession match but company not mentioned
+⚠️ Followers include people from their industry
+⚠️ Content aligns with ${contact.notes} but no explicit confirmation
+
+═══════════════════════════════════════════
+VERIFICATION CHECKLIST (MUST DO ALL):
+═══════════════════════════════════════════
+□ Did you check LinkedIn for listed social accounts?
+□ Did you search using their email prefix?
+□ Did you check if company follows them?
+□ Did you verify location matches?
+□ Did you check post content for professional relevance?
+□ Did you check follower/following for coworkers?
+□ Did you try multiple variations of their name?
+□ Did you check account creation date (should be before their email was created)?
+
+═══════════════════════════════════════════
+SMART SEARCH COMBINATIONS:
+═══════════════════════════════════════════
+For Instagram:
+1. "${contact.name}" "${contact.company}" instagram
+2. "${contact.email.split('@')[0]}" instagram profile
+3. "${firstName} ${lastNameInitial}" "${contact.company}" instagram
+4. LinkedIn: "${contact.name}" "${contact.company}" instagram handle
+
+For X/Twitter:
+1. "${contact.name}" "${contact.company}" twitter
+2. "${contact.name}" "${jobTitle}" site:x.com
+3. "${contact.email.split('@')[0]}" twitter profile
+4. "${contact.company}" employees "${contact.name}" twitter
+
+═══════════════════════════════════════════
+RED FLAGS (DO NOT RETURN THESE):
+═══════════════════════════════════════════
+- Account with 10 followers and no posts
+- Private account with no bio information
+- Account last posted 2+ years ago
+- Account bio is in different language than expected
+- Account clearly states different company (unless recently changed)
+- Parody or fan accounts
+- Account location is different country than company
+
+═══════════════════════════════════════════
+RETURN FORMAT WITH CONFIDENCE LEVELS:
+═══════════════════════════════════════════
+{
+  "instagram_result": {
+    "status": "FOUND" | "PROBABLE" | "NOT_FOUND",
+    "username": "@username" or null,
+    "url": "full url" or null,
+    "confidence_factors": [
+      "Bio mentions ${company}",
+      "Followed by company account",
+      "Email prefix matches username"
+    ],
+    "confidence_score": 9, // 1-10
+    "verification_method": "Found via LinkedIn profile link"
+  },
+  "x_result": {
+    "status": "FOUND" | "PROBABLE" | "NOT_FOUND",
+    "username": "@username" or null,
+    "url": "full url" or null,
+    "confidence_factors": [
+      "List what made you confident this is them"
+    ],
+    "confidence_score": 7,
+    "verification_method": "Email prefix match + bio verification"
+  },
+  "search_queries_performed": [
+    "List every search you actually did"
+  ],
+  "why_confident_or_not": "Explain your reasoning"
+}
+
+REMEMBER:
+- It's BETTER to return "NOT_FOUND" than a wrong account
+- ALWAYS check LinkedIn first - it's your most reliable source
+- Email prefix matching is highly reliable for professional accounts
+- If you find one platform, use that username to find others
+- Company connections (following/followers) are strong signals
+- Recent work-related posts are confirmation signals
+
+DO NOT GUESS - USE EVIDENCE-BASED MATCHING ONLY.
+`;
+```
+
+### **FALLBACK SEARCH STRATEGY (Add to prompt):**
+
+```javascript
+// If initial methods fail, use this systematic approach:
+
+const systematicSearch = `
+IF NO ACCOUNTS FOUND WITH ABOVE METHODS, TRY:
+
+1. NICKNAME VARIATIONS:
+   - If name is "William Smith", try: Bill, Will, Billy
+   - If name is "Jennifer Lee", try: Jen, Jenny, Jenn
+   
+2. USERNAME PATTERNS:
+   - firstname.lastname
+   - firstnamelastname
+   - firstname_lastname
+   - firstinitiallastname (jsmith)
+   - firstname.middle.lastname
+   - lastname.firstname
+
+3. COMPANY ALUMNI SEARCH:
+   - Search: "${contact.name}" "formerly ${contact.company}" twitter
+   - They may have left but bio still references it
+
+4. MUTUAL CONNECTION SEARCH:
+   - Find 3 confirmed employees of ${contact.company} on social media
+   - Check who they all follow (mutual follows likely = coworker)
+
+5. CONFERENCE/EVENT SEARCH:
+   - Search: "${contact.company}" conference 2024 "${contact.name}"
+   - Find events they attended
+   - Search: "${event_name}" "${contact.name}" instagram/twitter
+
+IF STILL NO EXACT MATCH:
+- Return NOT_FOUND with explanation
+- Do NOT return random accounts with similar names
+`;
+```
+
+### **Implementation Note:**
+
+```javascript
+// Add this validation in your backend:
+function validateSocialAccount(platform, account, contact) {
+  const mustHaveFactors = {
+    instagram: [
+      'Bio mentions company or industry',
+      'Followers include known coworkers',
+      'Content relates to professional field',
+      'Account is active (posted within 6 months)'
+    ],
+    x: [
+      'Bio mentions professional role',
+      'Tweets about relevant industry topics',
+      'Followed by company or coworkers',
+      'Location matches expected city'
+    ]
+  };
+  
+  // Require at least 2 factors to be true
+  const validationScore = checkFactors(account, mustHaveFactors[platform]);
+  return validationScore >= 2;
+}
+```
+
+---
+
+This prompt forces the AI to use LinkedIn as the primary source of truth, verify through multiple methods, and return "NOT_FOUND" rather than guessing. The email prefix method and company verification are the most accurate ways to find someone's real accounts.

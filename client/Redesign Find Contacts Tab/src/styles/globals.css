@@ -1,0 +1,324 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* EXPLICIT DARK MODE STYLES - CYBERPUNK LUXURY THEME */
+
+/* Light mode (default) */
+body {
+  background: linear-gradient(135deg, rgb(248, 250, 252), rgb(243, 232, 255, 0.3), rgb(239, 246, 255));
+  color: rgb(17, 24, 39);
+  transition: background 0.3s, color 0.3s;
+}
+
+/* Dark mode - INVERTED ELEGANCE with deep purple-black */
+.dark body,
+html.dark body {
+  background: radial-gradient(ellipse at top, #1a0f2e 0%, #0f0820 50%, #0a0515 100%) !important;
+  color: rgb(243, 244, 246) !important;
+  position: relative;
+}
+
+/* Removed grid pattern - using subtle radial glow instead */
+.dark body::before,
+html.dark body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at 50% 0%, rgba(124, 58, 237, 0.03) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Gradient border utility for dark mode */
+@layer utilities {
+  .dark .border-gradient {
+    border: 2px solid transparent;
+    background-image: linear-gradient(#000, #000), 
+                      linear-gradient(135deg, rgb(168, 85, 247), rgb(99, 102, 241), rgb(6, 182, 212));
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+  }
+  
+  .dark .border-gradient-hover:hover {
+    background-image: linear-gradient(#000, #000), 
+                      linear-gradient(135deg, rgb(236, 72, 153), rgb(168, 85, 247), rgb(6, 182, 212));
+  }
+}
+
+/* Custom animations */
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-5px) rotate(1deg);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes neon-pulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 5px currentColor) drop-shadow(0 0 10px currentColor);
+  }
+  50% {
+    filter: drop-shadow(0 0 10px currentColor) drop-shadow(0 0 20px currentColor);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-3000 {
+  animation-delay: 3s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-float-slow {
+  animation: float-slow 6s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+  background: linear-gradient(to right, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+  background-size: 1000px 100%;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.dark .animate-gradient,
+html.dark .animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 8s ease infinite;
+}
+
+.dark .animate-neon-pulse,
+html.dark .animate-neon-pulse {
+  animation: neon-pulse 2s ease-in-out infinite;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar - VIBRANT in dark mode */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, rgb(147, 51, 234), rgb(99, 102, 241));
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, rgb(126, 34, 206), rgb(79, 70, 229));
+}
+
+.dark ::-webkit-scrollbar-track,
+html.dark ::-webkit-scrollbar-track {
+  background: rgba(168, 85, 247, 0.05);
+}
+
+.dark ::-webkit-scrollbar-thumb,
+html.dark ::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, rgb(168, 85, 247), rgb(6, 182, 212));
+}
+
+.dark ::-webkit-scrollbar-thumb:hover,
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, rgb(236, 72, 153), rgb(168, 85, 247));
+}
+
+/* Improved focus states - NEON in dark mode */
+*:focus-visible {
+  outline: 2px solid rgb(147, 51, 234);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.dark *:focus-visible,
+html.dark *:focus-visible {
+  outline: 2px solid rgb(168, 85, 247);
+  outline-offset: 2px;
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
+}
+
+/* Enhanced transitions */
+* {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Backdrop blur fallback */
+@supports not (backdrop-filter: blur(10px)) {
+  .backdrop-blur-xl {
+    background-color: rgba(255, 255, 255, 0.9);
+  }
+  .dark .backdrop-blur-xl,
+  html.dark .backdrop-blur-xl {
+    background-color: rgba(0, 0, 0, 0.9);
+  }
+}
+
+/* Selection color - VIBRANT in dark mode */
+::selection {
+  background-color: rgb(147, 51, 234, 0.3);
+  color: inherit;
+}
+
+.dark ::selection,
+html.dark ::selection {
+  background-color: rgba(168, 85, 247, 0.4);
+  color: white;
+}
+
+/* Neon glow text utility */
+.dark .text-neon-purple,
+html.dark .text-neon-purple {
+  color: rgb(168, 85, 247);
+  text-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+}
+
+.dark .text-neon-cyan,
+html.dark .text-neon-cyan {
+  color: rgb(6, 182, 212);
+  text-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+}
+
+.dark .text-neon-pink,
+html.dark .text-neon-pink {
+  color: rgb(236, 72, 153);
+  text-shadow: 0 0 10px rgba(236, 72, 153, 0.5);
+}
+
+/* Cyberpunk accent utilities */
+.dark .glow-purple,
+html.dark .glow-purple {
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+}
+
+.dark .glow-cyan,
+html.dark .glow-cyan {
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
+}
+
+.dark .glow-pink,
+html.dark .glow-pink {
+  box-shadow: 0 0 20px rgba(236, 72, 153, 0.3);
+}
+
+/* Enhanced depth for dark mode cards */
+.dark .card-depth,
+html.dark .card-depth {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+  border: 1px solid rgba(168, 85, 247, 0.1);
+  box-shadow: 
+    0 8px 32px 0 rgba(0, 0, 0, 0.37),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+}

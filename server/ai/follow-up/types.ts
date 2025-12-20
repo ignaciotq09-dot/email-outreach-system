@@ -1,0 +1,1 @@
+export interface FollowUpConfig { sequenceNumber: number; daysSinceLast: number; previousSubject: string; previousOpened: boolean; previousClicked: boolean; recipientEngagement: 'cold' | 'warm' | 'engaged'; }

@@ -1,0 +1,7 @@
+import { Request, Response } from 'express';
+import { z } from 'zod';
+import * as meetingScheduler from '../../services/meeting-scheduler';
+
+export async function processReply(req: Request, res: Response) { try { if (!req.user) return res.status(401).json({ error: 'Unauthorized' }); const schema = z.object({ replyId: z.number(), autoCreateEvent: z.boolean().optional() }); const { replyId, autoCreateEvent } = schema.parse(req.body); const result = await meetingScheduler.processMeetingRequest(replyId, req.user.id, autoCreateEvent); res.json(result); } catch (error: any) { console.error('Error processing meeting request:', error); res.status(400).json({ error: error.message || 'Failed to process meeting request' }); } }
+
+export async function scheduleFromAppointment(req: Request, res: Response) { try { if (!req.user) return res.status(401).json({ error: 'Unauthorized' }); const schema = z.object({ startDateTime: z.string().optional(), duration: z.number().optional() }); const appointmentId = parseInt(req.params.appointmentId); const data = schema.parse(req.body); const eventId = await meetingScheduler.createCalendarEventFromAppointment(appointmentId, req.user.id, data.startDateTime ? data : undefined); res.json({ eventId }); } catch (error: any) { console.error('Error creating calendar event from appointment:', error); res.status(400).json({ error: error.message || 'Failed to create calendar event' }); } }

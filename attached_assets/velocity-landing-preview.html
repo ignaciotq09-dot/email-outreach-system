@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VELOCITY - AI-Powered Email Outreach Landing Page Preview</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Custom Styles -->
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    
+    /* Gradient animations */
+    @keyframes gradient-shift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-20px); }
+    }
+    
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 20px rgba(14, 165, 233, 0.3); }
+      50% { box-shadow: 0 0 40px rgba(14, 165, 233, 0.6); }
+    }
+    
+    @keyframes shimmer {
+      0% { background-position: -1000px 0; }
+      100% { background-position: 1000px 0; }
+    }
+    
+    .gradient-animate {
+      background-size: 200% 200%;
+      animation: gradient-shift 8s ease infinite;
+    }
+    
+    .float-animation {
+      animation: float 6s ease-in-out infinite;
+    }
+    
+    .pulse-glow {
+      animation: pulse-glow 2s ease-in-out infinite;
+    }
+    
+    .shimmer {
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+      animation: shimmer 3s infinite;
+    }
+    
+    .text-hero {
+      font-size: clamp(2.5rem, 8vw, 5rem);
+      font-weight: 900;
+      line-height: 1;
+    }
+    
+    .text-display {
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    
+    /* 3D card effect */
+    .card-3d {
+      transform-style: preserve-3d;
+      transform: perspective(1000px) rotateY(15deg) rotateX(5deg);
+      transition: transform 0.6s;
+    }
+    
+    .card-3d:hover {
+      transform: perspective(1000px) rotateY(0deg) rotateX(0deg);
+    }
+    
+    /* Holographic effect */
+    .holographic {
+      background: linear-gradient(45deg, #ff00aa, #00ff88, #aa00ff, #ffaa00, #ff00aa);
+      background-size: 300% 300%;
+      animation: gradient-shift 4s ease infinite;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    /* Scanline effect */
+    .scanline::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.1);
+      animation: scanline 8s linear infinite;
+    }
+    
+    @keyframes scanline {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(100vh); }
+    }
+    
+    /* Glass morphism */
+    .glass {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+  </style>
+</head>
+<body class="bg-white">
+  <!-- Navigation -->
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg border-b border-slate-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <!-- Logo -->
+        <div class="flex items-center gap-2 cursor-pointer">
+          <div class="w-8 h-8 bg-gradient-to-br from-sky-500 to-blue-600 rounded-lg flex items-center justify-center">
+            <span class="text-white font-bold text-sm">V</span>
+          </div>
+          <span class="font-bold text-lg text-slate-900">VELOCITY</span>
+        </div>
+        
+        <!-- Desktop Navigation -->
+        <div class="hidden md:flex items-center gap-8">
+          <a href="#features" class="text-slate-600 hover:text-slate-900 transition-colors">Features</a>
+          <a href="#how-it-works" class="text-slate-600 hover:text-slate-900 transition-colors">How It Works</a>
+          <a href="#pricing" class="text-slate-600 hover:text-slate-900 transition-colors">Pricing</a>
+          <a href="#faq" class="text-slate-600 hover:text-slate-900 transition-colors">FAQ</a>
+        </div>
+        
+        <!-- Desktop CTAs -->
+        <div class="hidden md:flex items-center gap-4">
+          <button class="px-4 py-2 text-slate-600 hover:text-slate-900">Sign In</button>
+          <button class="px-6 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg shadow-sm transition-all">
+            Get Started
+          </button>
+        </div>
+        
+        <!-- Mobile menu button -->
+        <button class="md:hidden p-2 text-slate-600">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </nav>
+  
+  <!-- Futuristic Hero Section -->
+  <section class="relative pt-32 pb-24 px-4 overflow-hidden bg-gradient-to-br from-slate-50 via-white to-sky-50">
+    <!-- Decorative elements -->
+    <div class="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-to-br from-sky-400/20 to-blue-500/20 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-0 left-0 w-[500px] h-[500px] bg-gradient-to-tr from-violet-400/20 to-purple-500/20 rounded-full blur-3xl"></div>
+    <div class="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-pink-400/30 to-rose-500/30 rounded-full blur-3xl float-animation"></div>
+    
+    <div class="max-w-6xl mx-auto text-center relative z-10">
+      <!-- Badge -->
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-8 bg-gradient-to-r from-sky-500 to-blue-600 shadow-lg shadow-sky-500/30">
+        <span class="relative flex h-2 w-2">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+        </span>
+        <span class="text-sm text-white font-medium">Join <strong>2,847+</strong> teams</span>
+      </div>
+      
+      <!-- Main Title -->
+      <h1 class="text-hero mb-8">
+        <span class="block text-slate-900">Turn Cold Emails</span>
+        <span class="block bg-gradient-to-r from-sky-600 via-blue-600 to-violet-600 bg-clip-text text-transparent">
+          Into Warm Deals
+        </span>
+      </h1>
+      
+      <!-- Subtitle -->
+      <p class="text-xl md:text-2xl mb-12 max-w-3xl mx-auto text-slate-600">
+        Send <span class="text-sky-600 font-semibold">100% personalized</span> emails at scale with AI
+      </p>
+      
+      <!-- CTAs -->
+      <div class="flex flex-col sm:flex-row gap-4 justify-center mb-20">
+        <button class="px-8 py-4 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white rounded-lg shadow-xl shadow-sky-500/30 transition-all text-lg font-medium">
+          Start Free Trial →
+        </button>
+        <button class="px-8 py-4 border-2 border-slate-300 hover:border-sky-600 hover:bg-sky-50 rounded-lg transition-all text-lg font-medium">
+          ▶ Watch Demo
+        </button>
+      </div>
+      
+      <!-- Stats -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+        <div class="p-6 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 shadow-lg">
+          <div class="text-4xl mb-2">📧</div>
+          <div class="text-3xl font-bold mb-1 text-white">3.2M+</div>
+          <div class="text-sm text-white/90">Emails Sent</div>
+        </div>
+        <div class="p-6 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg">
+          <div class="text-4xl mb-2">💬</div>
+          <div class="text-3xl font-bold mb-1 text-white">847K+</div>
+          <div class="text-sm text-white/90">Replies</div>
+        </div>
+        <div class="p-6 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg">
+          <div class="text-4xl mb-2">📅</div>
+          <div class="text-3xl font-bold mb-1 text-white">92K+</div>
+          <div class="text-sm text-white/90">Meetings</div>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Logo Cloud -->
+  <section class="py-16 px-4 bg-white border-b border-slate-100">
+    <div class="max-w-7xl mx-auto">
+      <p class="text-center text-slate-500 mb-8">Trusted by teams at</p>
+      <div class="flex flex-wrap justify-center items-center gap-12">
+        <div class="text-2xl font-bold text-slate-400">salesforce</div>
+        <div class="text-2xl font-bold text-slate-400">HubSpot</div>
+        <div class="text-2xl font-bold text-slate-400">stripe</div>
+        <div class="text-2xl font-bold text-slate-400">atlassian</div>
+        <div class="text-2xl font-bold text-slate-400">zoom</div>
+        <div class="text-2xl font-bold text-slate-400">slack</div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Bento Features Grid -->
+  <section id="features" class="py-20 px-4 bg-white">
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-16">
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4 bg-sky-50 text-sky-700 border border-sky-100">
+          <span class="font-medium">⚡ Powerful Features</span>
+        </div>
+        <h2 class="text-display mb-4 text-slate-900">
+          Everything You Need To<br>
+          <span class="bg-gradient-to-r from-sky-600 to-blue-600 bg-clip-text text-transparent">
+            Close More Deals
+          </span>
+        </h2>
+        <p class="text-lg text-slate-600 max-w-2xl mx-auto">
+          Powerful AI-driven tools designed to help you connect with prospects and convert leads faster
+        </p>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Feature 1 - Spans 2 columns -->
+        <div class="md:col-span-2">
+          <div class="h-full p-8 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 shadow-lg hover:shadow-2xl transition-all">
+            <div class="text-5xl mb-4">✨</div>
+            <h3 class="text-2xl mb-3 text-white">AI Personalization</h3>
+            <p class="text-white/90">Every email uniquely crafted for maximum engagement</p>
+          </div>
+        </div>
+        
+        <!-- Feature 2 -->
+        <div class="md:col-span-1">
+          <div class="h-full p-8 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg hover:shadow-2xl transition-all">
+            <div class="text-5xl mb-4">⚡</div>
+            <h3 class="text-2xl mb-3 text-white">Instant Reply Detection</h3>
+            <p class="text-white/90">Never miss a response</p>
+          </div>
+        </div>
+        
+        <!-- Feature 3 -->
+        <div class="md:col-span-1">
+          <div class="h-full p-8 rounded-2xl bg-gradient-to-br from-rose-500 to-pink-600 shadow-lg hover:shadow-2xl transition-all">
+            <div class="text-5xl mb-4">🎯</div>
+            <h3 class="text-2xl mb-3 text-white">Smart Targeting</h3>
+            <p class="text-white/90">Reach the right people at the right time</p>
+          </div>
+        </div>
+        
+        <!-- Feature 4 - Spans 2 columns -->
+        <div class="md:col-span-2">
+          <div class="h-full p-8 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg hover:shadow-2xl transition-all">
+            <div class="text-5xl mb-4">📊</div>
+            <h3 class="text-2xl mb-3 text-white">Real-time Analytics</h3>
+            <p class="text-white/90">Track performance with live dashboards and insights</p>
+          </div>
+        </div>
+        
+        <!-- Feature 5 -->
+        <div class="md:col-span-1">
+          <div class="h-full p-8 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg hover:shadow-2xl transition-all">
+            <div class="text-5xl mb-4">⏰</div>
+            <h3 class="text-2xl mb-3 text-white">Auto-Scheduling</h3>
+            <p class="text-white/90">Book meetings automatically</p>
+          </div>
+        </div>
+        
+        <!-- Feature 6 -->
+        <div class="md:col-span-1">
+          <div class="h-full p-8 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg hover:shadow-2xl transition-all">
+            <div class="text-5xl mb-4">🛡️</div>
+            <h3 class="text-2xl mb-3 text-white">Enterprise Security</h3>
+            <p class="text-white/90">SOC 2 & GDPR compliant</p>
+          </div>
+        </div>
+        
+        <!-- Feature 7 -->
+        <div class="md:col-span-1">
+          <div class="h-full p-8 rounded-2xl bg-gradient-to-br from-fuchsia-500 to-purple-600 shadow-lg hover:shadow-2xl transition-all">
+            <div class="text-5xl mb-4">🔄</div>
+            <h3 class="text-2xl mb-3 text-white">Smart Follow-ups</h3>
+            <p class="text-white/90">Automated sequences that feel human</p>
+          </div>
+        </div>
+        
+        <!-- Feature 8 - Spans 2 columns -->
+        <div class="md:col-span-2">
+          <div class="h-full p-8 rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-600 shadow-lg hover:shadow-2xl transition-all">
+            <div class="text-5xl mb-4">👥</div>
+            <h3 class="text-2xl mb-3 text-white">Team Collaboration</h3>
+            <p class="text-white/90">Work together seamlessly with your entire team</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- AI Brain Visualization -->
+  <section class="py-20 px-4 bg-slate-900 relative overflow-hidden scanline">
+    <div class="max-w-6xl mx-auto text-center">
+      <h2 class="text-display text-white mb-4">
+        AI That <span class="holographic">Thinks Like You</span>
+      </h2>
+      <p class="text-lg text-slate-400 mb-12">Our neural network analyzes millions of data points to craft the perfect message</p>
+      
+      <!-- Animated brain visualization placeholder -->
+      <div class="relative h-96 flex items-center justify-center">
+        <div class="absolute w-64 h-64 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full blur-3xl opacity-50 pulse-glow"></div>
+        <div class="relative z-10">
+          <div class="w-48 h-48 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-full flex items-center justify-center">
+            <span class="text-6xl">🧠</span>
+          </div>
+          <div class="absolute -top-4 -right-4 w-16 h-16 bg-green-500 rounded-full flex items-center justify-center animate-pulse">
+            <span class="text-white text-xs font-bold">98%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Floating 3D Email Cards -->
+  <section class="py-20 px-4 bg-gradient-to-b from-slate-950 to-slate-900 relative overflow-hidden">
+    <div class="max-w-7xl mx-auto">
+      <h2 class="text-display text-white text-center mb-12">
+        Emails That <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">Stand Out</span>
+      </h2>
+      
+      <div class="grid md:grid-cols-3 gap-8">
+        <!-- Email Card 1 -->
+        <div class="card-3d bg-gradient-to-br from-slate-800 to-slate-700 p-6 rounded-xl shadow-2xl">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 bg-sky-500 rounded-full"></div>
+            <div>
+              <div class="text-white font-medium">Sarah Johnson</div>
+              <div class="text-slate-400 text-sm">CEO at TechCorp</div>
+            </div>
+          </div>
+          <div class="text-slate-300">
+            Hi Sarah, I noticed TechCorp just raised $50M. Congrats! Our AI can help you scale your outreach...
+          </div>
+        </div>
+        
+        <!-- Email Card 2 -->
+        <div class="card-3d bg-gradient-to-br from-slate-800 to-slate-700 p-6 rounded-xl shadow-2xl" style="transform: perspective(1000px) rotateY(-15deg) rotateX(5deg);">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 bg-violet-500 rounded-full"></div>
+            <div>
+              <div class="text-white font-medium">Mike Chen</div>
+              <div class="text-slate-400 text-sm">VP Sales at StartupXYZ</div>
+            </div>
+          </div>
+          <div class="text-slate-300">
+            Mike, your recent LinkedIn post about sales challenges resonated with me. Here's how we solved...
+          </div>
+        </div>
+        
+        <!-- Email Card 3 -->
+        <div class="card-3d bg-gradient-to-br from-slate-800 to-slate-700 p-6 rounded-xl shadow-2xl">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 bg-emerald-500 rounded-full"></div>
+            <div>
+              <div class="text-white font-medium">Lisa Park</div>
+              <div class="text-slate-400 text-sm">CMO at Growth Inc</div>
+            </div>
+          </div>
+          <div class="text-slate-300">
+            Lisa, loved your talk at MarketingConf! Your point about personalization aligns perfectly with...
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- How It Works -->
+  <section id="how-it-works" class="py-20 px-4 bg-white">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-16">
+        <div class="inline-block px-4 py-2 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 mb-4">
+          Simple Process
+        </div>
+        <h2 class="text-display text-slate-900 mb-4">How It Works</h2>
+        <p class="text-lg text-slate-600">Get started in minutes, see results in hours</p>
+      </div>
+      
+      <div class="grid md:grid-cols-4 gap-8">
+        <div class="text-center">
+          <div class="w-20 h-20 bg-gradient-to-br from-sky-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <span class="text-3xl text-white">1</span>
+          </div>
+          <h3 class="font-semibold text-lg mb-2">Import Contacts</h3>
+          <p class="text-slate-600">Upload your CSV or connect your CRM</p>
+        </div>
+        
+        <div class="text-center">
+          <div class="w-20 h-20 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <span class="text-3xl text-white">2</span>
+          </div>
+          <h3 class="font-semibold text-lg mb-2">AI Writes</h3>
+          <p class="text-slate-600">Our AI crafts personalized messages</p>
+        </div>
+        
+        <div class="text-center">
+          <div class="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <span class="text-3xl text-white">3</span>
+          </div>
+          <h3 class="font-semibold text-lg mb-2">Review & Send</h3>
+          <p class="text-slate-600">Approve and launch your campaign</p>
+        </div>
+        
+        <div class="text-center">
+          <div class="w-20 h-20 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <span class="text-3xl text-white">4</span>
+          </div>
+          <h3 class="font-semibold text-lg mb-2">Track & Convert</h3>
+          <p class="text-slate-600">Watch replies turn into meetings</p>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Pricing Section -->
+  <section id="pricing" class="py-20 px-4 bg-slate-50">
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-12">
+        <div class="inline-block px-4 py-2 rounded-full bg-sky-50 text-sky-700 border border-sky-100 mb-4">
+          Flexible Pricing
+        </div>
+        <h2 class="text-display text-slate-900 mb-4">Simple, Transparent Pricing</h2>
+        <p class="text-lg text-slate-600 mb-8">Choose the perfect plan for your team</p>
+        
+        <!-- Toggle -->
+        <div class="inline-flex items-center gap-3 p-1 bg-white border border-slate-200 rounded-full">
+          <button class="px-6 py-2 rounded-full bg-sky-600 text-white">Monthly</button>
+          <button class="px-6 py-2 rounded-full text-slate-600">
+            Annual
+            <span class="ml-2 text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">Save 20%</span>
+          </button>
+        </div>
+      </div>
+      
+      <div class="grid md:grid-cols-3 gap-8">
+        <!-- Free Plan -->
+        <div class="p-8 rounded-2xl bg-white border-2 border-slate-200">
+          <div class="mb-6">
+            <div class="w-10 h-10 rounded-lg bg-slate-900 flex items-center justify-center mb-4">
+              <span class="text-white">⚡</span>
+            </div>
+            <h3 class="text-xl text-slate-900 mb-2">Free</h3>
+            <div class="text-5xl text-slate-900 font-light">$0</div>
+          </div>
+          <ul class="space-y-3 mb-8">
+            <li class="flex items-start gap-3">
+              <span class="text-sky-600">✓</span>
+              <span class="text-slate-600">50 emails/month</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-sky-600">✓</span>
+              <span class="text-slate-600">Basic personalization</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-sky-600">✓</span>
+              <span class="text-slate-600">Reply detection</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-sky-600">✓</span>
+              <span class="text-slate-600">Email support</span>
+            </li>
+          </ul>
+          <button class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-lg transition-all">
+            Start Free
+          </button>
+        </div>
+        
+        <!-- Pro Plan (Popular) -->
+        <div class="relative md:-mt-4">
+          <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-sky-600 to-blue-600 text-white px-4 py-1 rounded-full text-sm shadow-lg">
+            ⭐ Most Popular
+          </div>
+          <div class="p-8 rounded-2xl bg-white border-2 border-sky-600 shadow-xl">
+            <div class="mb-6">
+              <div class="w-10 h-10 rounded-lg bg-slate-900 flex items-center justify-center mb-4">
+                <span class="text-white">🚀</span>
+              </div>
+              <h3 class="text-xl text-slate-900 mb-2">Pro</h3>
+              <div class="flex items-baseline gap-1">
+                <span class="text-5xl text-slate-900 font-light">$49</span>
+                <span class="text-slate-500">/month</span>
+              </div>
+            </div>
+            <ul class="space-y-3 mb-8">
+              <li class="flex items-start gap-3">
+                <span class="text-sky-600">✓</span>
+                <span class="text-slate-600">2,000 emails/month</span>
+              </li>
+              <li class="flex items-start gap-3">
+                <span class="text-sky-600">✓</span>
+                <span class="text-slate-600">Advanced AI personalization</span>
+              </li>
+              <li class="flex items-start gap-3">
+                <span class="text-sky-600">✓</span>
+                <span class="text-slate-600">All features included</span>
+              </li>
+              <li class="flex items-start gap-3">
+                <span class="text-sky-600">✓</span>
+                <span class="text-slate-600">Priority support</span>
+              </li>
+            </ul>
+            <button class="w-full py-3 bg-sky-600 hover:bg-sky-700 text-white rounded-lg transition-all">
+              Start Building Campaigns
+            </button>
+          </div>
+        </div>
+        
+        <!-- Scale Plan -->
+        <div class="p-8 rounded-2xl bg-white border-2 border-slate-200">
+          <div class="mb-6">
+            <div class="w-10 h-10 rounded-lg bg-slate-900 flex items-center justify-center mb-4">
+              <span class="text-white">👑</span>
+            </div>
+            <h3 class="text-xl text-slate-900 mb-2">Scale</h3>
+            <div class="flex items-baseline gap-1">
+              <span class="text-5xl text-slate-900 font-light">$149</span>
+              <span class="text-slate-500">/month</span>
+            </div>
+          </div>
+          <ul class="space-y-3 mb-8">
+            <li class="flex items-start gap-3">
+              <span class="text-sky-600">✓</span>
+              <span class="text-slate-600">Unlimited emails</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-sky-600">✓</span>
+              <span class="text-slate-600">Custom AI training</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-sky-600">✓</span>
+              <span class="text-slate-600">Dedicated success manager</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-sky-600">✓</span>
+              <span class="text-slate-600">API access</span>
+            </li>
+          </ul>
+          <button class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-lg transition-all">
+            Book a Demo
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Social Proof -->
+  <section class="py-20 px-4 bg-white">
+    <div class="max-w-6xl mx-auto">
+      <h2 class="text-display text-center text-slate-900 mb-12">
+        Join <span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-600 to-blue-600">2,847+ Teams</span> Growing With VELOCITY
+      </h2>
+      
+      <div class="grid md:grid-cols-3 gap-8">
+        <div class="p-6 bg-slate-50 rounded-xl">
+          <div class="flex mb-4">
+            <span class="text-yellow-500">⭐⭐⭐⭐⭐</span>
+          </div>
+          <p class="text-slate-700 mb-4">"VELOCITY transformed our outreach. We're booking 3x more meetings with half the effort."</p>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-gradient-to-br from-sky-500 to-blue-600 rounded-full"></div>
+            <div>
+              <div class="font-semibold">Alex Thompson</div>
+              <div class="text-sm text-slate-500">Head of Sales, TechStart</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="p-6 bg-slate-50 rounded-xl">
+          <div class="flex mb-4">
+            <span class="text-yellow-500">⭐⭐⭐⭐⭐</span>
+          </div>
+          <p class="text-slate-700 mb-4">"The AI personalization is incredible. Our reply rates went from 2% to 18% overnight."</p>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-gradient-to-br from-violet-500 to-purple-600 rounded-full"></div>
+            <div>
+              <div class="font-semibold">Maria Garcia</div>
+              <div class="text-sm text-slate-500">CEO, GrowthCo</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="p-6 bg-slate-50 rounded-xl">
+          <div class="flex mb-4">
+            <span class="text-yellow-500">⭐⭐⭐⭐⭐</span>
+          </div>
+          <p class="text-slate-700 mb-4">"Best investment we've made. ROI in the first month. Can't imagine sales without it."</p>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full"></div>
+            <div>
+              <div class="font-semibold">David Kim</div>
+              <div class="text-sm text-slate-500">VP Sales, ScaleUp</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- FAQ Section -->
+  <section id="faq" class="py-20 px-4 bg-slate-50">
+    <div class="max-w-3xl mx-auto">
+      <div class="text-center mb-12">
+        <div class="inline-block px-4 py-2 rounded-full bg-violet-50 text-violet-700 border border-violet-100 mb-4">
+          FAQ
+        </div>
+        <h2 class="text-display text-slate-900 mb-4">Frequently Asked Questions</h2>
+      </div>
+      
+      <div class="space-y-4">
+        <div class="bg-white p-6 rounded-xl border border-slate-200">
+          <h3 class="font-semibold text-lg mb-2">How does the AI personalization work?</h3>
+          <p class="text-slate-600">Our AI analyzes publicly available information about your prospects, including company news, social media activity, and professional backgrounds to craft unique, relevant messages for each recipient.</p>
+        </div>
+        
+        <div class="bg-white p-6 rounded-xl border border-slate-200">
+          <h3 class="font-semibold text-lg mb-2">Can I integrate with my existing CRM?</h3>
+          <p class="text-slate-600">Yes! VELOCITY integrates seamlessly with Salesforce, HubSpot, Pipedrive, and 20+ other popular CRMs. You can sync contacts, track activities, and update records automatically.</p>
+        </div>
+        
+        <div class="bg-white p-6 rounded-xl border border-slate-200">
+          <h3 class="font-semibold text-lg mb-2">Is my data secure?</h3>
+          <p class="text-slate-600">Absolutely. We're SOC 2 Type II certified and GDPR compliant. All data is encrypted at rest and in transit. We never share or sell your data, and you maintain full ownership of all your contacts and content.</p>
+        </div>
+        
+        <div class="bg-white p-6 rounded-xl border border-slate-200">
+          <h3 class="font-semibold text-lg mb-2">What's your deliverability rate?</h3>
+          <p class="text-slate-600">Our customers typically see 95%+ deliverability rates. We use advanced warming techniques, domain authentication, and reputation monitoring to ensure your emails reach the inbox.</p>
+        </div>
+        
+        <div class="bg-white p-6 rounded-xl border border-slate-200">
+          <h3 class="font-semibold text-lg mb-2">Can I cancel anytime?</h3>
+          <p class="text-slate-600">Yes, you can cancel your subscription at any time. There are no long-term contracts or cancellation fees. You'll continue to have access until the end of your billing period.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- CTA Section -->
+  <section class="py-20 px-4 bg-gradient-to-br from-sky-600 via-blue-600 to-violet-600 relative overflow-hidden">
+    <div class="absolute inset-0 shimmer"></div>
+    <div class="max-w-4xl mx-auto text-center relative z-10">
+      <h2 class="text-hero text-white mb-6">
+        Ready to <span class="text-yellow-300">10x</span> Your Outreach?
+      </h2>
+      <p class="text-xl text-white/90 mb-8">
+        Join thousands of teams using VELOCITY to close more deals
+      </p>
+      <button class="px-10 py-4 bg-white hover:bg-slate-50 text-slate-900 rounded-lg shadow-2xl transition-all text-lg font-semibold">
+        Start Your Free Trial →
+      </button>
+      <p class="text-white/70 mt-4">No credit card required • 14-day free trial</p>
+    </div>
+  </section>
+  
+  <!-- Footer -->
+  <footer class="py-12 px-4 bg-slate-900 text-slate-400">
+    <div class="max-w-7xl mx-auto">
+      <div class="grid md:grid-cols-4 gap-8 mb-8">
+        <div>
+          <div class="flex items-center gap-2 mb-4">
+            <div class="w-8 h-8 bg-gradient-to-br from-sky-500 to-blue-600 rounded-lg flex items-center justify-center">
+              <span class="text-white font-bold text-sm">V</span>
+            </div>
+            <span class="font-bold text-lg text-white">VELOCITY</span>
+          </div>
+          <p class="text-sm">AI-powered email outreach that converts</p>
+        </div>
+        
+        <div>
+          <h4 class="font-semibold text-white mb-4">Product</h4>
+          <ul class="space-y-2">
+            <li><a href="#" class="hover:text-white transition-colors">Features</a></li>
+            <li><a href="#" class="hover:text-white transition-colors">Pricing</a></li>
+            <li><a href="#" class="hover:text-white transition-colors">Integrations</a></li>
+            <li><a href="#" class="hover:text-white transition-colors">API</a></li>
+          </ul>
+        </div>
+        
+        <div>
+          <h4 class="font-semibold text-white mb-4">Company</h4>
+          <ul class="space-y-2">
+            <li><a href="#" class="hover:text-white transition-colors">About</a></li>
+            <li><a href="#" class="hover:text-white transition-colors">Blog</a></li>
+            <li><a href="#" class="hover:text-white transition-colors">Careers</a></li>
+            <li><a href="#" class="hover:text-white transition-colors">Contact</a></li>
+          </ul>
+        </div>
+        
+        <div>
+          <h4 class="font-semibold text-white mb-4">Legal</h4>
+          <ul class="space-y-2">
+            <li><a href="#" class="hover:text-white transition-colors">Privacy</a></li>
+            <li><a href="#" class="hover:text-white transition-colors">Terms</a></li>
+            <li><a href="#" class="hover:text-white transition-colors">Security</a></li>
+            <li><a href="#" class="hover:text-white transition-colors">GDPR</a></li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center">
+        <p class="text-sm">© 2024 VELOCITY. All rights reserved.</p>
+        <div class="flex gap-6 mt-4 md:mt-0">
+          <a href="#" class="hover:text-white transition-colors">Twitter</a>
+          <a href="#" class="hover:text-white transition-colors">LinkedIn</a>
+          <a href="#" class="hover:text-white transition-colors">GitHub</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+  
+  <!-- Sticky CTA Bar -->
+  <div class="fixed bottom-0 left-0 right-0 bg-slate-900 p-4 shadow-2xl z-40 hidden md:flex items-center justify-between">
+    <div class="max-w-7xl mx-auto w-full flex items-center justify-between">
+      <div>
+        <p class="text-white font-semibold">Start sending personalized emails today</p>
+        <p class="text-slate-400 text-sm">Free trial • No credit card required</p>
+      </div>
+      <button class="px-6 py-2 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white rounded-lg transition-all">
+        Get Started Free →
+      </button>
+    </div>
+  </div>
+</body>
+</html>

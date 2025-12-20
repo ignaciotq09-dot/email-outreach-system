@@ -1,0 +1,567 @@
+📁 Project Structure
+```
+your-project/
+├── App.tsx
+├── styles/
+│   └── globals.css
+└── components/
+    └── ui/
+        ├── utils.ts
+        ├── button.tsx
+        ├── textarea.tsx
+        ├── radio-group.tsx
+        └── label.tsx
+```
+
+---
+
+📄 App.tsx
+```tsx
+import React, { useState } from 'react';
+import { Sparkles, Mail, Brain } from 'lucide-react';
+import { Button } from './components/ui/button';
+import { Textarea } from './components/ui/textarea';
+import { RadioGroup, RadioGroupItem } from './components/ui/radio-group';
+import { Label } from './components/ui/label';
+
+export default function App() {
+  const [baseMessage, setBaseMessage] = useState('');
+  const [writingStyle, setWritingStyle] = useState('professional-adult');
+
+  const handleGenerate = () => {
+    console.log('Generating email variants...');
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-purple-50">
+      {/* Navigation */}
+      <div className="border-b border-purple-100 bg-white/80 backdrop-blur-sm">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="flex items-center gap-8">
+            <div className="flex items-center gap-3 py-5">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-600 to-violet-600 shadow-md shadow-purple-200">
+                <Sparkles className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-gray-900">EmailAI</span>
+            </div>
+            
+            <nav className="flex gap-6">
+              <button className="relative py-5 text-gray-900">
+                <span>Compose & Send</span>
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-600 rounded-full"></div>
+              </button>
+              <button className="py-5 text-gray-600 hover:text-gray-900">
+                Drafted
+              </button>
+              <button className="py-5 text-gray-600 hover:text-gray-900">
+                Sent Emails
+              </button>
+              <button className="py-5 text-gray-600 hover:text-gray-900">
+                Inbox
+              </button>
+              <button className="py-5 text-gray-600 hover:text-gray-900">
+                Meetings
+              </button>
+              <button className="py-5 text-gray-600 hover:text-gray-900">
+                Analytics
+              </button>
+              <button className="py-5 text-gray-600 hover:text-gray-900">
+                Templates
+              </button>
+              <button className="py-5 text-gray-600 hover:text-gray-900">
+                Settings
+              </button>
+            </nav>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <main className="mx-auto max-w-7xl px-6 py-12">
+        <div className="mb-10 text-center">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-purple-100 px-4 py-2">
+            <div className="h-2 w-2 rounded-full bg-purple-600"></div>
+            <span className="text-sm text-purple-900">AI-powered email generation</span>
+          </div>
+          <h1 className="mb-3 text-gray-900">Compose Your Message</h1>
+          <p className="text-gray-600">Write your base message and let AI create 3 personalized variants</p>
+        </div>
+
+        {/* Layout */}
+        <div className="grid grid-cols-12 gap-6">
+          {/* Main Compose Area */}
+          <div className="col-span-8">
+            <div className="rounded-2xl border border-purple-100 bg-white p-8 shadow-sm">
+              <Label htmlFor="base-message" className="mb-4 flex items-center gap-3 text-gray-900">
+                <div className="rounded-lg bg-purple-600 p-2">
+                  <Mail className="h-5 w-5 text-white" />
+                </div>
+                <span>Your Base Message</span>
+              </Label>
+              <Textarea
+                id="base-message"
+                placeholder="Start typing your message... AI will transform it into 3 unique variants."
+                className="min-h-[360px] resize-none rounded-xl border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-500 focus:border-purple-400 focus:ring-purple-400"
+                value={baseMessage}
+                onChange={(e) => setBaseMessage(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Sidebar */}
+          <div className="col-span-4">
+            {/* Writing Style Card */}
+            <div className="rounded-2xl border border-purple-100 bg-white p-6 shadow-sm">
+              <div className="mb-5 flex items-center gap-3">
+                <div className="rounded-lg bg-violet-600 p-2">
+                  <Brain className="h-5 w-5 text-white" />
+                </div>
+                <Label className="text-gray-900">Writing Style</Label>
+              </div>
+              
+              <RadioGroup value={writingStyle} onValueChange={setWritingStyle} className="space-y-3">
+                <div className="cursor-pointer rounded-xl border-2 border-purple-200 bg-purple-50 p-4 transition-colors hover:border-purple-400">
+                  <div className="flex items-start gap-3">
+                    <RadioGroupItem value="professional-adult" id="professional-adult" className="mt-1" />
+                    <div className="flex-1">
+                      <Label htmlFor="professional-adult" className="cursor-pointer text-gray-900">
+                        Professional & Direct
+                      </Label>
+                      <p className="mt-1 text-sm text-gray-600">Confident, assumes expertise</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="cursor-pointer rounded-xl border-2 border-purple-200 bg-purple-50 p-4 transition-colors hover:border-purple-400">
+                  <div className="flex items-start gap-3">
+                    <RadioGroupItem value="professional-humble" id="professional-humble" className="mt-1" />
+                    <div className="flex-1">
+                      <Label htmlFor="professional-humble" className="cursor-pointer text-gray-900">
+                        Professional & Humble
+                      </Label>
+                      <p className="mt-1 text-sm text-gray-600">Curious, asks questions</p>
+                    </div>
+                  </div>
+                </div>
+              </RadioGroup>
+            </div>
+          </div>
+        </div>
+
+        {/* Generate Button */}
+        <div className="mt-10 text-center">
+          <Button
+            onClick={handleGenerate}
+            className="rounded-xl bg-gradient-to-r from-purple-600 to-violet-600 px-10 py-6 shadow-lg shadow-purple-300 hover:shadow-xl hover:shadow-purple-400"
+          >
+            <span className="flex items-center gap-2 text-white">
+              <Sparkles className="h-5 w-5" />
+              <span>Generate 3 Email Variants</span>
+            </span>
+          </Button>
+          
+          <div className="mt-6 flex items-center justify-center gap-8 text-sm">
+            <div className="flex items-center gap-2">
+              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-green-100">
+                <div className="h-2 w-2 rounded-full bg-green-600"></div>
+              </div>
+              <span className="text-gray-700">Takes ~30 seconds</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-purple-100">
+                <div className="h-2 w-2 rounded-full bg-purple-600"></div>
+              </div>
+              <span className="text-gray-700">Unique to your voice</span>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+```
+
+---
+
+📄 styles/globals.css
+```css
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --font-size: 16px;
+  --background: #ffffff;
+  --foreground: oklch(0.145 0 0);
+  --card: #ffffff;
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: #030213;
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.95 0.0058 264.53);
+  --secondary-foreground: #030213;
+  --muted: #ececf0;
+  --muted-foreground: #717182;
+  --accent: #e9ebef;
+  --accent-foreground: #030213;
+  --destructive: #d4183d;
+  --destructive-foreground: #ffffff;
+  --border: rgba(0, 0, 0, 0.1);
+  --input: transparent;
+  --input-background: #f3f3f5;
+  --switch-background: #cbced4;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: #030213;
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.145 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.145 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.985 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.396 0.141 25.723);
+  --destructive-foreground: oklch(0.637 0.237 25.331);
+  --border: oklch(0.269 0 0);
+  --input: oklch(0.269 0 0);
+  --ring: oklch(0.439 0 0);
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(0.269 0 0);
+  --sidebar-ring: oklch(0.439 0 0);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+{
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/**
+Base typography. This is not applied to elements which have an ancestor with a Tailwind text class.
+ */
+@layer base {
+  :where(:not(:has([class*=' text-']), :not(:has([class^='text-'])))) {
+    h1 {
+      font-size: var(--text-2xl);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h2 {
+      font-size: var(--text-xl);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h3 {
+      font-size: var(--text-lg);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h4 {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    p {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-normal);
+      line-height: 1.5;
+    }
+
+    label {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    button {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    input {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-normal);
+      line-height: 1.5;
+    }
+  }
+}
+
+html {
+  font-size: var(--font-size);
+}
+```
+
+---
+
+📄 components/ui/utils.ts
+```typescript
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+```
+
+---
+
+📄 components/ui/button.tsx
+```typescript
+import * as React from "react";
+import { Slot } from "@radix-ui/react-slot@1.1.2";
+import { cva, type VariantProps } from "class-variance-authority@0.7.1";
+
+import { cn } from "./utils";
+
+const buttonVariants = cva(
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+  {
+    variants: {
+      variant: {
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        destructive:
+          "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+        outline:
+          "border bg-background text-foreground hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
+        secondary:
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        ghost:
+          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
+        link: "text-primary underline-offset-4 hover:underline",
+      },
+      size: {
+        default: "h-9 px-4 py-2 has-[>svg]:px-3",
+        sm: "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",
+        lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
+        icon: "size-9 rounded-md",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  },
+);
+
+function Button({
+  className,
+  variant,
+  size,
+  asChild = false,
+  ...props
+}: React.ComponentProps<"button"> &
+  VariantProps<typeof buttonVariants> & {
+    asChild?: boolean;
+  }) {
+  const Comp = asChild ? Slot : "button";
+
+  return (
+    <Comp
+      data-slot="button"
+      className={cn(buttonVariants({ variant, size, className }))}
+      {...props}
+    />
+  );
+}
+
+export { Button, buttonVariants };
+```
+
+---
+
+📄 components/ui/textarea.tsx
+```typescript
+import * as React from "react";
+
+import { cn } from "./utils";
+
+function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
+  return (
+    <textarea
+      data-slot="textarea"
+      className={cn(
+        "resize-none border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 flex field-sizing-content min-h-16 w-full rounded-md border bg-input-background px-3 py-2 text-base transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+export { Textarea };
+```
+
+---
+
+📄 components/ui/radio-group.tsx
+```typescript
+"use client";
+
+import * as React from "react";
+import * as RadioGroupPrimitive from "@radix-ui/react-radio-group@1.2.3";
+import { CircleIcon } from "lucide-react@0.487.0";
+
+import { cn } from "./utils";
+
+function RadioGroup({
+  className,
+  ...props
+}: React.ComponentProps<typeof RadioGroupPrimitive.Root>) {
+  return (
+    <RadioGroupPrimitive.Root
+      data-slot="radio-group"
+      className={cn("grid gap-3", className)}
+      {...props}
+    />
+  );
+}
+
+function RadioGroupItem({
+  className,
+  ...props
+}: React.ComponentProps<typeof RadioGroupPrimitive.Item>) {
+  return (
+    <RadioGroupPrimitive.Item
+      data-slot="radio-group-item"
+      className={cn(
+        "border-input text-primary focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 aspect-square size-4 shrink-0 rounded-full border shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50",
+        className,
+      )}
+      {...props}
+    >
+      <RadioGroupPrimitive.Indicator
+        data-slot="radio-group-indicator"
+        className="relative flex items-center justify-center"
+      >
+        <CircleIcon className="fill-primary absolute top-1/2 left-1/2 size-2 -translate-x-1/2 -translate-y-1/2" />
+      </RadioGroupPrimitive.Indicator>
+    </RadioGroupPrimitive.Item>
+  );
+}
+
+export { RadioGroup, RadioGroupItem };
+```
+
+---
+
+📄 components/ui/label.tsx
+```typescript
+"use client";
+
+import * as React from "react";
+import * as LabelPrimitive from "@radix-ui/react-label@2.1.2";
+
+import { cn } from "./utils";
+
+function Label({
+  className,
+  ...props
+}: React.ComponentProps<typeof LabelPrimitive.Root>) {
+  return (
+    <LabelPrimitive.Root
+      data-slot="label"
+      className={cn(
+        "flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+export { Label };
+```
+
+---
+
+📦 Dependencies to Install
+```bash
+npm install lucide-react clsx tailwind-merge class-variance-authority@0.7.1 @radix-ui/react-slot@1.1.2 @radix-ui/react-radio-group@1.2.3 @radix-ui/react-label@2.1.2
+```
+
+---

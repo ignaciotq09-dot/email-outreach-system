@@ -1,0 +1,199 @@
+import { motion } from "motion/react";
+import {
+  Mail,
+  User,
+  Sparkles,
+  CheckCircle,
+} from "lucide-react";
+
+export function EmailFlowVisualization() {
+  return (
+    <div className="relative w-full h-64 flex items-center justify-center">
+      {/* Connection lines */}
+      <svg
+        className="absolute inset-0 w-full h-full"
+        viewBox="0 0 600 200"
+        preserveAspectRatio="xMidYMid meet"
+      >
+        <defs>
+          <linearGradient
+            id="flowGradient"
+            x1="0%"
+            y1="0%"
+            x2="100%"
+            y2="0%"
+          >
+            <stop offset="0%" stopColor="#8b5cf6" />
+            <stop offset="50%" stopColor="#d946ef" />
+            <stop offset="100%" stopColor="#3b82f6" />
+          </linearGradient>
+          <path
+            id="flowPath"
+            d="M 100 100 Q 200 50, 300 100 Q 400 150, 500 100"
+          />
+        </defs>
+
+        {/* Animated path */}
+        <motion.path
+          d="M 100 100 Q 200 50, 300 100 Q 400 150, 500 100"
+          stroke="url(#flowGradient)"
+          strokeWidth="3"
+          fill="none"
+          strokeLinecap="round"
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={{
+            pathLength: 1,
+            opacity: [0, 1, 1, 0],
+          }}
+          transition={{
+            duration: 3,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+
+        {/* Animated dots flowing */}
+        {[0, 0.33, 0.66].map((offset, i) => (
+          <motion.circle
+            key={i}
+            r="4"
+            fill="#d946ef"
+            initial={{ opacity: 0 }}
+            animate={{
+              opacity: [0, 1, 1, 0],
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              delay: offset * 3,
+              ease: "linear",
+            }}
+          >
+            <animateMotion
+              dur="3s"
+              repeatCount="indefinite"
+              begin={`${offset * 3}s`}
+            >
+              <mpath href="#flowPath" />
+            </animateMotion>
+          </motion.circle>
+        ))}
+      </svg>
+
+      {/* Nodes */}
+      <div className="relative z-10 flex items-center justify-between w-full max-w-xl px-8">
+        {/* Step 1: User */}
+        <motion.div
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.2, type: "spring" }}
+          className="flex flex-col items-center"
+        >
+          <div className="relative">
+            <div className="absolute inset-0 bg-violet-500 rounded-full blur-xl opacity-50"></div>
+            <motion.div
+              className="relative w-16 h-16 bg-gradient-to-br from-violet-500 to-purple-600 rounded-full flex items-center justify-center shadow-xl"
+              whileHover={{ scale: 1.1, rotate: 360 }}
+              transition={{ duration: 0.6 }}
+            >
+              <User className="w-8 h-8 text-white" />
+            </motion.div>
+          </div>
+          <span className="mt-2 text-sm text-gray-600">
+            You
+          </span>
+        </motion.div>
+
+        {/* Step 2: AI Processing */}
+        <motion.div
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.4, type: "spring" }}
+          className="flex flex-col items-center"
+        >
+          <div className="relative">
+            <div className="absolute inset-0 bg-fuchsia-500 rounded-full blur-xl opacity-50"></div>
+            <motion.div
+              className="relative w-16 h-16 bg-gradient-to-br from-fuchsia-500 to-pink-600 rounded-full flex items-center justify-center shadow-xl"
+              animate={{
+                rotate: 360,
+                scale: [1, 1.1, 1],
+              }}
+              transition={{
+                rotate: {
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: "linear",
+                },
+                scale: {
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                },
+              }}
+            >
+              <Sparkles className="w-8 h-8 text-white" />
+            </motion.div>
+          </div>
+          <span className="mt-2 text-sm text-gray-600">
+            AI Magic
+          </span>
+        </motion.div>
+
+        {/* Step 3: Email Sent */}
+        <motion.div
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.6, type: "spring" }}
+          className="flex flex-col items-center"
+        >
+          <div className="relative">
+            <div className="absolute inset-0 bg-blue-500 rounded-full blur-xl opacity-50"></div>
+            <motion.div
+              className="relative w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-full flex items-center justify-center shadow-xl"
+              whileHover={{
+                scale: 1.1,
+                y: [-5, 5, -5],
+              }}
+              transition={{ duration: 0.5 }}
+            >
+              <Mail className="w-8 h-8 text-white" />
+            </motion.div>
+          </div>
+          <span className="mt-2 text-sm text-gray-600">
+            Personalized
+          </span>
+        </motion.div>
+
+        {/* Step 4: Success */}
+        <motion.div
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.8, type: "spring" }}
+          className="flex flex-col items-center"
+        >
+          <div className="relative">
+            <div className="absolute inset-0 bg-emerald-500 rounded-full blur-xl opacity-50"></div>
+            <motion.div
+              className="relative w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center shadow-xl"
+              whileHover={{ scale: 1.1 }}
+              animate={{
+                boxShadow: [
+                  "0 0 20px rgba(16, 185, 129, 0.4)",
+                  "0 0 40px rgba(16, 185, 129, 0.6)",
+                  "0 0 20px rgba(16, 185, 129, 0.4)",
+                ],
+              }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <CheckCircle className="w-8 h-8 text-white" />
+            </motion.div>
+          </div>
+          <span className="mt-2 text-sm text-gray-600">
+            Delivered
+          </span>
+        </motion.div>
+      </div>
+    </div>
+  );
+}

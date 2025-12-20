@@ -1,0 +1,492 @@
+/components/EmailPreviewCarousel.tsx`
+
+```tsx
+import { useState } from 'react';
+import { Card, CardContent } from './ui/card';
+import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { Button } from './ui/button';
+import { motion, AnimatePresence } from 'motion/react';
+
+const emailExamples = [
+  {
+    subject: 'Quick question about TechCorp\'s Q4 initiatives',
+    preview:
+      'Hi Sarah,\n\nI noticed TechCorp recently announced your expansion into the European market—congrats on the growth! I\'m reaching out because we\'ve helped similar B2B SaaS companies scale their outbound during international expansion.\n\nWould you be open to a 15-minute chat next week about how we reduced CAC by 40% for a company in your space?\n\nBest,\nAlex',
+    color: 'violet',
+  },
+  {
+    subject: 'Loved your recent post on AI in sales',
+    preview:
+      'Hey Marcus,\n\nYour LinkedIn article on "Why Sales Teams Still Need Humans" really resonated with me—especially the part about empathy in discovery calls. That\'s exactly the balance we\'re trying to strike with our platform.\n\nI\'d love to get your take on how AI could support (not replace) your team at GrowthLabs. Coffee chat?\n\nCheers,\nAlex',
+    color: 'fuchsia',
+  },
+  {
+    subject: 'Following up on our intro from Jennifer',
+    preview:
+      'Hi David,\n\nJennifer mentioned you\'re looking to streamline your outbound process before the new quarter. I completely understand—hiring SDRs is expensive and training takes forever.\n\nWe\'ve built something that might help. Would Thursday at 2pm work for a quick demo?\n\nThanks,\nAlex',
+    color: 'blue',
+  },
+];
+
+export function EmailPreviewCarousel() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [direction, setDirection] = useState(0);
+
+  const next = () => {
+    setDirection(1);
+    setCurrentIndex((prev) => (prev + 1) % emailExamples.length);
+  };
+
+  const prev = () => {
+    setDirection(-1);
+    setCurrentIndex((prev) => (prev - 1 + emailExamples.length) % emailExamples.length);
+  };
+
+  const slideVariants = {
+    enter: (direction: number) => ({
+      x: direction > 0 ? 1000 : -1000,
+      opacity: 0,
+    }),
+    center: {
+      zIndex: 1,
+      x: 0,
+      opacity: 1,
+    },
+    exit: (direction: number) => ({
+      zIndex: 0,
+      x: direction < 0 ? 1000 : -1000,
+      opacity: 0,
+    }),
+  };
+
+  return (
+    <section className="py-24 px-4 bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 relative overflow-hidden">
+      {/* Decorative Elements */}
+      <div className="absolute top-1/4 left-0 w-72 h-72 bg-violet-200 rounded-full filter blur-3xl opacity-20"></div>
+      <div className="absolute bottom-1/4 right-0 w-72 h-72 bg-fuchsia-200 rounded-full filter blur-3xl opacity-20"></div>
+
+      <div className="max-w-5xl mx-auto relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-12"
+        >
+          <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-gradient-to-r from-violet-100 to-fuchsia-100 text-violet-700 mb-4">
+            <Sparkles className="w-4 h-4" />
+            <span>AI-Powered Personalization</span>
+          </div>
+          <h2 className="text-4xl md:text-5xl text-center text-gray-900 mb-4">
+            See AI Personalization In Action
+          </h2>
+          <p className="text-center text-gray-600 text-lg">
+            Every email is uniquely written—no templates, no copy-paste
+          </p>
+        </motion.div>
+
+        <div className="relative">
+          <div className="relative h-[400px] md:h-[380px]">
+            <AnimatePresence initial={false} custom={direction}>
+              <motion.div
+                key={currentIndex}
+                custom={direction}
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{
+                  x: { type: "spring", stiffness: 300, damping: 30 },
+                  opacity: { duration: 0.2 },
+                }}
+                className="absolute inset-0"
+              >
+                <Card className="border-0 shadow-2xl bg-white/90 backdrop-blur-sm h-full overflow-hidden group">
+                  {/* Card Gradient Border */}
+                  <div className={`absolute inset-0 bg-gradient-to-r from-${emailExamples[currentIndex].color}-500 to-${emailExamples[currentIndex].color}-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10`}></div>
+                  <div className="absolute inset-[2px] bg-white rounded-lg z-0"></div>
+
+                  <CardContent className="p-8 relative z-10 h-full flex flex-col">
+                    {/* Email Header */}
+                    <div className="mb-6 pb-6 border-b border-gray-100">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className={`w-2 h-2 rounded-full bg-gradient-to-r from-${emailExamples[currentIndex].color}-500 to-${emailExamples[currentIndex].color}-600`}></div>
+                        <span className="text-xs uppercase tracking-wide text-gray-500">Subject</span>
+                      </div>
+                      <div className="text-lg text-gray-900">
+                        {emailExamples[currentIndex].subject}
+                      </div>
+                    </div>
+
+                    {/* Email Body */}
+                    <div className="flex-1 overflow-y-auto">
+                      <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">
+                        {emailExamples[currentIndex].preview}
+                      </div>
+                    </div>
+
+                    {/* AI Badge */}
+                    <div className="mt-4 pt-4 border-t border-gray-100">
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-violet-50 to-fuchsia-50 text-xs text-violet-700">
+                        <Sparkles className="w-3 h-3" />
+                        <span>100% AI-Generated Personalization</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          {/* Navigation */}
+          <div className="flex items-center justify-center gap-6 mt-8">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={prev}
+              className="w-12 h-12 rounded-full border-2 border-violet-200 hover:border-violet-400 hover:bg-violet-50 transition-all shadow-lg"
+            >
+              <ChevronLeft className="w-5 h-5 text-violet-600" />
+            </Button>
+
+            <div className="flex gap-2">
+              {emailExamples.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => {
+                    setDirection(index > currentIndex ? 1 : -1);
+                    setCurrentIndex(index);
+                  }}
+                  className="relative group"
+                >
+                  <div
+                    className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                      index === currentIndex
+                        ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 scale-110'
+                        : 'bg-gray-300 hover:bg-gray-400'
+                    }`}
+                  />
+                  {index === currentIndex && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-full blur opacity-50"></div>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={next}
+              className="w-12 h-12 rounded-full border-2 border-violet-200 hover:border-violet-400 hover:bg-violet-50 transition-all shadow-lg"
+            >
+              <ChevronRight className="w-5 h-5 text-violet-600" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+```
+
+`/components/FAQSection.tsx`
+
+```tsx
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from './ui/accordion';
+import { motion } from 'motion/react';
+import { HelpCircle } from 'lucide-react';
+
+const faqs = [
+  {
+    question: 'How does the AI personalization work?',
+    answer:
+      'Our AI analyzes your writing style from sample emails and learns your tone, vocabulary, and messaging patterns. It then generates unique emails for each recipient based on their profile, company, and context—ensuring every message feels personally written.',
+  },
+  {
+    question: 'Will emails be sent from my Gmail account?',
+    answer:
+      'Yes! The system connects directly to your Gmail account via secure OAuth. All emails are sent from your actual email address, maintaining your domain reputation and ensuring deliverability.',
+  },
+  {
+    question: 'What happens if someone replies?',
+    answer:
+      'Our 4-layer reply detection system monitors responses across all threads and automatically stops any scheduled follow-ups. You receive instant notifications via email and SMS, and the AI can even book meetings directly to your calendar if requested.',
+  },
+  {
+    question: 'Can I cancel anytime?',
+    answer:
+      'Absolutely. There are no contracts or commitments. You can upgrade, downgrade, or cancel your subscription at any time from your account settings. The free plan is available forever with no credit card required.',
+  },
+  {
+    question: 'How accurate is the reply detection?',
+    answer:
+      'Our reply detection has a 99.7% accuracy rate. It monitors primary inbox, threaded replies, different email aliases, and even catches responses that come from forwarded emails or different domains within the same organization.',
+  },
+];
+
+export function FAQSection() {
+  return (
+    <section className="py-24 px-4 bg-white relative overflow-hidden">
+      {/* Decorative Elements */}
+      <div className="absolute top-1/2 left-0 w-72 h-72 bg-violet-100 rounded-full filter blur-3xl opacity-20 -translate-y-1/2"></div>
+      <div className="absolute top-1/2 right-0 w-72 h-72 bg-fuchsia-100 rounded-full filter blur-3xl opacity-20 -translate-y-1/2"></div>
+
+      <div className="max-w-3xl mx-auto relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-12"
+        >
+          <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-gradient-to-r from-violet-100 to-fuchsia-100 text-violet-700 mb-4">
+            <HelpCircle className="w-4 h-4" />
+            <span>FAQ</span>
+          </div>
+          <h2 className="text-4xl md:text-5xl text-center text-gray-900 mb-4">
+            Frequently Asked Questions
+          </h2>
+          <p className="text-gray-600 text-lg">
+            Everything you need to know about our platform
+          </p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-violet-100 overflow-hidden"
+        >
+          <Accordion type="single" collapsible className="w-full">
+            {faqs.map((faq, index) => (
+              <AccordionItem 
+                key={index} 
+                value={`item-${index}`}
+                className="border-b border-violet-100 last:border-0"
+              >
+                <AccordionTrigger className="text-left px-6 py-5 hover:bg-gradient-to-r hover:from-violet-50 hover:to-fuchsia-50 transition-all [&[data-state=open]]:bg-gradient-to-r [&[data-state=open]]:from-violet-50 [&[data-state=open]]:to-fuchsia-50">
+                  <span className="text-gray-900">{faq.question}</span>
+                </AccordionTrigger>
+                <AccordionContent className="px-6 pb-5 text-gray-600 leading-relaxed">
+                  {faq.answer}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </motion.div>
+
+        {/* Still have questions CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="text-center mt-12 p-8 rounded-2xl bg-gradient-to-r from-violet-50 to-fuchsia-50 border border-violet-100"
+        >
+          <p className="text-gray-700 mb-4">
+            Still have questions? We're here to help!
+          </p>
+          <a
+            href="#"
+            className="inline-block px-6 py-3 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white hover:shadow-lg hover:shadow-violet-500/50 transition-all duration-300"
+          >
+            Contact Support
+          </a>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+```
+
+`/components/FeaturesSection.tsx`
+
+```tsx
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Brain, Target, RefreshCw, Calendar, BarChart3, Mail } from 'lucide-react';
+import { motion } from 'motion/react';
+import { TiltCard } from './TiltCard';
+
+const features = [
+  {
+    icon: Brain,
+    title: 'AI That Writes Like You',
+    description:
+      'GPT-5 learns your voice and creates unique emails for each recipient. No more templates that sound robotic.',
+    gradient: 'from-violet-500 to-purple-600',
+    bg: 'bg-violet-50',
+  },
+  {
+    icon: Target,
+    title: '4-Layer Reply Detection',
+    description:
+      "Never miss a response. Our system catches replies across threads, aliases, and domains with 99.7% accuracy.",
+    gradient: 'from-fuchsia-500 to-pink-600',
+    bg: 'bg-fuchsia-50',
+  },
+  {
+    icon: RefreshCw,
+    title: 'Automated Follow-Ups',
+    description:
+      'Smart 3-stage sequences (3, 13, 21 days) that stop when prospects reply. Different tone each time.',
+    gradient: 'from-blue-500 to-cyan-600',
+    bg: 'bg-blue-50',
+  },
+  {
+    icon: Calendar,
+    title: 'Meeting Auto-Scheduler',
+    description:
+      'AI detects appointment requests and creates Google Calendar events instantly. No back-and-forth.',
+    gradient: 'from-emerald-500 to-teal-600',
+    bg: 'bg-emerald-50',
+  },
+  {
+    icon: BarChart3,
+    title: 'Campaign Analytics',
+    description:
+      "Track open rates, reply rates, and conversion metrics. See what's working in real-time.",
+    gradient: 'from-orange-500 to-amber-600',
+    bg: 'bg-orange-50',
+  },
+  {
+    icon: Mail,
+    title: 'Gmail Native',
+    description:
+      'Works directly with your Gmail. No new email service to learn. Your domain, your reputation.',
+    gradient: 'from-rose-500 to-red-600',
+    bg: 'bg-rose-50',
+  },
+];
+
+export function FeaturesSection() {
+  return (
+    <section id="features" className="py-20 px-4 bg-white relative overflow-hidden">
+      {/* Decorative Elements */}
+      <div className="absolute top-0 left-0 w-96 h-96 bg-violet-100 rounded-full filter blur-3xl opacity-20 -translate-x-1/2 -translate-y-1/2"></div>
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-fuchsia-100 rounded-full filter blur-3xl opacity-20 translate-x-1/2 translate-y-1/2"></div>
+
+      <div className="max-w-7xl mx-auto relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-16"
+        >
+          <div className="inline-block px-4 py-1 rounded-full bg-gradient-to-r from-violet-100 to-fuchsia-100 text-violet-700 mb-4">
+            Powerful Features
+          </div>
+          <h2 className="text-4xl md:text-5xl text-center text-gray-900 mb-4">
+            Everything You Need In One Platform
+          </h2>
+        </motion.div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mt-12">
+          {features.map((feature, index) => {
+            const Icon = feature.icon;
+            return (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ 
+                  duration: 0.6, 
+                  delay: index * 0.1,
+                  type: "spring",
+                  stiffness: 100,
+                }}
+              >
+                <TiltCard className="h-full">
+                  <Card className="group border-0 shadow-xl hover:shadow-2xl transition-all duration-500 bg-white/90 backdrop-blur-sm h-full overflow-hidden relative">
+                    {/* Gradient Border Effect */}
+                    <div className={`absolute inset-0 bg-gradient-to-r ${feature.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10`}></div>
+                    <div className="absolute inset-[2px] bg-white rounded-lg z-0"></div>
+                    
+                    {/* Shimmer effect on hover */}
+                    <motion.div
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-0 group-hover:opacity-100 -z-10"
+                      animate={{ x: ['-200%', '200%'] }}
+                      transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 3 }}
+                    />
+                    
+                    <CardHeader className="relative z-10">
+                      <div className="relative inline-block mb-4">
+                        <motion.div 
+                          className={`absolute inset-0 bg-gradient-to-r ${feature.gradient} rounded-xl blur opacity-50 group-hover:opacity-75 transition-opacity`}
+                          whileHover={{ scale: 1.2 }}
+                        />
+                        <motion.div 
+                          className={`relative w-14 h-14 ${feature.bg} rounded-xl flex items-center justify-center`}
+                          whileHover={{ 
+                            scale: 1.1,
+                            rotate: [0, -10, 10, -10, 0],
+                          }}
+                          transition={{ duration: 0.5 }}
+                        >
+                          <Icon className={`w-7 h-7 bg-gradient-to-r ${feature.gradient} bg-clip-text text-transparent`} style={{ WebkitTextStroke: '1px currentColor', WebkitTextFillColor: 'transparent' }} />
+                        </motion.div>
+                      </div>
+                      <CardTitle className="text-gray-900">{feature.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="relative z-10">
+                      <CardDescription className="text-base text-gray-600 leading-relaxed">
+                        {feature.description}
+                      </CardDescription>
+                    </CardContent>
+                  </Card>
+                </TiltCard>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+```
+
+`/components/FloatingParticles.tsx`
+
+```tsx
+import { motion } from 'motion/react';
+
+interface FloatingParticlesProps {
+  count?: number;
+  color?: string;
+}
+
+export function FloatingParticles({ count = 20, color = 'violet' }: FloatingParticlesProps) {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {Array.from({ length: count }).map((_, i) => (
+        <motion.div
+          key={i}
+          className={`absolute w-1 h-1 bg-${color}-400 rounded-full opacity-30`}
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+          }}
+          animate={{
+            y: [0, -100, -200, -300],
+            opacity: [0, 0.6, 0.4, 0],
+            scale: [0, 1, 1, 0],
+          }}
+          transition={{
+            duration: 10 + Math.random() * 10,
+            repeat: Infinity,
+            delay: Math.random() * 5,
+            ease: "linear",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+```

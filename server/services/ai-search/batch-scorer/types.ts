@@ -1,0 +1,4 @@
+export interface PreferenceWeight { value: string; weight: number; sampleSize: number; lastUpdated: string; }
+export interface IcpProfile { userId: number; titlePreferences: PreferenceWeight[]; industryPreferences: PreferenceWeight[]; companySizePreferences: PreferenceWeight[]; locationPreferences: PreferenceWeight[]; seniorityPreferences: PreferenceWeight[]; technologyPreferences: PreferenceWeight[]; icpConfidence: number; totalDataPoints: number; bestPerformingAttributes: { topTitles: string[]; topIndustries: string[]; topCompanySizes: string[]; topLocations: string[]; averageReplyRate: number }; }
+export interface LeadAttributes { title?: string | null; industry?: string | null; companySize?: string | null; location?: string | null; }
+export interface IcpScoreResult { score: number; matchReasons: string[]; unmatchReasons: string[]; }

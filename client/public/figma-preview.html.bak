@@ -1,0 +1,1557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered Email Outreach - New Landing Page Design</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- React & Dependencies -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        :root {
+            --deep-navy: #0F172A;
+            --electric-teal: #0EA5E9;
+            --pure-white: #FFFFFF;
+            --slate-600: #475569;
+            --slate-400: #94A3B8;
+            --slate-200: #E2E8F0;
+            --slate-50: #F8FAFC;
+            --slate-100: #F1F5F9;
+            --success-green: #10B981;
+            --warning-amber: #F59E0B;
+            --error-red: #EF4444;
+            --info-blue: #3B82F6;
+        }
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        @keyframes gradient-shift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+        
+        @keyframes pulse-glow {
+            0%, 100% { 
+                box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+            }
+            50% { 
+                box-shadow: 0 0 40px rgba(6, 182, 212, 0.8);
+            }
+        }
+        
+        @keyframes rotate-gradient {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes fade-in-up {
+            from { 
+                opacity: 0; 
+                transform: translateY(20px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+            }
+        }
+        
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        .animate-gradient-shift {
+            animation: gradient-shift 15s ease infinite;
+        }
+        
+        .animate-shimmer {
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+            animation: shimmer 2s infinite;
+        }
+        
+        .animate-pulse-glow {
+            animation: pulse-glow 3s ease-in-out infinite;
+        }
+        
+        .animate-fade-in-up {
+            animation: fade-in-up 0.6s ease-out forwards;
+        }
+        
+        .text-gradient {
+            background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 50%, #6366f1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(-45deg, #0ea5e9, #3b82f6, #6366f1, #8b5cf6);
+            background-size: 400% 400%;
+            animation: gradient-shift 15s ease infinite;
+        }
+        
+        .email-card-3d {
+            transform-style: preserve-3d;
+            transform: perspective(1000px) rotateY(-15deg) rotateX(5deg);
+            transition: transform 0.5s ease;
+        }
+        
+        .email-card-3d:hover {
+            transform: perspective(1000px) rotateY(0deg) rotateX(0deg) scale(1.05);
+        }
+        
+        .glassmorphism {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .neural-network {
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(14, 165, 233, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(99, 102, 241, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 50% 80%, rgba(139, 92, 246, 0.3) 0%, transparent 50%);
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+<body class="bg-white">
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        
+        function App() {
+            const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+            const [scrolled, setScrolled] = useState(false);
+            const [showVideo, setShowVideo] = useState(false);
+            const [billingPeriod, setBillingPeriod] = useState('monthly');
+            const [sliderPosition, setSliderPosition] = useState(50);
+            const [emailCount, setEmailCount] = useState(1000);
+            const [responseRate, setResponseRate] = useState(2);
+            const [openFaq, setOpenFaq] = useState(null);
+            const [showExitPopup, setShowExitPopup] = useState(false);
+            const [emailPreview, setEmailPreview] = useState(0);
+            const [stickyBarVisible, setStickyBarVisible] = useState(false);
+            
+            useEffect(() => {
+                const handleScroll = () => {
+                    setScrolled(window.scrollY > 50);
+                    setStickyBarVisible(window.scrollY > 600);
+                };
+                window.addEventListener('scroll', handleScroll);
+                
+                const handleMouseLeave = (e) => {
+                    if (e.clientY <= 0 && !showExitPopup) {
+                        setShowExitPopup(true);
+                    }
+                };
+                document.addEventListener('mouseleave', handleMouseLeave);
+                
+                return () => {
+                    window.removeEventListener('scroll', handleScroll);
+                    document.removeEventListener('mouseleave', handleMouseLeave);
+                };
+            }, [showExitPopup]);
+            
+            // Navigation Component
+            const Navigation = () => (
+                <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${
+                    scrolled ? 'bg-white/95 backdrop-blur-md shadow-lg' : 'bg-transparent'
+                }`}>
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="flex justify-between items-center h-16">
+                            <div className="flex items-center">
+                                <div className="flex items-center space-x-2">
+                                    <div className="w-10 h-10 gradient-bg rounded-lg flex items-center justify-center">
+                                        <span className="text-white text-xl">✉️</span>
+                                    </div>
+                                    <span className="text-xl font-bold text-slate-900">EmailAI Pro</span>
+                                </div>
+                            </div>
+                            
+                            <div className="hidden md:flex items-center space-x-8">
+                                <a href="#features" className="text-slate-600 hover:text-slate-900 transition">Features</a>
+                                <a href="#how-it-works" className="text-slate-600 hover:text-slate-900 transition">How It Works</a>
+                                <a href="#pricing" className="text-slate-600 hover:text-slate-900 transition">Pricing</a>
+                                <a href="#testimonials" className="text-slate-600 hover:text-slate-900 transition">Testimonials</a>
+                                <button 
+                                    onClick={() => window.location.href = '/app'}
+                                    className="px-6 py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-lg hover:shadow-lg transition transform hover:scale-105"
+                                    data-testid="button-get-started"
+                                >
+                                    Get Started Free
+                                </button>
+                            </div>
+                            
+                            <button 
+                                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                                className="md:hidden p-2"
+                            >
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                                        d={mobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </nav>
+            );
+            
+            // Futuristic Hero Section
+            const FuturisticHero = () => (
+                <section className="relative pt-32 pb-24 px-4 overflow-hidden bg-gradient-to-br from-slate-50 via-white to-sky-50">
+                    {/* Animated gradient orbs */}
+                    <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-to-br from-sky-400/20 to-blue-500/20 rounded-full blur-3xl animate-pulse" />
+                    <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-gradient-to-tr from-violet-400/20 to-purple-500/20 rounded-full blur-3xl animate-float" />
+                    <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-pink-400/30 to-rose-500/30 rounded-full blur-3xl animate-pulse" />
+                    
+                    <div className="max-w-6xl mx-auto text-center relative z-10">
+                        {/* Badge */}
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-8 bg-gradient-to-r from-sky-500 to-blue-600 shadow-lg animate-fade-in-up">
+                            <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                            </span>
+                            <span className="text-sm text-white font-medium">
+                                Join <strong>2,847+</strong> teams automating outreach
+                            </span>
+                        </div>
+                        
+                        {/* Main Title */}
+                        <h1 className="text-5xl md:text-7xl lg:text-8xl mb-8 leading-tight font-black animate-fade-in-up">
+                            <span className="block text-slate-900">Turn Cold Emails</span>
+                            <span className="block text-gradient">Into Warm Deals</span>
+                        </h1>
+                        
+                        {/* Subtitle */}
+                        <p className="text-xl md:text-2xl mb-12 max-w-3xl mx-auto text-slate-600 animate-fade-in-up">
+                            Send <span className="text-sky-600 font-semibold">100% personalized</span> emails at scale with AI 
+                            that writes like you, not a robot. <span className="text-green-600 font-semibold">312% higher response rates</span> guaranteed.
+                        </p>
+                        
+                        {/* CTAs */}
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-20 animate-fade-in-up">
+                            <button 
+                                onClick={() => window.location.href = '/app'}
+                                className="group px-8 py-4 bg-gradient-to-r from-sky-500 to-blue-600 text-white font-semibold rounded-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition"
+                                data-testid="button-start-free"
+                            >
+                                <span className="flex items-center justify-center gap-2">
+                                    Start Free Trial
+                                    <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                    </svg>
+                                </span>
+                            </button>
+                            
+                            <button 
+                                onClick={() => setShowVideo(true)}
+                                className="group px-8 py-4 bg-white text-slate-900 font-semibold rounded-lg shadow-lg hover:shadow-xl border-2 border-slate-200 hover:border-sky-500 transition"
+                            >
+                                <span className="flex items-center justify-center gap-2">
+                                    <svg className="w-5 h-5 text-sky-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" />
+                                    </svg>
+                                    Watch 2-Min Demo
+                                </span>
+                            </button>
+                        </div>
+                        
+                        {/* Stats Cards */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto mb-12">
+                            <div className="bg-white rounded-xl p-6 shadow-lg border border-slate-100 hover:shadow-xl transition">
+                                <div className="text-3xl font-bold text-gradient mb-2">98.5%</div>
+                                <div className="text-slate-600">Delivery Rate</div>
+                            </div>
+                            <div className="bg-white rounded-xl p-6 shadow-lg border border-slate-100 hover:shadow-xl transition">
+                                <div className="text-3xl font-bold text-gradient mb-2">312%</div>
+                                <div className="text-slate-600">Higher Response</div>
+                            </div>
+                            <div className="bg-white rounded-xl p-6 shadow-lg border border-slate-100 hover:shadow-xl transition">
+                                <div className="text-3xl font-bold text-gradient mb-2">2.5hrs</div>
+                                <div className="text-slate-600">Saved Daily</div>
+                            </div>
+                        </div>
+                        
+                        {/* Trust Badges */}
+                        <div className="flex items-center justify-center gap-8 flex-wrap">
+                            <div className="flex items-center gap-2 text-slate-600">
+                                <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                                <span className="text-sm">No credit card required</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-slate-600">
+                                <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                                <span className="text-sm">14-day free trial</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-slate-600">
+                                <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                                <span className="text-sm">Cancel anytime</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            );
+            
+            // Logo Cloud
+            const LogoCloud = () => (
+                <section className="py-16 bg-white border-y border-slate-200">
+                    <div className="max-w-7xl mx-auto px-4">
+                        <p className="text-center text-slate-600 mb-8 text-sm uppercase tracking-wider font-medium">
+                            Trusted by 2,847+ sales teams at leading companies
+                        </p>
+                        <div className="grid grid-cols-2 md:grid-cols-6 gap-8 items-center">
+                            {['Google', 'Microsoft', 'Salesforce', 'HubSpot', 'Stripe', 'Shopify'].map((company, i) => (
+                                <div key={i} className="text-center group">
+                                    <span className="text-2xl font-bold text-slate-300 group-hover:text-slate-500 transition">
+                                        {company}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            );
+            
+            // Bento Features Grid
+            const BentoFeatures = () => {
+                const features = [
+                    {
+                        title: 'AI Personalization Engine',
+                        description: 'GPT-5 powered emails that sound genuinely human, not generic templates',
+                        icon: '🤖',
+                        gradient: 'from-purple-500 to-pink-500',
+                        size: 'large'
+                    },
+                    {
+                        title: 'Smart Send Timing',
+                        description: 'AI predicts the perfect time to send for maximum open rates',
+                        icon: '⏰',
+                        gradient: 'from-blue-500 to-cyan-500'
+                    },
+                    {
+                        title: 'Reply Detection AI',
+                        description: 'Automatically categorizes responses: interested, not now, or objection',
+                        icon: '📬',
+                        gradient: 'from-green-500 to-emerald-500'
+                    },
+                    {
+                        title: '1000+ Templates',
+                        description: 'Industry-specific templates that actually convert',
+                        icon: '📚',
+                        gradient: 'from-orange-500 to-red-500'
+                    },
+                    {
+                        title: 'Real-time Analytics',
+                        description: 'Track opens, clicks, replies, and meetings booked instantly',
+                        icon: '📊',
+                        gradient: 'from-indigo-500 to-purple-500',
+                        size: 'large'
+                    },
+                    {
+                        title: 'Team Collaboration',
+                        description: 'Share campaigns, templates, and insights with your team',
+                        icon: '👥',
+                        gradient: 'from-pink-500 to-rose-500'
+                    }
+                ];
+                
+                return (
+                    <section id="features" className="py-20 bg-slate-50">
+                        <div className="max-w-7xl mx-auto px-4">
+                            <div className="text-center mb-16">
+                                <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
+                                    Everything you need to <span className="text-gradient">10x your outreach</span>
+                                </h2>
+                                <p className="text-xl text-slate-600">Powerful AI features that help you send better emails, faster</p>
+                            </div>
+                            
+                            <div className="grid md:grid-cols-3 gap-6">
+                                {features.map((feature, i) => (
+                                    <div 
+                                        key={i} 
+                                        className={`group bg-white rounded-2xl p-8 shadow-sm hover:shadow-2xl transition-all duration-300 border border-slate-200 hover:border-transparent hover:scale-105 ${
+                                            feature.size === 'large' ? 'md:col-span-2' : ''
+                                        }`}
+                                    >
+                                        <div className={`inline-flex p-4 rounded-xl bg-gradient-to-r ${feature.gradient} mb-6 shadow-lg`}>
+                                            <span className="text-4xl">{feature.icon}</span>
+                                        </div>
+                                        <h3 className="text-2xl font-semibold text-slate-900 mb-3">{feature.title}</h3>
+                                        <p className="text-slate-600 text-lg">{feature.description}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+                );
+            };
+            
+            // Floating 3D Email Cards
+            const Floating3DEmailCards = () => (
+                <section className="py-20 bg-white relative overflow-hidden">
+                    <div className="max-w-7xl mx-auto px-4">
+                        <div className="text-center mb-16">
+                            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
+                                Emails that <span className="text-gradient">actually get replies</span>
+                            </h2>
+                            <p className="text-xl text-slate-600">Our AI writes emails that feel personal, not promotional</p>
+                        </div>
+                        
+                        <div className="relative h-96">
+                            {/* Floating email cards */}
+                            <div className="absolute top-0 left-1/4 email-card-3d bg-white rounded-xl shadow-2xl p-6 w-80 animate-float">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="w-10 h-10 bg-gradient-to-r from-sky-500 to-blue-600 rounded-full"></div>
+                                    <div>
+                                        <div className="font-semibold text-slate-900">Sarah Johnson</div>
+                                        <div className="text-sm text-slate-600">CEO at TechCorp</div>
+                                    </div>
+                                </div>
+                                <p className="text-slate-700">
+                                    Hi Mike, loved your LinkedIn post about scaling SaaS companies. 
+                                    We faced similar challenges at TechCorp...
+                                </p>
+                            </div>
+                            
+                            <div className="absolute top-20 right-1/4 email-card-3d bg-white rounded-xl shadow-2xl p-6 w-80 animate-float" style={{animationDelay: '2s'}}>
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full"></div>
+                                    <div>
+                                        <div className="font-semibold text-slate-900">David Chen</div>
+                                        <div className="text-sm text-slate-600">VP Sales at StartupXYZ</div>
+                                    </div>
+                                </div>
+                                <p className="text-slate-700">
+                                    Hey Lisa, noticed you're expanding to Europe. 
+                                    We helped Stripe do the same last year...
+                                </p>
+                            </div>
+                            
+                            <div className="absolute bottom-0 left-1/3 email-card-3d bg-white rounded-xl shadow-2xl p-6 w-80 animate-float" style={{animationDelay: '4s'}}>
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full"></div>
+                                    <div>
+                                        <div className="font-semibold text-slate-900">Emily Davis</div>
+                                        <div className="text-sm text-slate-600">Head of Growth</div>
+                                    </div>
+                                </div>
+                                <p className="text-slate-700">
+                                    Quick question about your recent product launch. 
+                                    How did you achieve 10K signups in week one?
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            );
+            
+            // How It Works
+            const HowItWorksSection = () => {
+                const steps = [
+                    {
+                        number: '01',
+                        title: 'Upload Your Contacts',
+                        description: 'Import from CSV, CRM, or LinkedIn. We enrich data automatically.',
+                        icon: '📤',
+                        color: 'from-purple-500 to-pink-500'
+                    },
+                    {
+                        number: '02',
+                        title: 'AI Learns Your Style',
+                        description: 'Our AI analyzes your best emails to match your voice perfectly.',
+                        icon: '🧠',
+                        color: 'from-blue-500 to-cyan-500'
+                    },
+                    {
+                        number: '03',
+                        title: 'Generate & Personalize',
+                        description: 'Create unique emails for each contact in seconds, not hours.',
+                        icon: '✨',
+                        color: 'from-green-500 to-emerald-500'
+                    },
+                    {
+                        number: '04',
+                        title: 'Track & Optimize',
+                        description: 'Monitor performance and let AI improve your campaigns over time.',
+                        icon: '📈',
+                        color: 'from-orange-500 to-red-500'
+                    }
+                ];
+                
+                return (
+                    <section id="how-it-works" className="py-20 bg-slate-50">
+                        <div className="max-w-7xl mx-auto px-4">
+                            <div className="text-center mb-16">
+                                <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
+                                    How it works
+                                </h2>
+                                <p className="text-xl text-slate-600">Get started in minutes, see results in hours</p>
+                            </div>
+                            
+                            <div className="grid md:grid-cols-4 gap-8">
+                                {steps.map((step, i) => (
+                                    <div key={i} className="relative text-center group">
+                                        <div className="mb-6">
+                                            <div className={`inline-flex items-center justify-center w-24 h-24 bg-gradient-to-r ${step.color} rounded-2xl text-white text-3xl font-bold shadow-xl group-hover:scale-110 transition`}>
+                                                <span className="text-4xl">{step.icon}</span>
+                                            </div>
+                                        </div>
+                                        <div className="text-sm font-bold text-slate-400 mb-2">STEP {step.number}</div>
+                                        <h3 className="text-xl font-semibold text-slate-900 mb-3">{step.title}</h3>
+                                        <p className="text-slate-600">{step.description}</p>
+                                        {i < steps.length - 1 && (
+                                            <div className="hidden md:block absolute top-12 left-full w-full">
+                                                <div className="w-full h-1 bg-gradient-to-r from-slate-300 to-slate-200"></div>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+                );
+            };
+            
+            // AI Brain Visualization
+            const AIBrainVisualization = () => (
+                <section className="py-20 bg-white">
+                    <div className="max-w-6xl mx-auto px-4">
+                        <div className="text-center mb-12">
+                            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
+                                AI that <span className="text-gradient">learns your voice</span>
+                            </h2>
+                            <p className="text-xl text-slate-600">Our neural network analyzes your writing patterns to create authentic emails</p>
+                        </div>
+                        
+                        <div className="bg-gradient-to-br from-slate-50 to-sky-50 rounded-3xl p-12 shadow-2xl neural-network">
+                            <div className="relative h-64">
+                                {/* Central brain */}
+                                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                                    <div className="w-32 h-32 gradient-bg rounded-full flex items-center justify-center animate-pulse-glow">
+                                        <span className="text-6xl">🧠</span>
+                                    </div>
+                                </div>
+                                
+                                {/* Data points */}
+                                {['Writing Style', 'Industry Terms', 'Tone Analysis', 'Success Patterns', 'Personal Touch', 'Call-to-Actions'].map((label, i) => {
+                                    const angle = (i * 60) * Math.PI / 180;
+                                    const radius = 180;
+                                    const x = radius * Math.cos(angle);
+                                    const y = radius * Math.sin(angle);
+                                    
+                                    return (
+                                        <div 
+                                            key={i}
+                                            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+                                            style={{
+                                                transform: `translate(${x}px, ${y}px) translate(-50%, -50%)`
+                                            }}
+                                        >
+                                            <div className="bg-white px-4 py-2 rounded-lg shadow-lg text-sm font-medium text-slate-700">
+                                                {label}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            
+                            <div className="mt-12 grid md:grid-cols-4 gap-6 text-center">
+                                <div>
+                                    <div className="text-3xl font-bold text-sky-600 mb-2">98.5%</div>
+                                    <div className="text-slate-600">Accuracy</div>
+                                </div>
+                                <div>
+                                    <div className="text-3xl font-bold text-sky-600 mb-2">0.3s</div>
+                                    <div className="text-slate-600">Per Email</div>
+                                </div>
+                                <div>
+                                    <div className="text-3xl font-bold text-sky-600 mb-2">50+</div>
+                                    <div className="text-slate-600">Languages</div>
+                                </div>
+                                <div>
+                                    <div className="text-3xl font-bold text-sky-600 mb-2">24/7</div>
+                                    <div className="text-slate-600">Learning</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            );
+            
+            // Before/After Email Comparison Slider
+            const BeforeAfterSlider = () => {
+                const [isDragging, setIsDragging] = useState(false);
+                const sliderRef = useRef(null);
+                
+                const handleMouseMove = (e) => {
+                    if (!isDragging || !sliderRef.current) return;
+                    const rect = sliderRef.current.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const percentage = (x / rect.width) * 100;
+                    setSliderPosition(Math.max(0, Math.min(100, percentage)));
+                };
+                
+                useEffect(() => {
+                    if (isDragging) {
+                        document.addEventListener('mousemove', handleMouseMove);
+                        document.addEventListener('mouseup', () => setIsDragging(false));
+                        return () => {
+                            document.removeEventListener('mousemove', handleMouseMove);
+                            document.removeEventListener('mouseup', () => setIsDragging(false));
+                        };
+                    }
+                }, [isDragging]);
+                
+                return (
+                    <section className="py-20 bg-slate-50">
+                        <div className="max-w-5xl mx-auto px-4">
+                            <div className="text-center mb-12">
+                                <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
+                                    See the <span className="text-gradient">AI difference</span>
+                                </h2>
+                                <p className="text-xl text-slate-600">Drag to compare generic templates vs. AI personalization</p>
+                            </div>
+                            
+                            <div 
+                                ref={sliderRef}
+                                className="relative bg-white rounded-3xl shadow-2xl overflow-hidden cursor-ew-resize" 
+                                style={{height: '500px'}}
+                                onMouseDown={() => setIsDragging(true)}
+                            >
+                                <div className="absolute inset-0 flex">
+                                    {/* Before - Generic */}
+                                    <div className="absolute inset-0 p-8 bg-gradient-to-br from-red-50 to-orange-50">
+                                        <div className="mb-4">
+                                            <span className="px-3 py-1 bg-red-100 text-red-600 rounded-full text-sm font-semibold">
+                                                ❌ Generic Template
+                                            </span>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <p className="text-slate-900 font-semibold text-lg">Subject: Our Amazing Product</p>
+                                            <div className="space-y-3 text-slate-700">
+                                                <p>Dear Sir/Madam,</p>
+                                                <p>I hope this email finds you well.</p>
+                                                <p>I'm reaching out to introduce our product that can help your business.</p>
+                                                <p>We have many features that companies like.</p>
+                                                <p>Would you be interested in learning more?</p>
+                                                <p>Best regards,<br/>Sales Team</p>
+                                            </div>
+                                            <div className="mt-6 p-3 bg-red-100 rounded-lg">
+                                                <p className="text-red-700 text-sm font-medium">❌ 2% Response Rate</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* After - AI Personalized */}
+                                    <div 
+                                        className="absolute inset-0 bg-gradient-to-br from-green-50 to-emerald-50 p-8"
+                                        style={{clipPath: `inset(0 ${100 - sliderPosition}% 0 0)`}}
+                                    >
+                                        <div className="mb-4">
+                                            <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
+                                                ✅ AI Personalized
+                                            </span>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <p className="text-slate-900 font-semibold text-lg">Subject: Quick question about TechCorp's Q3 expansion</p>
+                                            <div className="space-y-3 text-slate-700">
+                                                <p>Hi Sarah,</p>
+                                                <p>Just read your LinkedIn post about scaling TechCorp's customer success team - congrats on the 300% growth!</p>
+                                                <p>I noticed you mentioned struggling with personalized outreach at scale. We helped Salesforce solve this exact problem last quarter.</p>
+                                                <p>They went from 2% to 18% response rates in 6 weeks.</p>
+                                                <p>Worth a quick 15-min call Tuesday to share the playbook?</p>
+                                                <p>Best,<br/>Mike</p>
+                                            </div>
+                                            <div className="mt-6 p-3 bg-green-100 rounded-lg">
+                                                <p className="text-green-700 text-sm font-medium">✅ 18% Response Rate</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                {/* Slider Handle */}
+                                <div 
+                                    className="absolute top-0 bottom-0 w-1 bg-gradient-to-b from-sky-500 to-blue-600"
+                                    style={{left: `${sliderPosition}%`}}
+                                >
+                                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-white rounded-full shadow-2xl border-4 border-sky-500 flex items-center justify-center">
+                                        <svg className="w-6 h-6 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                );
+            };
+            
+            // Email Preview Carousel
+            const EmailPreviewCarousel = () => {
+                const emails = [
+                    {
+                        subject: "Your recent Forbes feature caught my attention",
+                        preview: "Hi Jennifer, Congrats on the Forbes 30 Under 30 recognition! Your approach to sustainable fashion...",
+                        sender: "Mike Chen",
+                        time: "2 mins ago",
+                        status: "opened"
+                    },
+                    {
+                        subject: "Quick question about ScaleUp's new product launch",
+                        preview: "Hey Tom, Saw the ProductHunt launch - #1 for the day is impressive! How did you manage...",
+                        sender: "Sarah Lee",
+                        time: "5 mins ago",
+                        status: "replied"
+                    },
+                    {
+                        subject: "Following up on our LinkedIn conversation",
+                        preview: "Hi David, Thanks for sharing your insights on the SaaS pricing thread. Your point about...",
+                        sender: "Alex Park",
+                        time: "12 mins ago",
+                        status: "meeting"
+                    }
+                ];
+                
+                return (
+                    <section className="py-20 bg-white">
+                        <div className="max-w-6xl mx-auto px-4">
+                            <div className="text-center mb-12">
+                                <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
+                                    Emails that get <span className="text-gradient">real responses</span>
+                                </h2>
+                                <p className="text-xl text-slate-600">See actual examples of AI-generated emails that converted</p>
+                            </div>
+                            
+                            <div className="grid md:grid-cols-3 gap-6">
+                                {emails.map((email, i) => (
+                                    <div key={i} className="bg-white border-2 border-slate-200 rounded-xl p-6 hover:border-sky-500 hover:shadow-xl transition">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 bg-gradient-to-r from-sky-500 to-blue-600 rounded-full"></div>
+                                                <div>
+                                                    <div className="font-semibold text-slate-900">{email.sender}</div>
+                                                    <div className="text-sm text-slate-600">{email.time}</div>
+                                                </div>
+                                            </div>
+                                            {email.status === 'opened' && (
+                                                <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">Opened</span>
+                                            )}
+                                            {email.status === 'replied' && (
+                                                <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">Replied</span>
+                                            )}
+                                            {email.status === 'meeting' && (
+                                                <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">Meeting Booked</span>
+                                            )}
+                                        </div>
+                                        <h3 className="font-semibold text-slate-900 mb-2">{email.subject}</h3>
+                                        <p className="text-slate-600">{email.preview}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+                );
+            };
+            
+            // ROI Calculator
+            const ROICalculator = () => {
+                const calculateROI = () => {
+                    const improvedRate = 18;
+                    const avgDealSize = 5000;
+                    const newResponses = (emailCount * improvedRate) / 100;
+                    const oldResponses = (emailCount * responseRate) / 100;
+                    const additionalResponses = Math.round(newResponses - oldResponses);
+                    const additionalMeetings = Math.round(additionalResponses * 0.3);
+                    const additionalDeals = Math.round(additionalMeetings * 0.2);
+                    const revenue = additionalDeals * avgDealSize;
+                    const timeSaved = Math.round(emailCount * 0.5 / 60);
+                    
+                    return {
+                        responses: additionalResponses,
+                        meetings: additionalMeetings,
+                        deals: additionalDeals,
+                        revenue: revenue.toLocaleString(),
+                        timeSaved
+                    };
+                };
+                
+                const roi = calculateROI();
+                
+                return (
+                    <section className="py-20 gradient-bg">
+                        <div className="max-w-5xl mx-auto px-4">
+                            <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12">
+                                <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-8 text-center">
+                                    Calculate Your <span className="text-gradient">ROI Potential</span>
+                                </h2>
+                                
+                                <div className="grid md:grid-cols-2 gap-8 mb-8">
+                                    <div>
+                                        <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                            Emails sent per month
+                                        </label>
+                                        <input 
+                                            type="range"
+                                            min="100"
+                                            max="10000"
+                                            value={emailCount}
+                                            onChange={(e) => setEmailCount(e.target.value)}
+                                            className="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                                        />
+                                        <div className="text-3xl font-bold text-sky-600 mt-2">
+                                            {emailCount.toLocaleString()}
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                            Current response rate
+                                        </label>
+                                        <input 
+                                            type="range"
+                                            min="1"
+                                            max="10"
+                                            value={responseRate}
+                                            onChange={(e) => setResponseRate(e.target.value)}
+                                            className="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                                        />
+                                        <div className="text-3xl font-bold text-sky-600 mt-2">
+                                            {responseRate}%
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div className="bg-gradient-to-r from-sky-50 to-blue-50 rounded-2xl p-8">
+                                    <div className="grid md:grid-cols-5 gap-6 text-center">
+                                        <div>
+                                            <div className="text-3xl font-bold text-sky-600">+{roi.responses}</div>
+                                            <div className="text-sm text-slate-600 mt-1">More Responses</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-3xl font-bold text-sky-600">+{roi.meetings}</div>
+                                            <div className="text-sm text-slate-600 mt-1">More Meetings</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-3xl font-bold text-sky-600">+{roi.deals}</div>
+                                            <div className="text-sm text-slate-600 mt-1">More Deals</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-3xl font-bold text-green-600">${roi.revenue}</div>
+                                            <div className="text-sm text-slate-600 mt-1">Extra Revenue</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-3xl font-bold text-purple-600">{roi.timeSaved}h</div>
+                                            <div className="text-sm text-slate-600 mt-1">Time Saved</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div className="mt-8 text-center">
+                                    <button 
+                                        onClick={() => window.location.href = '/app'}
+                                        className="px-10 py-4 bg-gradient-to-r from-sky-500 to-blue-600 text-white font-semibold rounded-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition"
+                                        data-testid="button-see-roi"
+                                    >
+                                        Start Achieving These Results
+                                    </button>
+                                    <p className="text-sm text-slate-600 mt-4">
+                                        Based on average customer data • Results may vary
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                );
+            };
+            
+            // Pricing Section
+            const PricingSection = () => {
+                const plans = [
+                    {
+                        name: 'Starter',
+                        price: billingPeriod === 'monthly' ? '$49' : '$490',
+                        description: 'Perfect for individuals',
+                        features: [
+                            '1,000 emails/month',
+                            'Basic AI personalization',
+                            'Email support',
+                            '10 templates',
+                            'Basic analytics'
+                        ],
+                        cta: 'Start Free Trial',
+                        popular: false
+                    },
+                    {
+                        name: 'Professional',
+                        price: billingPeriod === 'monthly' ? '$149' : '$1,490',
+                        description: 'Best for growing teams',
+                        features: [
+                            '10,000 emails/month',
+                            'Advanced AI (GPT-5)',
+                            '24/7 priority support',
+                            '100+ templates',
+                            'Team collaboration',
+                            'CRM integrations',
+                            'A/B testing',
+                            'Custom domains'
+                        ],
+                        cta: 'Start Free Trial',
+                        popular: true,
+                        savings: billingPeriod === 'annual' ? 'Save $298' : null
+                    },
+                    {
+                        name: 'Enterprise',
+                        price: 'Custom',
+                        description: 'For large organizations',
+                        features: [
+                            'Unlimited emails',
+                            'Custom AI training',
+                            'Dedicated success manager',
+                            'API access',
+                            'Custom integrations',
+                            'SLA guarantee',
+                            'White-label option',
+                            'Onboarding & training'
+                        ],
+                        cta: 'Contact Sales',
+                        popular: false
+                    }
+                ];
+                
+                return (
+                    <section id="pricing" className="py-20 bg-slate-50">
+                        <div className="max-w-7xl mx-auto px-4">
+                            <div className="text-center mb-12">
+                                <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
+                                    Pricing that <span className="text-gradient">scales with you</span>
+                                </h2>
+                                <p className="text-xl text-slate-600 mb-8">Start free, upgrade when you see results</p>
+                                
+                                <div className="inline-flex items-center p-1 bg-white rounded-lg shadow-lg">
+                                    <button
+                                        onClick={() => setBillingPeriod('monthly')}
+                                        className={`px-6 py-2.5 rounded-md transition font-semibold ${
+                                            billingPeriod === 'monthly' 
+                                                ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white' 
+                                                : 'text-slate-600'
+                                        }`}
+                                    >
+                                        Monthly
+                                    </button>
+                                    <button
+                                        onClick={() => setBillingPeriod('annual')}
+                                        className={`px-6 py-2.5 rounded-md transition font-semibold ${
+                                            billingPeriod === 'annual' 
+                                                ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white' 
+                                                : 'text-slate-600'
+                                        }`}
+                                    >
+                                        Annual <span className="text-green-600 text-sm ml-1">Save 20%</span>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                                {plans.map((plan, i) => (
+                                    <div key={i} className={`relative bg-white rounded-2xl p-8 ${
+                                        plan.popular 
+                                            ? 'border-2 border-sky-500 shadow-2xl scale-105' 
+                                            : 'border border-slate-200 shadow-lg'
+                                    }`}>
+                                        {plan.popular && (
+                                            <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                                                <span className="px-4 py-1 bg-gradient-to-r from-sky-500 to-blue-600 text-white text-sm font-bold rounded-full shadow-lg">
+                                                    MOST POPULAR
+                                                </span>
+                                            </div>
+                                        )}
+                                        
+                                        {plan.savings && (
+                                            <div className="absolute -top-4 right-4">
+                                                <span className="px-3 py-1 bg-green-100 text-green-700 text-sm font-bold rounded-full">
+                                                    {plan.savings}
+                                                </span>
+                                            </div>
+                                        )}
+                                        
+                                        <div className="text-center mb-6">
+                                            <h3 className="text-2xl font-bold text-slate-900 mb-2">{plan.name}</h3>
+                                            <p className="text-slate-600 text-sm mb-4">{plan.description}</p>
+                                            <div className="text-5xl font-bold text-slate-900">
+                                                {plan.price}
+                                                {plan.price !== 'Custom' && (
+                                                    <span className="text-lg text-slate-600">
+                                                        /{billingPeriod === 'monthly' ? 'mo' : 'yr'}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        
+                                        <ul className="space-y-3 mb-8">
+                                            {plan.features.map((feature, j) => (
+                                                <li key={j} className="flex items-start">
+                                                    <svg className="w-5 h-5 text-green-500 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                    <span className="text-slate-700">{feature}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                        
+                                        <button
+                                            onClick={() => window.location.href = '/app'}
+                                            className={`w-full py-3 rounded-lg font-semibold transition ${
+                                                plan.popular
+                                                    ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white hover:shadow-lg transform hover:scale-105'
+                                                    : 'bg-slate-100 text-slate-900 hover:bg-slate-200'
+                                            }`}
+                                            data-testid={`button-${plan.name.toLowerCase()}`}
+                                        >
+                                            {plan.cta}
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                            
+                            <div className="mt-12 text-center">
+                                <p className="text-slate-600">
+                                    All plans include: <span className="font-semibold">Gmail integration • Chrome extension • Mobile app • API access</span>
+                                </p>
+                            </div>
+                        </div>
+                    </section>
+                );
+            };
+            
+            // Social Proof Section
+            const SocialProofSection = () => {
+                const testimonials = [
+                    {
+                        text: "EmailAI completely transformed our outreach. We went from 2% to 18% response rates in just 2 months!",
+                        author: "Sarah Johnson",
+                        role: "Head of Sales, TechCorp",
+                        avatar: "SJ",
+                        rating: 5,
+                        metric: "9x Response Rate"
+                    },
+                    {
+                        text: "The AI personalization is mind-blowing. It actually sounds like me, not a robot. Our clients love it.",
+                        author: "Michael Chen",
+                        role: "Founder, StartupXYZ",
+                        avatar: "MC",
+                        rating: 5,
+                        metric: "$2M Pipeline Generated"
+                    },
+                    {
+                        text: "Best investment we made this year. ROI positive within the first week. Couldn't be happier!",
+                        author: "Emily Davis",
+                        role: "VP Sales, ScaleUp",
+                        avatar: "ED",
+                        rating: 5,
+                        metric: "312% ROI"
+                    }
+                ];
+                
+                return (
+                    <section id="testimonials" className="py-20 bg-white">
+                        <div className="max-w-7xl mx-auto px-4">
+                            <div className="text-center mb-12">
+                                <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
+                                    Join <span className="text-gradient">2,847+ successful teams</span>
+                                </h2>
+                                <div className="flex items-center justify-center gap-2 mb-4">
+                                    {[...Array(5)].map((_, i) => (
+                                        <svg key={i} className="w-8 h-8 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                        </svg>
+                                    ))}
+                                    <span className="text-slate-600 ml-2 text-lg">4.9/5 from 2,000+ reviews</span>
+                                </div>
+                            </div>
+                            
+                            <div className="grid md:grid-cols-3 gap-8">
+                                {testimonials.map((testimonial, i) => (
+                                    <div key={i} className="bg-gradient-to-br from-slate-50 to-sky-50 p-8 rounded-2xl shadow-lg hover:shadow-2xl transition">
+                                        <div className="flex gap-1 mb-4">
+                                            {[...Array(testimonial.rating)].map((_, j) => (
+                                                <svg key={j} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                                </svg>
+                                            ))}
+                                        </div>
+                                        <p className="text-slate-700 mb-6 italic text-lg">"{testimonial.text}"</p>
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center">
+                                                <div className="w-12 h-12 bg-gradient-to-r from-sky-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold mr-4">
+                                                    {testimonial.avatar}
+                                                </div>
+                                                <div>
+                                                    <div className="font-semibold text-slate-900">{testimonial.author}</div>
+                                                    <div className="text-sm text-slate-600">{testimonial.role}</div>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="text-sm font-bold text-green-600">{testimonial.metric}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+                );
+            };
+            
+            // Comparison Table
+            const ComparisonTable = () => (
+                <section className="py-20 bg-slate-50">
+                    <div className="max-w-5xl mx-auto px-4">
+                        <div className="text-center mb-12">
+                            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
+                                Why teams choose <span className="text-gradient">EmailAI Pro</span>
+                            </h2>
+                            <p className="text-xl text-slate-600">See how we compare to traditional methods</p>
+                        </div>
+                        
+                        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+                            <table className="w-full">
+                                <thead>
+                                    <tr className="bg-gradient-to-r from-slate-50 to-sky-50">
+                                        <th className="text-left p-6 font-semibold text-slate-900">Feature</th>
+                                        <th className="text-center p-6 font-semibold text-slate-900">Manual Outreach</th>
+                                        <th className="text-center p-6 font-semibold text-slate-900">
+                                            <span className="text-gradient">EmailAI Pro</span>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {[
+                                        ['Time per email', '10-15 minutes', '3 seconds'],
+                                        ['Personalization', 'Basic', 'Deep & contextual'],
+                                        ['Response rate', '2-3%', '15-20%'],
+                                        ['Follow-ups', 'Manual', 'Automated'],
+                                        ['A/B testing', 'Difficult', 'Built-in'],
+                                        ['Analytics', 'Basic', 'Advanced AI insights'],
+                                        ['Scale', '50-100/day', '10,000+/day'],
+                                        ['Cost per email', '$2-5', '$0.02']
+                                    ].map(([feature, manual, emailai], i) => (
+                                        <tr key={i} className="border-t border-slate-100">
+                                            <td className="p-6 font-medium text-slate-900">{feature}</td>
+                                            <td className="p-6 text-center text-slate-600">{manual}</td>
+                                            <td className="p-6 text-center font-semibold text-green-600">{emailai}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+            );
+            
+            // Security Badges
+            const SecurityBadges = () => (
+                <section className="py-12 bg-white border-y border-slate-200">
+                    <div className="max-w-7xl mx-auto px-4">
+                        <div className="flex items-center justify-center gap-12 flex-wrap">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                    <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div className="font-semibold text-slate-900">SOC 2 Type II</div>
+                                    <div className="text-sm text-slate-600">Certified</div>
+                                </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                    <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M18 8a6 6 0 01-7.743 5.743L10 14l-1 1-1 1H6v2H2v-4l4.257-4.257A6 6 0 1118 8zm-6-4a1 1 0 100 2 2 2 0 012 2 1 1 0 102 0 4 4 0 00-4-4z" clipRule="evenodd" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div className="font-semibold text-slate-900">256-bit</div>
+                                    <div className="text-sm text-slate-600">Encryption</div>
+                                </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                                    <svg className="w-6 h-6 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M10 2a5 5 0 00-5 5v2a2 2 0 00-2 2v5a2 2 0 002 2h10a2 2 0 002-2v-5a2 2 0 00-2-2H7V7a3 3 0 016 0v2h2V7a5 5 0 00-5-5z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div className="font-semibold text-slate-900">GDPR</div>
+                                    <div className="text-sm text-slate-600">Compliant</div>
+                                </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                                    <svg className="w-6 h-6 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div className="font-semibold text-slate-900">99.9%</div>
+                                    <div className="text-sm text-slate-600">Uptime SLA</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            );
+            
+            // FAQ Section
+            const FAQSection = () => {
+                const faqs = [
+                    {
+                        question: 'How does the AI personalization actually work?',
+                        answer: 'Our AI analyzes each contact\'s LinkedIn profile, company website, recent posts, and news to create genuinely personalized emails that reference specific details about them and their business. It\'s not just mail merge - it\'s deep contextual understanding.'
+                    },
+                    {
+                        question: 'Will my emails land in spam?',
+                        answer: 'No! We use advanced deliverability techniques including domain warming, reputation monitoring, and smart sending patterns. Our average inbox placement rate is 98.5%, far above industry standards.'
+                    },
+                    {
+                        question: 'Can I integrate with my existing CRM?',
+                        answer: 'Yes! We integrate with 50+ tools including Salesforce, HubSpot, Pipedrive, Close, and more. You can sync contacts, log activities, and track deals seamlessly.'
+                    },
+                    {
+                        question: 'How quickly can I get started?',
+                        answer: 'Most users send their first campaign within 10 minutes. Just connect your email, import contacts, and let AI do the rest. No complex setup or training required.'
+                    },
+                    {
+                        question: 'What if I\'m not satisfied?',
+                        answer: 'We offer a 30-day money-back guarantee. If you don\'t see improved response rates within 30 days, we\'ll refund you in full, no questions asked.'
+                    }
+                ];
+                
+                return (
+                    <section id="faq" className="py-20 bg-white">
+                        <div className="max-w-3xl mx-auto px-4">
+                            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-12 text-center">
+                                Frequently asked questions
+                            </h2>
+                            
+                            <div className="space-y-4">
+                                {faqs.map((faq, i) => (
+                                    <div key={i} className="bg-slate-50 rounded-xl overflow-hidden">
+                                        <button
+                                            onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                                            className="w-full px-6 py-5 text-left flex items-center justify-between hover:bg-slate-100 transition"
+                                        >
+                                            <span className="font-semibold text-slate-900 text-lg pr-8">{faq.question}</span>
+                                            <svg 
+                                                className={`w-6 h-6 text-slate-500 transition-transform flex-shrink-0 ${
+                                                    openFaq === i ? 'rotate-180' : ''
+                                                }`}
+                                                fill="none" 
+                                                stroke="currentColor" 
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                        </button>
+                                        {openFaq === i && (
+                                            <div className="px-6 py-4 bg-white">
+                                                <p className="text-slate-700 leading-relaxed">{faq.answer}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+                );
+            };
+            
+            // CTA Section
+            const CTASection = () => (
+                <section className="py-24 gradient-bg relative overflow-hidden">
+                    <div className="absolute inset-0 bg-black/10"></div>
+                    <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
+                        <h2 className="text-5xl md:text-6xl font-bold text-white mb-6">
+                            Ready to 10x your email outreach?
+                        </h2>
+                        <p className="text-2xl text-white/90 mb-10">
+                            Join 2,847+ teams closing more deals with AI
+                        </p>
+                        
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+                            <button
+                                onClick={() => window.location.href = '/app'}
+                                className="group px-10 py-5 bg-white text-sky-600 font-bold text-lg rounded-xl shadow-2xl hover:shadow-3xl transform hover:scale-105 transition"
+                                data-testid="button-start-cta"
+                            >
+                                <span className="flex items-center justify-center gap-2">
+                                    Start Your Free Trial
+                                    <svg className="w-6 h-6 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                    </svg>
+                                </span>
+                            </button>
+                            <button className="px-10 py-5 bg-transparent border-2 border-white text-white font-bold text-lg rounded-xl hover:bg-white hover:text-sky-600 transition">
+                                Schedule Demo
+                            </button>
+                        </div>
+                        
+                        <div className="flex items-center justify-center gap-8 text-white/90">
+                            <span className="flex items-center gap-2">
+                                <svg className="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                                No credit card required
+                            </span>
+                            <span className="flex items-center gap-2">
+                                <svg className="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                                14-day free trial
+                            </span>
+                            <span className="flex items-center gap-2">
+                                <svg className="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                                Cancel anytime
+                            </span>
+                        </div>
+                    </div>
+                </section>
+            );
+            
+            // Footer
+            const Footer = () => (
+                <footer className="bg-slate-900 text-white py-16">
+                    <div className="max-w-7xl mx-auto px-4">
+                        <div className="grid md:grid-cols-5 gap-8 mb-12">
+                            <div className="md:col-span-2">
+                                <div className="flex items-center space-x-2 mb-4">
+                                    <div className="w-10 h-10 gradient-bg rounded-lg flex items-center justify-center">
+                                        <span className="text-white text-xl">✉️</span>
+                                    </div>
+                                    <span className="text-xl font-bold">EmailAI Pro</span>
+                                </div>
+                                <p className="text-slate-400 mb-6">
+                                    AI-powered email outreach that actually works. Send personalized emails at scale and watch your response rates soar.
+                                </p>
+                                <div className="flex space-x-4">
+                                    {['Twitter', 'LinkedIn', 'GitHub'].map((social) => (
+                                        <a key={social} href="#" className="text-slate-400 hover:text-white transition">
+                                            <span className="text-sm">{social}</span>
+                                        </a>
+                                    ))}
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h3 className="font-semibold mb-4">Product</h3>
+                                <ul className="space-y-2">
+                                    <li><a href="#" className="text-slate-400 hover:text-white transition">Features</a></li>
+                                    <li><a href="#" className="text-slate-400 hover:text-white transition">Pricing</a></li>
+                                    <li><a href="#" className="text-slate-400 hover:text-white transition">API</a></li>
+                                    <li><a href="#" className="text-slate-400 hover:text-white transition">Integrations</a></li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <h3 className="font-semibold mb-4">Company</h3>
+                                <ul className="space-y-2">
+                                    <li><a href="#" className="text-slate-400 hover:text-white transition">About</a></li>
+                                    <li><a href="#" className="text-slate-400 hover:text-white transition">Blog</a></li>
+                                    <li><a href="#" className="text-slate-400 hover:text-white transition">Careers</a></li>
+                                    <li><a href="#" className="text-slate-400 hover:text-white transition">Contact</a></li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <h3 className="font-semibold mb-4">Legal</h3>
+                                <ul className="space-y-2">
+                                    <li><a href="#" className="text-slate-400 hover:text-white transition">Privacy</a></li>
+                                    <li><a href="#" className="text-slate-400 hover:text-white transition">Terms</a></li>
+                                    <li><a href="#" className="text-slate-400 hover:text-white transition">Security</a></li>
+                                    <li><a href="#" className="text-slate-400 hover:text-white transition">GDPR</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row items-center justify-between">
+                            <p className="text-slate-400">© 2024 EmailAI Pro. All rights reserved.</p>
+                            <div className="flex items-center gap-6 mt-4 md:mt-0">
+                                <span className="text-sm text-slate-400">🔒 SOC 2 Certified</span>
+                                <span className="text-sm text-slate-400">🌍 GDPR Compliant</span>
+                                <span className="text-sm text-slate-400">🛡️ CCPA Ready</span>
+                            </div>
+                        </div>
+                    </div>
+                </footer>
+            );
+            
+            // Sticky CTA Bar
+            const StickyCtaBar = () => (
+                <div className={`fixed bottom-0 left-0 right-0 bg-gradient-to-r from-sky-600 to-blue-600 p-4 shadow-2xl transform transition-transform z-40 ${
+                    stickyBarVisible ? 'translate-y-0' : 'translate-y-full'
+                }`}>
+                    <div className="max-w-7xl mx-auto flex items-center justify-between">
+                        <div className="text-white">
+                            <span className="font-bold text-lg">Limited Time: </span>
+                            <span>Get 20% off annual plans - Ends soon!</span>
+                        </div>
+                        <button 
+                            onClick={() => window.location.href = '/app'}
+                            className="px-6 py-2 bg-white text-sky-600 font-bold rounded-lg hover:shadow-lg transition"
+                            data-testid="button-sticky-cta"
+                        >
+                            Claim Offer
+                        </button>
+                    </div>
+                </div>
+            );
+            
+            // Live Activity Feed
+            const LiveActivityFeed = () => {
+                const [activities, setActivities] = useState([
+                    { user: 'Sarah from TechCorp', action: 'just got a reply', time: '2 mins ago' },
+                    { user: 'Mike from StartupXYZ', action: 'booked a meeting', time: '5 mins ago' },
+                    { user: 'Emily from ScaleUp', action: 'sent 500 emails', time: '12 mins ago' }
+                ]);
+                
+                useEffect(() => {
+                    const interval = setInterval(() => {
+                        setActivities(prev => {
+                            const newActivity = {
+                                user: ['John from Growth Inc', 'Lisa from SalesForce', 'Tom from Marketing Pro'][Math.floor(Math.random() * 3)],
+                                action: ['just got a reply', 'booked a meeting', 'sent a campaign'][Math.floor(Math.random() * 3)],
+                                time: 'just now'
+                            };
+                            return [newActivity, ...prev.slice(0, 2)];
+                        });
+                    }, 5000);
+                    return () => clearInterval(interval);
+                }, []);
+                
+                return (
+                    <div className="fixed bottom-8 left-8 z-30 max-w-sm">
+                        {activities.slice(0, 1).map((activity, i) => (
+                            <div key={i} className="bg-white rounded-lg shadow-xl p-4 mb-2 border-l-4 border-green-500 animate-fade-in-up">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-green-500">✓</span>
+                                    <span className="text-sm">
+                                        <strong>{activity.user}</strong> {activity.action}
+                                    </span>
+                                </div>
+                                <div className="text-xs text-slate-500 mt-1">{activity.time}</div>
+                            </div>
+                        ))}
+                    </div>
+                );
+            };
+            
+            // Exit Intent Popup
+            const ExitIntentPopup = () => {
+                if (!showExitPopup) return null;
+                
+                return (
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                        <div className="bg-white rounded-3xl p-8 max-w-md w-full relative shadow-2xl animate-fade-in-up">
+                            <button
+                                onClick={() => setShowExitPopup(false)}
+                                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition"
+                            >
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                            
+                            <div className="text-center">
+                                <div className="text-6xl mb-4">🎁</div>
+                                <h3 className="text-3xl font-bold text-slate-900 mb-2">Wait! Special Offer</h3>
+                                <p className="text-slate-600 mb-6">
+                                    Get <strong>30% OFF</strong> your first 3 months + bonus templates!
+                                </p>
+                                
+                                <div className="bg-gradient-to-r from-sky-50 to-blue-50 rounded-xl p-6 mb-6">
+                                    <div className="text-4xl font-bold text-gradient mb-2">SAVE30</div>
+                                    <div className="text-sm text-slate-600">Use code at checkout • Expires in 24 hours</div>
+                                </div>
+                                
+                                <button
+                                    onClick={() => {
+                                        setShowExitPopup(false);
+                                        window.location.href = '/app';
+                                    }}
+                                    className="w-full py-4 bg-gradient-to-r from-sky-500 to-blue-600 text-white font-bold rounded-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition"
+                                >
+                                    Claim Your 30% Discount
+                                </button>
+                                <p className="text-xs text-slate-500 mt-4">No credit card required • Cancel anytime</p>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+            
+            return (
+                <div>
+                    <Navigation />
+                    <FuturisticHero />
+                    <LogoCloud />
+                    <BentoFeatures />
+                    <Floating3DEmailCards />
+                    <HowItWorksSection />
+                    <AIBrainVisualization />
+                    <BeforeAfterSlider />
+                    <EmailPreviewCarousel />
+                    <ROICalculator />
+                    <SocialProofSection />
+                    <ComparisonTable />
+                    <PricingSection />
+                    <SecurityBadges />
+                    <FAQSection />
+                    <CTASection />
+                    <Footer />
+                    <StickyCtaBar />
+                    <LiveActivityFeed />
+                    <ExitIntentPopup />
+                </div>
+            );
+        }
+        
+        // Render the app
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>

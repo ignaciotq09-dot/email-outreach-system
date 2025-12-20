@@ -1,0 +1,2358 @@
+import type { Express } from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import { db } from "./db";
+import { sendEmail, sendReplyInThread, checkThreadForReplies, getGmailUserEmail, checkInboxForContactEmails, getUncachableGmailClient } from "./gmail";
+import { generateEmailVariants, regenerateEmailVariants, personalizeVariantForContact } from "./openai";
+import { researchContactOptimized } from "./research-optimized";
+import { EmailMonitoringService } from "./monitoring-service";
+import { createCalendarEvent, parseAppointmentDateTime, isCalendarConnected } from "./google-calendar";
+import { SendSchedulingEngine } from "./send-scheduling-engine";
+import { AnalyticsService } from "./analytics";
+import { TemplatePerformanceService } from "./template-performance";
+import { 
+  insertContactSchema, 
+  insertSentEmailSchema, 
+  insertFollowUpSchema, 
+  insertEmailPreferencesSchema,
+  insertMonitoringSettingsSchema,
+  insertCampaignSchema,
+  insertCampaignContactSchema,
+  insertEmailTemplateSchema,
+  monitoringSettings,
+  replies,
+  appointmentRequests,
+  contacts,
+  sentEmails,
+  campaigns,
+  campaignContacts,
+  scheduledJobs,
+  emailTemplates,
+  followUpSequences,
+  sequenceSteps,
+} from "@shared/schema";
+import { z } from "zod";
+import { eq, desc, and, sql } from "drizzle-orm";
+
+// Input validation schemas for API endpoints
+const generateEmailSchema = z.object({
+  baseMessage: z.string().min(1, "Base message is required").max(10000, "Message too long"),
+  writingStyle: z.enum(["professional-adult", "professional-humble"]).optional(),
+});
+
+const regenerateEmailSchema = z.object({
+  baseMessage: z.string().min(1).max(10000),
+  feedback: z.string().min(1).max(5000),
+  previousVariants: z.array(z.object({
+    approach: z.string(),
+    subject: z.string(),
+    body: z.string(),
+  })).min(1).max(10),
+});
+
+const sendToSelectedSchema = z.object({
+  selectedVariant: z.object({
+    approach: z.string(),
+    subject: z.string().max(500),
+    body: z.string().max(50000),
+  }),
+  contactIds: z.array(z.number().int().positive()).min(1).max(100),
+});
+
+const sendBulkSchema = z.object({
+  emails: z.array(z.object({
+    contactId: z.number().int().positive(),
+    subject: z.string().max(500),
+    body: z.string().max(50000),
+    writingStyle: z.string().optional(),
+    contact: z.object({
+      email: z.string().email(),
+      name: z.string(),
+    }),
+  })).min(1).max(100),
+});
+
+const followUpSchema = z.object({
+  sentEmailId: z.number().int().positive(),
+  followUpBody: z.string().min(1).max(50000),
+});
+
+const senderInfoSchema = z.object({
+  senderName: z.string().min(1).max(255),
+  senderPhone: z.string().min(1).max(50),
+});
+
+// Create monitoring service instance
+const monitoringService = new EmailMonitoringService();
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // GET /api/gmail/status - Check Gmail connection status
+  app.get("/api/gmail/status", async (req, res) => {
+    try {
+      // Try to get Gmail client to verify connection
+      // Don't call getProfile() as it requires different scopes
+      await getUncachableGmailClient();
+      res.json({ 
+        connected: true,
+        email: "Connected (Gmail)" 
+      });
+    } catch (error) {
+      console.error('Error checking Gmail status:', error);
+      res.json({ connected: false, email: null });
+    }
+  });
+
+  // POST /api/contacts/add - Add a new contact
+  app.post("/api/contacts/add", async (req, res) => {
+    try {
+      const validatedData = insertContactSchema.parse(req.body);
+      const contact = await storage.createContact(validatedData);
+      res.json(contact);
+    } catch (error: any) {
+      console.error('Error creating contact:', error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: 'Invalid contact data', details: error.errors });
+      } else if (error?.code === '23505' && error?.constraint === 'contacts_email_unique') {
+        // Duplicate email error
+        res.status(400).json({ error: `A contact with email ${req.body.email} already exists.` });
+      } else {
+        res.status(500).json({ error: 'Failed to create contact' });
+      }
+    }
+  });
+
+  // GET /api/contacts/all - Get all contacts
+  app.get("/api/contacts/all", async (req, res) => {
+    try {
+      const contacts = await storage.getAllContacts();
+      res.json(contacts);
+    } catch (error) {
+      console.error('Error fetching contacts:', error);
+      res.status(500).json({ error: 'Failed to fetch contacts' });
+    }
+  });
+
+  // POST /api/contacts/research - Research contact using web search
+  app.post("/api/contacts/research", async (req, res) => {
+    try {
+      const { contactId } = req.body;
+      if (!contactId || typeof contactId !== 'number') {
+        return res.status(400).json({ error: 'Contact ID is required' });
+      }
+
+      // Get the contact
+      const contacts = await storage.getContactsByIds([contactId]);
+      if (contacts.length === 0) {
+        return res.status(404).json({ error: 'Contact not found' });
+      }
+      const contact = contacts[0];
+
+      console.log(`[Research] Starting research for ${contact.name} at ${contact.company}`);
+
+      // Check if Google Search API is configured
+      const hasGoogleSearch = process.env.GOOGLE_API_KEY && process.env.GOOGLE_SEARCH_ENGINE_ID;
+      
+      let researchData;
+      let useRealSearch = false;
+      
+      if (hasGoogleSearch) {
+        try {
+          // Use real Google Custom Search API with OPTIMIZED research
+          console.log('[Research] Using Google Custom Search API with OPTIMIZED algorithm');
+          const { researchContactOptimized } = await import('./research-optimized');
+          const { searchWithDelay } = await import('./google-search');
+          
+          researchData = await researchContactOptimized(contact, searchWithDelay);
+          useRealSearch = true;
+        } catch (searchError: any) {
+          console.error('[Research] Google Search failed, falling back to demo data:', searchError.message);
+          // Fall through to demo data below
+        }
+      }
+      
+      if (!useRealSearch) {
+        // Fallback to demo data
+        console.log('[Research] Google Search not configured - using demo data');
+        const searchQueries = [
+          `"${contact.name}" "${contact.company}" LinkedIn`,
+          `"${contact.name}" "${contact.company}" instagram`,
+          `"${contact.name}" "${contact.company}" twitter OR x.com`,
+        ];
+
+        const username = contact.name.toLowerCase().replace(/\s+/g, '');
+        const firstLast = contact.name.split(' ');
+        const potentialUsernames = [
+          username,
+          `${firstLast[0]?.toLowerCase()}${firstLast[firstLast.length - 1]?.toLowerCase()}`,
+          `${firstLast[0]?.toLowerCase()}_${firstLast[firstLast.length - 1]?.toLowerCase()}`,
+        ];
+
+        researchData = {
+          researchNotes: `Research findings for ${contact.name}:\n• ${contact.position || 'Professional'} at ${contact.company}\n\nSearch queries performed: ${searchQueries.length}\nConfidence: 6/10 (Demo data - configure Google Search API for real results)`,
+          linkedinUrl: `https://www.linkedin.com/in/${username}`,
+          instagramUrl: `https://instagram.com/${potentialUsernames[0]}`,
+          instagramUsername: potentialUsernames[0],
+          instagramVerification: "Demo - configure Google Search API",
+          twitterUrl: `https://x.com/${potentialUsernames[1] || username}`,
+          twitterUsername: potentialUsernames[1] || username,
+          twitterVerification: "Demo - configure Google Search API",
+          researchConfidence: 6,
+          searchQueriesUsed: searchQueries,
+          bioSummary: `${contact.position || 'Professional'} at ${contact.company}`,
+          recentActivity: "Demo data - configure Google Search API to see real activity",
+          interests: "Business development, innovation",
+          location: null,
+        };
+      }
+
+      // Ensure we have research data (should always be set by this point)
+      if (!researchData) {
+        throw new Error('Failed to generate research data');
+      }
+
+      // Update contact with research data
+      const updatedContact = await storage.updateContactResearch(contactId, researchData);
+
+      console.log(`[Research] Research completed for ${contact.name}`);
+
+      res.json({
+        researchNotes: updatedContact.researchNotes,
+        linkedinUrl: updatedContact.linkedinUrl,
+        instagramUrl: updatedContact.instagramUrl,
+        instagramUsername: updatedContact.instagramUsername,
+        instagramVerification: updatedContact.instagramVerification,
+        twitterUrl: updatedContact.twitterUrl,
+        twitterUsername: updatedContact.twitterUsername,
+        twitterVerification: updatedContact.twitterVerification,
+        researchConfidence: updatedContact.researchConfidence,
+        bioSummary: updatedContact.bioSummary,
+        searchQueriesUsed: updatedContact.searchQueriesUsed,
+      });
+    } catch (error) {
+      console.error('[Research] Error researching contact:', error);
+      res.status(500).json({ error: 'Failed to research contact' });
+    }
+  });
+
+  // POST /api/contacts/parse-bulk - Parse bulk contact text using AI
+  app.post("/api/contacts/parse-bulk", async (req, res) => {
+    try {
+      const { bulkText, campaignId } = req.body;
+      
+      if (!bulkText || typeof bulkText !== 'string' || bulkText.trim().length === 0) {
+        return res.status(400).json({ error: 'Bulk text is required' });
+      }
+
+      console.log(`[BulkParse] Parsing bulk text (${bulkText.length} chars)`);
+      
+      // Use OpenAI to parse the bulk text
+      const { parseBulkContacts } = await import('./openai');
+      const parsedContacts = await parseBulkContacts(bulkText);
+      
+      if (parsedContacts.length === 0) {
+        return res.status(400).json({ 
+          error: 'No valid contacts found in the text. Make sure each contact has at least a name and email address.' 
+        });
+      }
+
+      console.log(`[BulkParse] Parsed ${parsedContacts.length} contacts`);
+      
+      // Create contacts and optionally add to campaign
+      const createdContacts = [];
+      const errors = [];
+      
+      for (const parsedContact of parsedContacts) {
+        try {
+          // Check if contact with this email already exists
+          const existingContact = await db
+            .select()
+            .from(contacts)
+            .where(eq(contacts.email, parsedContact.email))
+            .limit(1);
+          
+          let contact;
+          
+          if (existingContact.length > 0) {
+            // Contact exists, use existing one
+            contact = existingContact[0];
+            console.log(`[BulkParse] Contact with email ${parsedContact.email} already exists, using existing`);
+          } else {
+            // Create new contact
+            const contactData: any = {
+              name: parsedContact.name,
+              email: parsedContact.email,
+            };
+            
+            // Only add optional fields if they exist
+            if (parsedContact.company) contactData.company = parsedContact.company;
+            if (parsedContact.position) contactData.position = parsedContact.position;
+            if (parsedContact.phone) contactData.phone = parsedContact.phone;
+            
+            const [newContact] = await db.insert(contacts).values(contactData).returning();
+            
+            contact = newContact;
+            console.log(`[BulkParse] Created new contact: ${contact.name}`);
+          }
+          
+          // If campaignId provided, add contact to campaign
+          if (campaignId && typeof campaignId === 'number') {
+            // Check if contact already in campaign
+            const existing = await db
+              .select()
+              .from(campaignContacts)
+              .where(
+                and(
+                  eq(campaignContacts.campaignId, campaignId),
+                  eq(campaignContacts.contactId, contact.id)
+                )
+              )
+              .limit(1);
+            
+            if (existing.length === 0) {
+              // Add to campaign
+              await db.insert(campaignContacts).values({
+                campaignId,
+                contactId: contact.id,
+              });
+              console.log(`[BulkParse] Added contact ${contact.name} to campaign ${campaignId}`);
+            } else {
+              console.log(`[BulkParse] Contact ${contact.name} already in campaign ${campaignId}`);
+            }
+          }
+          
+          createdContacts.push(contact);
+        } catch (error: any) {
+          console.error(`[BulkParse] Error creating contact ${parsedContact.name}:`, error.message);
+          errors.push({
+            name: parsedContact.name,
+            email: parsedContact.email,
+            error: error.message,
+          });
+        }
+      }
+      
+      res.json({
+        success: true,
+        created: createdContacts.length,
+        contacts: createdContacts,
+        errors,
+      });
+    } catch (error: any) {
+      console.error('[BulkParse] Error parsing bulk contacts:', error);
+      res.status(500).json({ error: error.message || 'Failed to parse bulk contacts' });
+    }
+  });
+
+  // POST /api/drafted - Add a contact to drafted list
+  app.post("/api/drafted", async (req, res) => {
+    try {
+      const { contactId, notes } = req.body;
+      if (!contactId || typeof contactId !== 'number') {
+        return res.status(400).json({ error: 'Contact ID is required' });
+      }
+
+      // Check if contact exists
+      const contacts = await storage.getContactsByIds([contactId]);
+      if (contacts.length === 0) {
+        return res.status(404).json({ error: 'Contact not found' });
+      }
+
+      // Add to drafted list
+      const drafted = await storage.addDraftedContact(contactId, notes);
+      res.json(drafted);
+    } catch (error: any) {
+      console.error('Error adding drafted contact:', error);
+      if (error?.code === '23505') {
+        // Contact already drafted
+        res.status(400).json({ error: 'Contact is already in drafted list' });
+      } else {
+        res.status(500).json({ error: 'Failed to add contact to drafted list' });
+      }
+    }
+  });
+
+  // GET /api/drafted - Get all drafted contacts with contact details
+  app.get("/api/drafted", async (req, res) => {
+    try {
+      const draftedContacts = await storage.getAllDraftedContacts();
+      res.json(draftedContacts);
+    } catch (error) {
+      console.error('Error fetching drafted contacts:', error);
+      res.status(500).json({ error: 'Failed to fetch drafted contacts' });
+    }
+  });
+
+  // DELETE /api/drafted/:contactId - Remove a contact from drafted list
+  app.delete("/api/drafted/:contactId", async (req, res) => {
+    try {
+      const contactId = parseInt(req.params.contactId, 10);
+      if (isNaN(contactId)) {
+        return res.status(400).json({ error: 'Invalid contact ID' });
+      }
+
+      await storage.removeDraftedContact(contactId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error removing drafted contact:', error);
+      res.status(500).json({ error: 'Failed to remove contact from drafted list' });
+    }
+  });
+
+  // ============================================================================
+  // MONITORING SETTINGS ROUTES
+  // ============================================================================
+
+  // GET /api/monitoring/settings - Get current monitoring settings
+  app.get("/api/monitoring/settings", async (req, res) => {
+    try {
+      console.log('[MonitoringSettings] Fetching monitoring settings');
+      
+      const [settings] = await db
+        .select()
+        .from(monitoringSettings)
+        .where(eq(monitoringSettings.userId, "default"))
+        .limit(1);
+
+      if (!settings) {
+        console.log('[MonitoringSettings] No settings found, returning defaults');
+        // Return default settings if none exist
+        return res.json({
+          enabled: true,
+          smsPhoneNumber: null,
+          lastScanTime: null,
+          scanIntervalMinutes: 30,
+        });
+      }
+
+      console.log('[MonitoringSettings] Settings retrieved successfully');
+      res.json(settings);
+    } catch (error) {
+      console.error('[MonitoringSettings] Error fetching monitoring settings:', error);
+      res.status(500).json({ error: 'Failed to fetch monitoring settings' });
+    }
+  });
+
+  // POST /api/monitoring/settings - Update monitoring settings
+  app.post("/api/monitoring/settings", async (req, res) => {
+    try {
+      console.log('[MonitoringSettings] Updating monitoring settings:', req.body);
+      
+      const validatedData = insertMonitoringSettingsSchema.parse({
+        userId: "default",
+        enabled: req.body.enabled,
+        smsPhoneNumber: req.body.smsPhoneNumber,
+        scanIntervalMinutes: req.body.scanIntervalMinutes || 30,
+      });
+
+      // Check if settings already exist
+      const [existingSettings] = await db
+        .select()
+        .from(monitoringSettings)
+        .where(eq(monitoringSettings.userId, "default"))
+        .limit(1);
+
+      let updatedSettings;
+      if (existingSettings) {
+        // Update existing settings
+        [updatedSettings] = await db
+          .update(monitoringSettings)
+          .set({
+            enabled: validatedData.enabled,
+            smsPhoneNumber: validatedData.smsPhoneNumber,
+            scanIntervalMinutes: validatedData.scanIntervalMinutes,
+            updatedAt: new Date(),
+          })
+          .where(eq(monitoringSettings.userId, "default"))
+          .returning();
+      } else {
+        // Create new settings
+        [updatedSettings] = await db
+          .insert(monitoringSettings)
+          .values(validatedData)
+          .returning();
+      }
+
+      console.log('[MonitoringSettings] Settings updated successfully');
+      res.json(updatedSettings);
+    } catch (error: any) {
+      console.error('[MonitoringSettings] Error updating monitoring settings:', error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          error: 'Invalid settings data', 
+          details: error.errors 
+        });
+      }
+      res.status(500).json({ error: 'Failed to update monitoring settings' });
+    }
+  });
+
+  // POST /api/monitoring/scan - Manually trigger a scan for replies
+  app.post("/api/monitoring/scan", async (req, res) => {
+    try {
+      console.log('[MonitoringScan] Manual scan triggered');
+      
+      const result = await monitoringService.scanForReplies();
+      
+      // Update last scan time
+      await db
+        .update(monitoringSettings)
+        .set({ lastScanTime: new Date() })
+        .where(eq(monitoringSettings.userId, "default"));
+
+      console.log('[MonitoringScan] Scan completed:', {
+        newReplies: result.newReplies,
+        smsNotificationsSent: result.smsNotificationsSent,
+        appointmentsDetected: result.appointmentsDetected,
+        errors: result.errors.length,
+      });
+
+      res.json({
+        success: true,
+        newReplies: result.newReplies,
+        smsNotificationsSent: result.smsNotificationsSent,
+        appointmentsDetected: result.appointmentsDetected,
+        errors: result.errors,
+      });
+    } catch (error) {
+      console.error('[MonitoringScan] Error during manual scan:', error);
+      res.status(500).json({ 
+        error: 'Failed to scan for replies',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  });
+
+  // ============================================================================
+  // INBOX ROUTES - For viewing monitored replies
+  // ============================================================================
+
+  // GET /api/inbox/replies - Get all replies with contact info and appointments
+  app.get("/api/inbox/replies", async (req, res) => {
+    try {
+      console.log('[InboxReplies] Fetching all replies with contact and appointment info');
+      
+      // Query replies with joined contact and sent email information
+      const allReplies = await db.query.replies.findMany({
+        with: {
+          sentEmail: {
+            with: {
+              contact: true,
+            },
+          },
+        },
+        orderBy: [desc(replies.replyReceivedAt)],
+      });
+
+      // For each reply, check if there's an associated appointment
+      const repliesWithAppointments = await Promise.all(
+        allReplies.map(async (reply) => {
+          const [appointment] = await db
+            .select()
+            .from(appointmentRequests)
+            .where(eq(appointmentRequests.replyId, reply.id))
+            .limit(1);
+
+          return {
+            id: reply.id,
+            sentEmailId: reply.sentEmailId,
+            replyReceivedAt: reply.replyReceivedAt,
+            replyContent: reply.replyContent,
+            gmailMessageId: reply.gmailMessageId,
+            contact: reply.sentEmail.contact,
+            sentEmail: {
+              id: reply.sentEmail.id,
+              subject: reply.sentEmail.subject,
+              body: reply.sentEmail.body,
+              sentAt: reply.sentEmail.sentAt,
+            },
+            appointment: appointment || null,
+          };
+        })
+      );
+
+      console.log(`[InboxReplies] Retrieved ${repliesWithAppointments.length} replies`);
+      res.json(repliesWithAppointments);
+    } catch (error) {
+      console.error('[InboxReplies] Error fetching inbox replies:', error);
+      res.status(500).json({ error: 'Failed to fetch inbox replies' });
+    }
+  });
+
+  // GET /api/inbox/stats - Get inbox statistics
+  app.get("/api/inbox/stats", async (req, res) => {
+    try {
+      console.log('[InboxStats] Calculating inbox statistics');
+
+      // Total replies
+      const totalRepliesResult = await db
+        .select({ count: sql`count(*)`.as('count') })
+        .from(replies);
+      const totalReplies = Number(totalRepliesResult[0]?.count || 0);
+
+      // Total appointments
+      const totalAppointmentsResult = await db
+        .select({ count: sql`count(*)`.as('count') })
+        .from(appointmentRequests);
+      const totalAppointments = Number(totalAppointmentsResult[0]?.count || 0);
+
+      // Pending appointments
+      const pendingAppointmentsResult = await db
+        .select({ count: sql`count(*)`.as('count') })
+        .from(appointmentRequests)
+        .where(eq(appointmentRequests.status, "pending"));
+      const appointmentsPending = Number(pendingAppointmentsResult[0]?.count || 0);
+
+      // Accepted appointments
+      const acceptedAppointmentsResult = await db
+        .select({ count: sql`count(*)`.as('count') })
+        .from(appointmentRequests)
+        .where(eq(appointmentRequests.status, "accepted"));
+      const appointmentsAccepted = Number(acceptedAppointmentsResult[0]?.count || 0);
+
+      // Declined appointments
+      const declinedAppointmentsResult = await db
+        .select({ count: sql`count(*)`.as('count') })
+        .from(appointmentRequests)
+        .where(eq(appointmentRequests.status, "declined"));
+      const appointmentsDeclined = Number(declinedAppointmentsResult[0]?.count || 0);
+
+      // Recent replies (last 7 days)
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      const recentRepliesResult = await db
+        .select({ count: sql`count(*)`.as('count') })
+        .from(replies)
+        .where(sql`${replies.replyReceivedAt} >= ${sevenDaysAgo}`);
+      const recentReplies = Number(recentRepliesResult[0]?.count || 0);
+
+      const stats = {
+        totalReplies,
+        totalAppointments,
+        appointmentsPending,
+        appointmentsAccepted,
+        appointmentsDeclined,
+        recentReplies,
+      };
+
+      console.log('[InboxStats] Stats calculated:', stats);
+      res.json(stats);
+    } catch (error) {
+      console.error('[InboxStats] Error calculating inbox stats:', error);
+      res.status(500).json({ error: 'Failed to calculate inbox statistics' });
+    }
+  });
+
+  // ============================================================================
+  // APPOINTMENT ROUTES
+  // ============================================================================
+
+  // GET /api/appointments - Get all appointment requests
+  app.get("/api/appointments", async (req, res) => {
+    try {
+      console.log('[Appointments] Fetching all appointment requests');
+      
+      const appointments = await db.query.appointmentRequests.findMany({
+        with: {
+          contact: true,
+          reply: true,
+        },
+        orderBy: [desc(appointmentRequests.detectedAt)],
+      });
+
+      console.log(`[Appointments] Retrieved ${appointments.length} appointments`);
+      res.json(appointments);
+    } catch (error) {
+      console.error('[Appointments] Error fetching appointments:', error);
+      res.status(500).json({ error: 'Failed to fetch appointments' });
+    }
+  });
+
+  // POST /api/appointments/:id/accept - Accept an appointment request
+  app.post("/api/appointments/:id/accept", async (req, res) => {
+    try {
+      const appointmentId = parseInt(req.params.id, 10);
+      if (isNaN(appointmentId)) {
+        return res.status(400).json({ error: 'Invalid appointment ID' });
+      }
+
+      console.log(`[AppointmentAccept] Accepting appointment ${appointmentId}`);
+
+      // Get the appointment with contact and reply details
+      const [appointmentData] = await db
+        .select({
+          appointment: appointmentRequests,
+          contact: contacts,
+          reply: replies,
+          sentEmail: sentEmails,
+        })
+        .from(appointmentRequests)
+        .innerJoin(replies, eq(appointmentRequests.replyId, replies.id))
+        .innerJoin(sentEmails, eq(replies.sentEmailId, sentEmails.id))
+        .innerJoin(contacts, eq(sentEmails.contactId, contacts.id))
+        .where(eq(appointmentRequests.id, appointmentId))
+        .limit(1);
+
+      if (!appointmentData) {
+        console.log('[AppointmentAccept] Appointment not found');
+        return res.status(404).json({ error: 'Appointment not found' });
+      }
+
+      const { appointment, contact, reply } = appointmentData;
+
+      // Try to create Google Calendar event
+      let calendarEventId: string | null = null;
+      let calendarEventLink: string | null = null;
+      let calendarError: string | null = null;
+
+      try {
+        const calendarConnected = await isCalendarConnected();
+        
+        if (calendarConnected) {
+          console.log('[AppointmentAccept] Google Calendar is connected, creating event');
+          
+          // Parse appointment time from text (use rawEmailText which contains the original appointment text)
+          const appointmentText = appointment.rawEmailText || appointment.notes || 'Meeting request';
+          const timeDetails = parseAppointmentDateTime(appointmentText);
+          
+          if (timeDetails) {
+            // Log whether we successfully parsed the time or used default
+            if (!timeDetails.parsedSuccessfully) {
+              console.log('[AppointmentAccept] WARNING: Could not parse specific time from appointment text, using default (next business day at 2 PM)');
+              calendarError = 'Could not parse specific time - event created with default time (next business day at 2 PM). Please verify and adjust in Google Calendar.';
+            }
+            
+            const calendarResult = await createCalendarEvent({
+              summary: `Meeting with ${contact.name}`,
+              description: `Appointment request from email:\n\n${appointmentText}\n\nOriginal reply: ${reply.replyContent || 'No content'}\n\n${!timeDetails.parsedSuccessfully ? 'NOTE: Time was estimated. Please confirm appointment details.' : ''}`,
+              startTime: timeDetails.startTime,
+              endTime: timeDetails.endTime,
+              attendeeEmail: contact.email,
+              attendeeName: contact.name,
+            });
+            
+            calendarEventId = calendarResult.eventId || null;
+            calendarEventLink = calendarResult.htmlLink || null;
+            console.log('[AppointmentAccept] Calendar event created:', calendarEventId, timeDetails.parsedSuccessfully ? '(time parsed successfully)' : '(using default time)');
+          } else {
+            calendarError = 'Could not parse appointment details';
+          }
+        } else {
+          console.log('[AppointmentAccept] Google Calendar not connected');
+          calendarError = 'Google Calendar not connected';
+        }
+      } catch (error) {
+        console.error('[AppointmentAccept] Error creating calendar event:', error);
+        calendarError = error instanceof Error ? error.message : 'Unknown error';
+      }
+
+      // Update status to accepted (with calendar info if available)
+      const [updatedAppointment] = await db
+        .update(appointmentRequests)
+        .set({ 
+          status: "accepted",
+          googleCalendarEventId: calendarEventId,
+        })
+        .where(eq(appointmentRequests.id, appointmentId))
+        .returning();
+
+      console.log('[AppointmentAccept] Appointment accepted successfully');
+      
+      res.json({
+        success: true,
+        appointment: updatedAppointment,
+        calendarEventCreated: !!calendarEventId,
+        calendarEventLink: calendarEventLink,
+        calendarError: calendarError,
+        message: calendarEventId 
+          ? 'Appointment accepted and added to Google Calendar' 
+          : calendarError
+          ? `Appointment accepted but calendar event failed: ${calendarError}`
+          : 'Appointment accepted',
+      });
+    } catch (error) {
+      console.error('[AppointmentAccept] Error accepting appointment:', error);
+      res.status(500).json({ error: 'Failed to accept appointment' });
+    }
+  });
+
+  // POST /api/appointments/:id/decline - Decline an appointment request
+  app.post("/api/appointments/:id/decline", async (req, res) => {
+    try {
+      const appointmentId = parseInt(req.params.id, 10);
+      if (isNaN(appointmentId)) {
+        return res.status(400).json({ error: 'Invalid appointment ID' });
+      }
+
+      console.log(`[AppointmentDecline] Declining appointment ${appointmentId}`);
+
+      // Get the appointment
+      const [appointment] = await db
+        .select()
+        .from(appointmentRequests)
+        .where(eq(appointmentRequests.id, appointmentId))
+        .limit(1);
+
+      if (!appointment) {
+        console.log('[AppointmentDecline] Appointment not found');
+        return res.status(404).json({ error: 'Appointment not found' });
+      }
+
+      // Update status to declined
+      const [updatedAppointment] = await db
+        .update(appointmentRequests)
+        .set({ status: "declined" })
+        .where(eq(appointmentRequests.id, appointmentId))
+        .returning();
+
+      console.log('[AppointmentDecline] Appointment declined successfully');
+      
+      res.json({
+        success: true,
+        appointment: updatedAppointment,
+      });
+    } catch (error) {
+      console.error('[AppointmentDecline] Error declining appointment:', error);
+      res.status(500).json({ error: 'Failed to decline appointment' });
+    }
+  });
+
+  // GET /api/meetings - Get all meetings (accepted and pending appointments)
+  app.get("/api/meetings", async (req, res) => {
+    try {
+      console.log('[Meetings] Fetching all appointments');
+
+      // Get all appointments with contact details
+      const appointments = await db
+        .select({
+          id: appointmentRequests.id,
+          contactId: appointmentRequests.contactId,
+          contactName: contacts.name,
+          contactEmail: contacts.email,
+          contactCompany: contacts.company,
+          appointmentType: appointmentRequests.appointmentType,
+          suggestedDate: appointmentRequests.suggestedDate,
+          suggestedTime: appointmentRequests.suggestedTime,
+          duration: appointmentRequests.duration,
+          location: appointmentRequests.location,
+          notes: appointmentRequests.notes,
+          status: appointmentRequests.status,
+          googleCalendarEventId: appointmentRequests.googleCalendarEventId,
+          detectedAt: appointmentRequests.detectedAt,
+          rawEmailText: appointmentRequests.rawEmailText,
+        })
+        .from(appointmentRequests)
+        .innerJoin(contacts, eq(appointmentRequests.contactId, contacts.id))
+        .orderBy(desc(appointmentRequests.detectedAt));
+
+      // Add calendar links for appointments that have Google Calendar events
+      const appointmentsWithLinks = appointments.map(apt => ({
+        ...apt,
+        googleCalendarLink: apt.googleCalendarEventId 
+          ? `https://calendar.google.com/calendar/event?eid=${apt.googleCalendarEventId}`
+          : null,
+      }));
+
+      console.log(`[Meetings] Returning ${appointmentsWithLinks.length} appointments`);
+      res.json(appointmentsWithLinks);
+    } catch (error) {
+      console.error('[Meetings] Error fetching meetings:', error);
+      res.status(500).json({ error: 'Failed to fetch meetings' });
+    }
+  });
+
+  // POST /api/emails/generate - Generate 3 email variants
+  app.post("/api/emails/generate", async (req, res) => {
+    try {
+      // Validate input with detailed error messages
+      const validatedData = generateEmailSchema.parse(req.body);
+      const { baseMessage, writingStyle } = validatedData;
+
+      console.log('[Generate] Starting variant generation for message:', baseMessage.substring(0, 50));
+      console.log('[Generate] Writing style:', writingStyle || 'professional-adult');
+
+      // Get user preferences
+      const preferences = await storage.getEmailPreferences("default");
+      console.log('[Generate] Loaded preferences');
+
+      // Generate variants using OpenAI with timeout handling
+      const variants = await generateEmailVariants(baseMessage, preferences, writingStyle);
+      
+      console.log('[Generate] Returning', variants.length, 'variants');
+      res.json({ variants });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        console.error('[Generate] Validation error:', error.errors);
+        return res.status(400).json({ 
+          error: 'Invalid input data', 
+          details: error.errors 
+        });
+      }
+      console.error('[Generate] Error generating email variants:', error);
+      res.status(500).json({ 
+        error: error.message || 'Failed to generate email variants' 
+      });
+    }
+  });
+
+  // POST /api/emails/regenerate - Regenerate variants with feedback
+  app.post("/api/emails/regenerate", async (req, res) => {
+    try {
+      // Validate input with detailed error messages
+      const validatedData = regenerateEmailSchema.parse(req.body);
+      const { baseMessage, feedback, previousVariants } = validatedData;
+
+      console.log('[Regenerate] Starting regeneration with feedback:', feedback.substring(0, 50));
+
+      // Get user preferences
+      const preferences = await storage.getEmailPreferences("default");
+
+      // Regenerate variants with feedback
+      const variants = await regenerateEmailVariants(
+        baseMessage,
+        feedback,
+        previousVariants,
+        preferences
+      );
+
+      console.log('[Regenerate] Successfully regenerated', variants.length, 'variants');
+      res.json({ variants });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        console.error('[Regenerate] Validation error:', error.errors);
+        return res.status(400).json({ 
+          error: 'Invalid input data', 
+          details: error.errors 
+        });
+      }
+      console.error('[Regenerate] Error regenerating email variants:', error);
+      res.status(500).json({ error: error.message || 'Failed to regenerate email variants' });
+    }
+  });
+
+  // POST /api/emails/send-to-selected - Send selected variant to selected contacts
+  app.post("/api/emails/send-to-selected", async (req, res) => {
+    try {
+      // Validate input with detailed error messages
+      const validatedData = sendToSelectedSchema.parse(req.body);
+      const { selectedVariant, contactIds } = validatedData;
+
+      console.log('[SendToSelected] Sending to', contactIds.length, 'contacts');
+
+      // OPTIMIZED: Fetch only the contacts we need instead of fetching all and filtering
+      const selectedContacts = await storage.getContactsByIds(contactIds);
+
+      if (selectedContacts.length === 0) {
+        return res.status(400).json({ error: 'No valid contacts found' });
+      }
+
+      const results = [];
+
+      // Get sender preferences for personalization
+      const preferences = await storage.getEmailPreferences("default");
+
+      // Personalize and send to each contact
+      for (const contact of selectedContacts) {
+        try {
+          // Personalize the variant for this contact
+          const personalized = await personalizeVariantForContact(
+            selectedVariant,
+            contact.name,
+            contact.company,
+            contact.pronoun || '',
+            contact.notes || undefined,
+            preferences
+          );
+
+          // Send via Gmail
+          const { messageId, threadId } = await sendEmail(
+            contact.email,
+            personalized.subject,
+            personalized.body
+          );
+
+          // Save to database
+          const sentEmail = await storage.createSentEmail({
+            contactId: contact.id,
+            subject: personalized.subject,
+            body: personalized.body,
+            gmailMessageId: messageId || '',
+            gmailThreadId: threadId || '',
+            writingStyle: selectedVariant.approach,
+          });
+
+          results.push({
+            contactId: contact.id,
+            success: true,
+            sentEmailId: sentEmail.id,
+          });
+        } catch (error) {
+          console.error(`Error sending to ${contact.name}:`, error);
+          results.push({
+            contactId: contact.id,
+            success: false,
+            error: 'Failed to send email',
+          });
+        }
+      }
+
+      console.log('[SendToSelected] Sent', results.filter(r => r.success).length, 'of', results.length, 'emails');
+      res.json({ results });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        console.error('[SendToSelected] Validation error:', error.errors);
+        return res.status(400).json({ 
+          error: 'Invalid input data', 
+          details: error.errors 
+        });
+      }
+      console.error('[SendToSelected] Error sending to selected contacts:', error);
+      res.status(500).json({ error: error.message || 'Failed to send emails' });
+    }
+  });
+
+  // POST /api/emails/send-bulk - Send bulk emails
+  app.post("/api/emails/send-bulk", async (req, res) => {
+    try {
+      // Validate input with detailed error messages
+      const validatedData = sendBulkSchema.parse(req.body);
+      const { emails } = validatedData;
+
+      console.log('[SendBulk] Sending', emails.length, 'emails');
+
+      const results = [];
+
+      for (const email of emails) {
+        try {
+          // Send email via Gmail
+          const { messageId, threadId } = await sendEmail(
+            email.contact.email,
+            email.subject,
+            email.body
+          );
+
+          // Save to database
+          const sentEmail = await storage.createSentEmail({
+            contactId: email.contactId,
+            subject: email.subject,
+            body: email.body,
+            gmailMessageId: messageId || '',
+            gmailThreadId: threadId || '',
+            writingStyle: email.writingStyle || 'professional-adult',
+          });
+
+          results.push({
+            contactId: email.contactId,
+            success: true,
+            sentEmailId: sentEmail.id,
+          });
+        } catch (error) {
+          console.error(`Error sending email to ${email.contact.name}:`, error);
+          results.push({
+            contactId: email.contactId,
+            success: false,
+            error: 'Failed to send email',
+          });
+        }
+      }
+
+      console.log('[SendBulk] Sent', results.filter(r => r.success).length, 'of', results.length, 'emails');
+      res.json({ results });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        console.error('[SendBulk] Validation error:', error.errors);
+        return res.status(400).json({ 
+          error: 'Invalid input data', 
+          details: error.errors 
+        });
+      }
+      console.error('[SendBulk] Error sending bulk emails:', error);
+      res.status(500).json({ error: error.message || 'Failed to send bulk emails' });
+    }
+  });
+
+  // GET /api/emails/sent - Get sent emails
+  app.get("/api/emails/sent", async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 50;
+      const offset = parseInt(req.query.offset as string) || 0;
+
+      const emails = await storage.getSentEmails(limit, offset);
+      res.json(emails);
+    } catch (error) {
+      console.error('Error fetching sent emails:', error);
+      res.status(500).json({ error: 'Failed to fetch sent emails' });
+    }
+  });
+
+  // GET /api/emails/:id - Get specific email details
+  app.get("/api/emails/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const email = await storage.getSentEmailById(id);
+
+      if (!email) {
+        return res.status(404).json({ error: 'Email not found' });
+      }
+
+      res.json(email);
+    } catch (error) {
+      console.error('Error fetching email:', error);
+      res.status(500).json({ error: 'Failed to fetch email' });
+    }
+  });
+
+  // POST /api/emails/check-replies - Check for replies to sent emails
+  app.post("/api/emails/check-replies", async (req, res) => {
+    try {
+      const emailsWithoutReplies = await storage.getSentEmailsWithoutReplies();
+      
+      let updatedCount = 0;
+      const repliesFound = [];
+
+      for (const email of emailsWithoutReplies) {
+        try {
+          // First check the thread if we have thread ID
+          let hasReply = false;
+          let replyContent = '';
+          let replyMessageId = '';
+          
+          if (email.gmailThreadId && email.gmailMessageId) {
+            const threadCheck = await checkThreadForReplies(
+              email.gmailThreadId,
+              email.gmailMessageId
+            );
+            
+            if (threadCheck.hasReply) {
+              hasReply = true;
+              replyContent = threadCheck.replyContent || '';
+              replyMessageId = threadCheck.replyMessageId || '';
+            }
+          }
+          
+          // Also check entire inbox for emails from this contact
+          if (!hasReply && email.contact?.email) {
+            const inboxCheck = await checkInboxForContactEmails(
+              email.contact.email,
+              email.sentAt ? new Date(email.sentAt) : undefined // Check for emails after the sent date
+            );
+            
+            if (inboxCheck.hasReply && inboxCheck.latestEmail) {
+              hasReply = true;
+              replyContent = inboxCheck.latestEmail.content || '';
+              replyMessageId = inboxCheck.latestEmail.messageId || '';
+              
+              // Store additional emails for display
+              if (inboxCheck.emails.length > 0) {
+                repliesFound.push({
+                  contactEmail: email.contact.email,
+                  contactName: email.contact.name,
+                  emails: inboxCheck.emails,
+                });
+              }
+            }
+          }
+
+          if (hasReply) {
+            // Update email status
+            await storage.updateSentEmailReplyStatus(email.id, true, new Date());
+
+            // Save reply to database
+            if (replyMessageId && replyContent) {
+              await storage.createReply({
+                sentEmailId: email.id,
+                replyReceivedAt: new Date(),
+                replyContent: replyContent,
+                gmailMessageId: replyMessageId,
+              });
+            }
+
+            updatedCount++;
+          } else {
+            // Update last check time
+            await storage.updateSentEmailReplyStatus(email.id, false, new Date());
+          }
+        } catch (error) {
+          console.error(`Error checking replies for email ${email.id}:`, error);
+        }
+      }
+
+      res.json({ 
+        updatedCount, 
+        totalChecked: emailsWithoutReplies.length,
+        repliesFound, // Include the found emails for the UI to display
+      });
+    } catch (error) {
+      console.error('Error checking replies:', error);
+      res.status(500).json({ error: 'Failed to check replies' });
+    }
+  });
+
+  // POST /api/emails/check-automatic-followups - Check and send automatic follow-ups
+  app.post("/api/emails/check-automatic-followups", async (req, res) => {
+    try {
+      const emailsNeedingFollowUp = await storage.getEmailsNeedingFollowUp();
+      
+      let sentCount = 0;
+      const results = [];
+      
+      for (const email of emailsNeedingFollowUp) {
+        // Extract followUpType from the email (added by getEmailsNeedingFollowUp)
+        const emailWithFollowUpType = email as any;
+        const followUpType = emailWithFollowUpType.followUpType;
+        
+        try {
+          // Get sender info
+          const preferences = await storage.getEmailPreferences("default");
+          const senderName = preferences?.senderName || "Ignacio Torres";
+          const senderPhone = preferences?.senderPhone || "786-572-4981";
+          
+          // Generate follow-up message based on type
+          let followUpMessage = '';
+          
+          if (followUpType === 'first') {
+            // First follow-up (3 days) - friendly reminder
+            followUpMessage = `Hi ${email.contact.pronoun || 'Mr.'} ${email.contact.name.split(' ').pop()},
+
+I hope this message finds you well. I wanted to follow up on my previous email regarding our potential collaboration. I understand you're busy, and I wanted to make sure my message didn't get lost in your inbox.
+
+I believe there's a great opportunity for ${email.contact.company} here, and I'd love to discuss how we can move forward together.
+
+Would you have a few minutes this week for a brief conversation?
+
+Best regards,
+${senderName}
+${senderPhone}`;
+          } else if (followUpType === 'second') {
+            // Second follow-up (13 days) - slightly more urgent
+            followUpMessage = `Hi ${email.contact.pronoun || 'Mr.'} ${email.contact.name.split(' ').pop()},
+
+I wanted to reach out once more regarding my previous emails. I'm genuinely interested in exploring how we can help ${email.contact.company} achieve its goals.
+
+I understand if now isn't the right time, but I'd appreciate even a brief response to know if this is something worth pursuing or if I should close the loop on my end.
+
+Looking forward to hearing from you.
+
+Best regards,
+${senderName}
+${senderPhone}`;
+          } else if (followUpType === 'third') {
+            // Third follow-up (3 weeks) - kinder and pleading
+            followUpMessage = `Dear ${email.contact.pronoun || 'Mr.'} ${email.contact.name.split(' ').pop()},
+
+I hope you're doing well. This will be my final follow-up regarding the opportunity I've been trying to discuss with you.
+
+I truly believe in the value we could bring to ${email.contact.company}, and I would hate for you to miss out on this opportunity. I understand everyone's incredibly busy, but if there's even a small chance this could benefit your organization, I'd love to connect.
+
+If you're not interested, I completely understand - a quick "no thank you" would be appreciated so I can update my records accordingly. However, if there's any interest at all, please don't hesitate to reach out. I'm here to help and would be delighted to work with you.
+
+Thank you for your time and consideration.
+
+Warm regards,
+${senderName}
+${senderPhone}`;
+          }
+          
+          // Send the follow-up
+          if (followUpMessage && email.gmailThreadId) {
+            const { messageId } = await sendReplyInThread(
+              email.gmailThreadId,
+              email.contact.email,
+              email.subject || '',
+              followUpMessage
+            );
+            
+            // Save follow-up to database
+            await storage.createFollowUp({
+              originalEmailId: email.id,
+              followUpBody: followUpMessage,
+              gmailMessageId: messageId || '',
+            });
+            
+            sentCount++;
+            results.push({
+              emailId: email.id,
+              contactName: email.contact.name,
+              followUpType: followUpType,
+              success: true,
+            });
+          }
+        } catch (error) {
+          console.error(`Error sending automatic follow-up for email ${email.id}:`, error);
+          results.push({
+            emailId: email.id,
+            contactName: email.contact.name,
+            followUpType: followUpType,
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
+        }
+      }
+      
+      res.json({
+        sentCount,
+        totalChecked: emailsNeedingFollowUp.length,
+        results,
+      });
+    } catch (error) {
+      console.error('Error checking automatic follow-ups:', error);
+      res.status(500).json({ error: 'Failed to check automatic follow-ups' });
+    }
+  });
+
+  // POST /api/emails/follow-up - Send follow-up email
+  app.post("/api/emails/follow-up", async (req, res) => {
+    try {
+      // Validate input with detailed error messages
+      const validatedData = followUpSchema.parse({
+        sentEmailId: req.body.originalEmailId,
+        followUpBody: req.body.followUpMessage
+      });
+      const originalEmailId = validatedData.sentEmailId;
+      const followUpMessage = validatedData.followUpBody;
+
+      // Get original email
+      const originalEmail = await storage.getSentEmailById(originalEmailId);
+      if (!originalEmail) {
+        return res.status(404).json({ error: 'Original email not found' });
+      }
+
+      // Send follow-up via Gmail
+      const { messageId, threadId } = await sendReplyInThread(
+        originalEmail.gmailThreadId || '',
+        originalEmail.contact.email,
+        originalEmail.subject || '',
+        followUpMessage
+      );
+
+      // Save follow-up to database
+      const followUp = await storage.createFollowUp({
+        originalEmailId: originalEmailId,
+        followUpBody: followUpMessage,
+        gmailMessageId: messageId || '',
+      });
+
+      res.json({ success: true, followUp });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        console.error('[FollowUp] Validation error:', error.errors);
+        return res.status(400).json({ 
+          error: 'Invalid input data', 
+          details: error.errors 
+        });
+      }
+      console.error('[FollowUp] Error sending follow-up:', error);
+      res.status(500).json({ error: error.message || 'Failed to send follow-up email' });
+    }
+  });
+
+  // GET /api/settings/preferences - Get email preferences
+  app.get("/api/settings/preferences", async (req, res) => {
+    try {
+      const preferences = await storage.getEmailPreferences("default");
+      if (!preferences) {
+        // Return default empty preferences if none exist
+        return res.json({
+          tonePreference: '',
+          lengthPreference: '',
+          styleNotes: '',
+          defaultSignature: '',
+        });
+      }
+      res.json(preferences);
+    } catch (error) {
+      console.error('Error fetching preferences:', error);
+      res.status(500).json({ error: 'Failed to fetch preferences' });
+    }
+  });
+
+  // GET /api/preferences - Get email preferences
+  app.get("/api/preferences", async (req, res) => {
+    try {
+      const preferences = await storage.getEmailPreferences("default");
+      res.json(preferences);
+    } catch (error) {
+      console.error('Error fetching preferences:', error);
+      res.status(500).json({ error: 'Failed to fetch preferences' });
+    }
+  });
+
+  // POST /api/preferences/sender-info - Update sender name and phone
+  app.post("/api/preferences/sender-info", async (req, res) => {
+    try {
+      // Validate input with detailed error messages
+      const validatedData = senderInfoSchema.parse(req.body);
+      const { senderName, senderPhone } = validatedData;
+
+      console.log('[SenderInfo] Updating sender information');
+
+      // Get existing preferences
+      const existingPrefs = await storage.getEmailPreferences("default");
+      
+      // Update with new sender info
+      const updatedPrefs = {
+        userId: "default",
+        tonePreference: existingPrefs?.tonePreference || "professional",
+        lengthPreference: existingPrefs?.lengthPreference || "medium",
+        styleNotes: existingPrefs?.styleNotes || null,
+        senderName,
+        senderPhone,
+      };
+
+      const preferences = await storage.saveEmailPreferences(updatedPrefs);
+      console.log('[SenderInfo] Successfully updated sender information');
+      res.json(preferences);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        console.error('[SenderInfo] Validation error:', error.errors);
+        return res.status(400).json({ 
+          error: 'Invalid input data', 
+          details: error.errors 
+        });
+      }
+      console.error('[SenderInfo] Error updating sender info:', error);
+      res.status(500).json({ error: error.message || 'Failed to update sender information' });
+    }
+  });
+
+  // POST /api/settings/preferences - Save email preferences
+  app.post("/api/settings/preferences", async (req, res) => {
+    try {
+      const validatedData = insertEmailPreferencesSchema.parse(req.body);
+      const preferences = await storage.saveEmailPreferences(validatedData);
+      res.json(preferences);
+    } catch (error) {
+      console.error('Error saving preferences:', error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: 'Invalid preferences data', details: error.errors });
+      } else {
+        res.status(500).json({ error: 'Failed to save preferences' });
+      }
+    }
+  });
+
+  // PATCH /api/contacts/:id/pronoun - Update contact pronoun
+  app.patch("/api/contacts/:id/pronoun", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { pronoun } = req.body;
+
+      if (!pronoun) {
+        return res.status(400).json({ error: 'Pronoun is required' });
+      }
+
+      await storage.updateContactPronoun(id, pronoun);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error updating contact pronoun:', error);
+      res.status(500).json({ error: 'Failed to update contact pronoun' });
+    }
+  });
+
+  // Campaign Routes
+
+  // POST /api/campaigns - Create a new campaign with selected variant
+  app.post("/api/campaigns", async (req, res) => {
+    try {
+      const validatedData = insertCampaignSchema.parse(req.body);
+      const [campaign] = await db.insert(campaigns).values(validatedData).returning();
+      
+      // Track template usage if template was used
+      if (campaign.templateId) {
+        await TemplatePerformanceService.recordTemplateUsage(campaign.templateId);
+      }
+      
+      res.json(campaign);
+    } catch (error) {
+      console.error('Error creating campaign:', error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: 'Invalid campaign data', details: error.errors });
+      } else {
+        res.status(500).json({ error: 'Failed to create campaign' });
+      }
+    }
+  });
+
+  // GET /api/campaigns/recent - Get the most recent draft campaign
+  app.get("/api/campaigns/recent", async (req, res) => {
+    try {
+      const [recentCampaign] = await db
+        .select()
+        .from(campaigns)
+        .where(eq(campaigns.status, 'draft'))
+        .orderBy(desc(campaigns.createdAt))
+        .limit(1);
+      
+      if (!recentCampaign) {
+        return res.status(404).json({ error: 'No draft campaign found' });
+      }
+      
+      res.json(recentCampaign);
+    } catch (error) {
+      console.error('Error fetching recent campaign:', error);
+      res.status(500).json({ error: 'Failed to fetch recent campaign' });
+    }
+  });
+
+  // GET /api/campaigns/:id/contacts - Get all contacts for a campaign
+  app.get("/api/campaigns/:id/contacts", async (req, res) => {
+    try {
+      const campaignId = parseInt(req.params.id);
+      
+      const contactsData = await db
+        .select()
+        .from(campaignContacts)
+        .where(eq(campaignContacts.campaignId, campaignId))
+        .leftJoin(contacts, eq(campaignContacts.contactId, contacts.id))
+        .orderBy(desc(campaignContacts.addedAt));
+
+      const result = contactsData.map(row => ({
+        ...row.campaign_contacts,
+        contact: row.contacts,
+      }));
+
+      res.json(result);
+    } catch (error) {
+      console.error('Error fetching campaign contacts:', error);
+      res.status(500).json({ error: 'Failed to fetch campaign contacts' });
+    }
+  });
+
+  // POST /api/campaigns/:id/contacts - Add a contact to a campaign
+  app.post("/api/campaigns/:id/contacts", async (req, res) => {
+    try {
+      const campaignId = parseInt(req.params.id);
+      const contactData = insertContactSchema.parse(req.body);
+
+      // Check if contact already exists by email
+      const [existingContact] = await db
+        .select()
+        .from(contacts)
+        .where(eq(contacts.email, contactData.email))
+        .limit(1);
+
+      let contact;
+      if (existingContact) {
+        contact = existingContact;
+      } else {
+        // Create new contact
+        [contact] = await db.insert(contacts).values(contactData).returning();
+      }
+
+      // Check if contact already in this campaign
+      const [existingCampaignContact] = await db
+        .select()
+        .from(campaignContacts)
+        .where(
+          and(
+            eq(campaignContacts.campaignId, campaignId),
+            eq(campaignContacts.contactId, contact.id)
+          )
+        )
+        .limit(1);
+
+      if (existingCampaignContact) {
+        return res.status(400).json({ error: 'Contact already in this campaign' });
+      }
+
+      // Add contact to campaign
+      const [campaignContact] = await db
+        .insert(campaignContacts)
+        .values({
+          campaignId,
+          contactId: contact.id,
+          sentEmailId: null,
+        })
+        .returning();
+
+      res.json({
+        ...campaignContact,
+        contact,
+      });
+    } catch (error: any) {
+      console.error('Error adding contact to campaign:', error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: 'Invalid contact data', details: error.errors });
+      } else {
+        res.status(500).json({ error: error.message || 'Failed to add contact to campaign' });
+      }
+    }
+  });
+
+  // DELETE /api/campaigns/:id/contacts/:contactId - Remove a contact from a campaign
+  app.delete("/api/campaigns/:campaignId/contacts/:campaignContactId", async (req, res) => {
+    try {
+      const campaignContactId = parseInt(req.params.campaignContactId);
+
+      await db
+        .delete(campaignContacts)
+        .where(eq(campaignContacts.id, campaignContactId));
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error removing contact from campaign:', error);
+      res.status(500).json({ error: 'Failed to remove contact from campaign' });
+    }
+  });
+
+  // POST /api/campaigns/:id/personalize - Generate personalized preview for a contact
+  app.post("/api/campaigns/:id/personalize", async (req, res) => {
+    try {
+      const campaignId = parseInt(req.params.id);
+      const { contactId, variant } = req.body;
+
+      if (!contactId || !variant) {
+        return res.status(400).json({ error: 'Contact ID and variant required' });
+      }
+
+      // Get contact details
+      const [contact] = await db
+        .select()
+        .from(contacts)
+        .where(eq(contacts.id, contactId))
+        .limit(1);
+
+      if (!contact) {
+        return res.status(404).json({ error: 'Contact not found' });
+      }
+
+      // Get user preferences (if any)
+      const preferences = await storage.getEmailPreferences();
+
+      // Personalize the email for this contact
+      const personalizedEmail = await personalizeVariantForContact(
+        variant,
+        contact.name,
+        contact.company,
+        contact.pronoun || "Mr.",
+        contact.notes || undefined,
+        preferences
+      );
+
+      res.json(personalizedEmail);
+    } catch (error: any) {
+      console.error('Error personalizing email:', error);
+      res.status(500).json({ error: error.message || 'Failed to personalize email' });
+    }
+  });
+
+  // POST /api/campaigns/:id/send - Send campaign emails to all contacts
+  app.post("/api/campaigns/:id/send", async (req, res) => {
+    try {
+      const campaignId = parseInt(req.params.id);
+
+      // Get campaign details
+      const [campaign] = await db
+        .select()
+        .from(campaigns)
+        .where(eq(campaigns.id, campaignId))
+        .limit(1);
+
+      if (!campaign) {
+        return res.status(404).json({ error: 'Campaign not found' });
+      }
+
+      if (!campaign.subject || !campaign.body) {
+        return res.status(400).json({ error: 'Campaign missing subject or body' });
+      }
+
+      // Get all contacts in campaign
+      const contactsData = await db
+        .select()
+        .from(campaignContacts)
+        .where(eq(campaignContacts.campaignId, campaignId))
+        .leftJoin(contacts, eq(campaignContacts.contactId, contacts.id));
+
+      if (contactsData.length === 0) {
+        return res.status(400).json({ error: 'No contacts in campaign' });
+      }
+
+      const results = [];
+      const errors = [];
+
+      // Send personalized emails to each contact
+      for (const row of contactsData) {
+        const contact = row.contacts;
+        if (!contact) continue;
+
+        try {
+          // Personalize email for this contact
+          const personalizedEmail = await personalizeVariantForContact(
+            {
+              approach: campaign.writingStyle || 'professional-adult',
+              subject: campaign.subject,
+              body: campaign.body,
+            },
+            contact.name,
+            contact.company,
+            contact.pronoun || "",
+            contact.notes || undefined
+          );
+
+          // Send email
+          const gmailResult = await sendEmail(
+            contact.email,
+            personalizedEmail.subject,
+            personalizedEmail.body
+          );
+
+          // Store sent email
+          const [sentEmail] = await db.insert(sentEmails).values({
+            contactId: contact.id,
+            subject: personalizedEmail.subject,
+            body: personalizedEmail.body,
+            gmailMessageId: gmailResult.messageId || null,
+            gmailThreadId: gmailResult.threadId || null,
+            writingStyle: campaign.writingStyle,
+          }).returning();
+
+          // Update campaign contact with sent email ID
+          await db
+            .update(campaignContacts)
+            .set({ sentEmailId: sentEmail.id })
+            .where(eq(campaignContacts.id, row.campaign_contacts!.id));
+
+          // Mark contact as drafted using storage method
+          await storage.addDraftedContact(contact.id);
+
+          results.push({ contactId: contact.id, success: true });
+        } catch (error: any) {
+          console.error(`Error sending to ${contact.email}:`, error);
+          errors.push({ contactId: contact.id, emailError: error.message });
+        }
+      }
+
+      // Update campaign status
+      await db
+        .update(campaigns)
+        .set({ 
+          status: 'sent',
+          sentAt: new Date(),
+        })
+        .where(eq(campaigns.id, campaignId));
+
+      res.json({
+        success: true,
+        sent: results.length,
+        failed: errors.length,
+        results,
+        errors,
+      });
+    } catch (error: any) {
+      console.error('Error sending campaign:', error);
+      res.status(500).json({ error: error.message || 'Failed to send campaign' });
+    }
+  });
+
+  // POST /api/campaigns/:id/schedule - Schedule campaign for later with smart scheduling
+  app.post("/api/campaigns/:id/schedule", async (req, res) => {
+    try {
+      const campaignId = parseInt(req.params.id);
+      const { sendTime, batchSize, delayMinutes } = req.body;
+
+      // Validate request
+      const validatedData = z.object({
+        sendTime: z.string().optional(), // ISO datetime string, optional
+        batchSize: z.number().int().min(1).max(100).optional(),
+        delayMinutes: z.number().int().min(1).max(60).optional(),
+      }).parse({ sendTime, batchSize, delayMinutes });
+
+      // Get campaign details
+      const [campaign] = await db
+        .select()
+        .from(campaigns)
+        .where(eq(campaigns.id, campaignId))
+        .limit(1);
+
+      if (!campaign) {
+        return res.status(404).json({ error: 'Campaign not found' });
+      }
+
+      if (!campaign.subject || !campaign.body) {
+        return res.status(400).json({ error: 'Campaign missing subject or body' });
+      }
+
+      // Schedule the campaign using SendSchedulingEngine
+      await SendSchedulingEngine.scheduleCampaign(campaignId, {
+        mode: validatedData.sendTime ? "scheduled" : "optimal",
+        scheduledTime: validatedData.sendTime ? new Date(validatedData.sendTime) : undefined,
+        batchSize: validatedData.batchSize || 30,
+      });
+
+      res.json({
+        success: true,
+        message: validatedData.sendTime 
+          ? `Campaign scheduled for ${validatedData.sendTime}` 
+          : 'Campaign scheduled with smart timing',
+      });
+    } catch (error: any) {
+      console.error('Error scheduling campaign:', error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: 'Invalid scheduling data', details: error.errors });
+      } else {
+        res.status(500).json({ error: error.message || 'Failed to schedule campaign' });
+      }
+    }
+  });
+
+  // GET /api/campaigns/:id/schedule - Get schedule details for a campaign
+  app.get("/api/campaigns/:id/schedule", async (req, res) => {
+    try {
+      const campaignId = parseInt(req.params.id);
+
+      // Get scheduled jobs for this campaign
+      const jobs = await db
+        .select()
+        .from(scheduledJobs)
+        .where(
+          and(
+            eq(scheduledJobs.entityId, campaignId),
+            eq(scheduledJobs.jobType, "send_campaign_batch"),
+            eq(scheduledJobs.status, "pending")
+          )
+        )
+        .orderBy(scheduledJobs.scheduledFor);
+
+      res.json({
+        scheduled: jobs.length > 0,
+        jobs: jobs.map(job => ({
+          id: job.id,
+          scheduledFor: job.scheduledFor,
+          metadata: job.metadata,
+        })),
+      });
+    } catch (error: any) {
+      console.error('Error getting campaign schedule:', error);
+      res.status(500).json({ error: error.message || 'Failed to get campaign schedule' });
+    }
+  });
+
+  // GET /api/analytics/overview - Get analytics overview metrics
+  app.get("/api/analytics/overview", async (req, res) => {
+    try {
+      const metrics = await AnalyticsService.getOverviewMetrics();
+      res.json(metrics);
+    } catch (error: any) {
+      console.error('Error fetching analytics overview:', error);
+      res.status(500).json({ error: error.message || 'Failed to fetch analytics' });
+    }
+  });
+
+  // GET /api/analytics/engagement-trends - Get engagement trends over time
+  app.get("/api/analytics/engagement-trends", async (req, res) => {
+    try {
+      const days = parseInt(req.query.days as string) || 30;
+      const trends = await AnalyticsService.getEngagementTrends(days);
+      res.json(trends);
+    } catch (error: any) {
+      console.error('Error fetching engagement trends:', error);
+      res.status(500).json({ error: error.message || 'Failed to fetch trends' });
+    }
+  });
+
+  // GET /api/analytics/top-campaigns - Get top performing campaigns
+  app.get("/api/analytics/top-campaigns", async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 5;
+      const topCampaigns = await AnalyticsService.getTopCampaigns(limit);
+      res.json(topCampaigns);
+    } catch (error: any) {
+      console.error('Error fetching top campaigns:', error);
+      res.status(500).json({ error: error.message || 'Failed to fetch campaigns' });
+    }
+  });
+
+  // GET /api/analytics/contact-engagement - Get contact engagement leaderboard
+  app.get("/api/analytics/contact-engagement", async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 10;
+      const contactEngagement = await AnalyticsService.getContactEngagement(limit);
+      res.json(contactEngagement);
+    } catch (error: any) {
+      console.error('Error fetching contact engagement:', error);
+      res.status(500).json({ error: error.message || 'Failed to fetch contact engagement' });
+    }
+  });
+
+  // ==========================================
+  // TEMPLATE LIBRARY ENDPOINTS (Wave 3)
+  // ==========================================
+
+  // POST /api/templates - Create a new email template
+  app.post("/api/templates", async (req, res) => {
+    try {
+      const validatedData = insertEmailTemplateSchema.parse(req.body);
+      
+      const [template] = await db
+        .insert(emailTemplates)
+        .values(validatedData)
+        .returning();
+      
+      res.json(template);
+    } catch (error: any) {
+      console.error('Error creating template:', error);
+      res.status(400).json({ error: error.message || 'Failed to create template' });
+    }
+  });
+
+  // GET /api/templates - List all templates (with optional category filter)
+  app.get("/api/templates", async (req, res) => {
+    try {
+      const category = req.query.category as string | undefined;
+      
+      let query = db.select().from(emailTemplates);
+      
+      if (category) {
+        query = query.where(eq(emailTemplates.category, category)) as any;
+      }
+      
+      const templates = await query.orderBy(desc(emailTemplates.createdAt));
+      
+      res.json(templates);
+    } catch (error: any) {
+      console.error('Error fetching templates:', error);
+      res.status(500).json({ error: error.message || 'Failed to fetch templates' });
+    }
+  });
+
+  // GET /api/templates/:id - Get a specific template
+  app.get("/api/templates/:id", async (req, res) => {
+    try {
+      const templateId = parseInt(req.params.id);
+      
+      const [template] = await db
+        .select()
+        .from(emailTemplates)
+        .where(eq(emailTemplates.id, templateId))
+        .limit(1);
+      
+      if (!template) {
+        return res.status(404).json({ error: 'Template not found' });
+      }
+      
+      res.json(template);
+    } catch (error: any) {
+      console.error('Error fetching template:', error);
+      res.status(500).json({ error: error.message || 'Failed to fetch template' });
+    }
+  });
+
+  // PUT /api/templates/:id - Update a template
+  app.put("/api/templates/:id", async (req, res) => {
+    try {
+      const templateId = parseInt(req.params.id);
+      const validatedData = insertEmailTemplateSchema.partial().parse(req.body);
+      
+      const [updatedTemplate] = await db
+        .update(emailTemplates)
+        .set({
+          ...validatedData,
+          updatedAt: new Date(),
+        })
+        .where(eq(emailTemplates.id, templateId))
+        .returning();
+      
+      if (!updatedTemplate) {
+        return res.status(404).json({ error: 'Template not found' });
+      }
+      
+      res.json(updatedTemplate);
+    } catch (error: any) {
+      console.error('Error updating template:', error);
+      res.status(400).json({ error: error.message || 'Failed to update template' });
+    }
+  });
+
+  // DELETE /api/templates/:id - Delete a template
+  app.delete("/api/templates/:id", async (req, res) => {
+    try {
+      const templateId = parseInt(req.params.id);
+      
+      const [deletedTemplate] = await db
+        .delete(emailTemplates)
+        .where(eq(emailTemplates.id, templateId))
+        .returning();
+      
+      if (!deletedTemplate) {
+        return res.status(404).json({ error: 'Template not found' });
+      }
+      
+      res.json({ success: true, message: 'Template deleted' });
+    } catch (error: any) {
+      console.error('Error deleting template:', error);
+      res.status(500).json({ error: error.message || 'Failed to delete template' });
+    }
+  });
+
+  // GET /api/templates/top - Get top performing templates
+  app.get("/api/templates/top", async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 10;
+      const topTemplates = await TemplatePerformanceService.getTopTemplates(limit);
+      res.json(topTemplates);
+    } catch (error: any) {
+      console.error('Error fetching top templates:', error);
+      res.status(500).json({ error: error.message || 'Failed to fetch top templates' });
+    }
+  });
+
+  // POST /api/templates/:id/update-metrics - Update template performance metrics
+  app.post("/api/templates/:id/update-metrics", async (req, res) => {
+    try {
+      const templateId = parseInt(req.params.id);
+      await TemplatePerformanceService.updateTemplateMetrics(templateId);
+      res.json({ success: true, message: 'Metrics updated' });
+    } catch (error: any) {
+      console.error('Error updating template metrics:', error);
+      res.status(500).json({ error: error.message || 'Failed to update metrics' });
+    }
+  });
+
+  // GET /api/track/open/:sentEmailId - Tracking pixel for email opens
+  app.get("/api/track/open/:sentEmailId", async (req, res) => {
+    try {
+      const sentEmailId = parseInt(req.params.sentEmailId);
+
+      // Record the open event
+      await AnalyticsService.recordEmailOpen(sentEmailId, req.headers['user-agent'] || 'unknown');
+
+      // Return a 1x1 transparent PNG pixel
+      const pixel = Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+        'base64'
+      );
+      
+      res.set({
+        'Content-Type': 'image/png',
+        'Content-Length': pixel.length,
+        'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      });
+      
+      res.send(pixel);
+    } catch (error: any) {
+      console.error('Error recording email open:', error);
+      // Still return the pixel even if tracking fails
+      const pixel = Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+        'base64'
+      );
+      res.set('Content-Type', 'image/png');
+      res.send(pixel);
+    }
+  });
+
+  // GET /api/track/click/:linkId - Track link clicks
+  app.get("/api/track/click/:linkId", async (req, res) => {
+    try {
+      const linkId = parseInt(req.params.linkId);
+      const targetUrl = req.query.url as string;
+
+      if (!targetUrl) {
+        return res.status(400).json({ error: 'Missing target URL' });
+      }
+
+      // Record the click event
+      await AnalyticsService.recordLinkClick(linkId, req.headers['user-agent'] || 'unknown');
+
+      // Redirect to the target URL
+      res.redirect(targetUrl);
+    } catch (error: any) {
+      console.error('Error recording link click:', error);
+      // Still redirect even if tracking fails
+      const targetUrl = req.query.url as string;
+      if (targetUrl) {
+        res.redirect(targetUrl);
+      } else {
+        res.status(500).json({ error: 'Failed to track click' });
+      }
+    }
+  });
+
+  // ==========================================
+  // WAVE 4: CONTACT ENRICHMENT ENDPOINTS
+  // ==========================================
+
+  // POST /api/contacts/:id/enrich - Enrich a contact with company data
+  app.post("/api/contacts/:id/enrich", async (req, res) => {
+    try {
+      const { ContactEnrichmentService } = await import("./enrichment");
+      const contactId = parseInt(req.params.id);
+      
+      const result = await ContactEnrichmentService.enrichContact(contactId);
+      
+      if (!result) {
+        return res.status(404).json({ error: 'Contact not found or enrichment failed' });
+      }
+
+      // Return updated contact
+      const contact = await db.query.contacts.findFirst({
+        where: eq(contacts.id, contactId)
+      });
+
+      res.json({ 
+        success: true, 
+        contact,
+        enrichment: result 
+      });
+    } catch (error: any) {
+      console.error('Error enriching contact:', error);
+      res.status(500).json({ error: 'Failed to enrich contact' });
+    }
+  });
+
+  // GET /api/contacts/:id/enrichment-status - Get enrichment status for a contact
+  app.get("/api/contacts/:id/enrichment-status", async (req, res) => {
+    try {
+      const contactId = parseInt(req.params.id);
+      
+      const contact = await db.query.contacts.findFirst({
+        where: eq(contacts.id, contactId),
+        columns: {
+          id: true,
+          name: true,
+          email: true,
+          industry: true,
+          companySize: true,
+          companyRevenue: true,
+          location: true,
+          lastEnriched: true,
+          enrichmentSource: true,
+        }
+      });
+
+      if (!contact) {
+        return res.status(404).json({ error: 'Contact not found' });
+      }
+
+      const isEnriched = !!(contact.industry || contact.companySize || contact.companyRevenue);
+      
+      res.json({
+        contactId: contact.id,
+        isEnriched,
+        lastEnriched: contact.lastEnriched,
+        source: contact.enrichmentSource,
+        data: {
+          industry: contact.industry,
+          companySize: contact.companySize,
+          companyRevenue: contact.companyRevenue,
+          location: contact.location,
+        }
+      });
+    } catch (error: any) {
+      console.error('Error getting enrichment status:', error);
+      res.status(500).json({ error: 'Failed to get enrichment status' });
+    }
+  });
+
+  // ==========================================
+  // WAVE 4: SEQUENCE MANAGEMENT ENDPOINTS
+  // ==========================================
+
+  // GET /api/sequences - Get all follow-up sequences
+  app.get("/api/sequences", async (req, res) => {
+    try {
+      const sequences = await db.query.followUpSequences.findMany({
+        orderBy: (followUpSequences, { desc }) => [desc(followUpSequences.createdAt)],
+        with: {
+          sequenceSteps: {
+            orderBy: (sequenceSteps, { asc }) => [asc(sequenceSteps.stepNumber)],
+          },
+        },
+      });
+
+      res.json(sequences);
+    } catch (error: any) {
+      console.error('Error fetching sequences:', error);
+      res.status(500).json({ error: 'Failed to fetch sequences' });
+    }
+  });
+
+  // GET /api/sequences/:id - Get a specific sequence with steps
+  app.get("/api/sequences/:id", async (req, res) => {
+    try {
+      const { SequenceAutomationService } = await import("./sequence-automation");
+      const sequenceId = parseInt(req.params.id);
+      
+      const sequence = await SequenceAutomationService.getSequenceMetrics(sequenceId);
+      
+      if (!sequence) {
+        return res.status(404).json({ error: 'Sequence not found' });
+      }
+
+      res.json(sequence);
+    } catch (error: any) {
+      console.error('Error fetching sequence:', error);
+      res.status(500).json({ error: 'Failed to fetch sequence' });
+    }
+  });
+
+  // POST /api/sequences - Create a new follow-up sequence
+  app.post("/api/sequences", async (req, res) => {
+    try {
+      const { followUpSequences } = await import("@shared/schema");
+      
+      const sequenceData = {
+        name: req.body.name,
+        description: req.body.description || '',
+        active: req.body.active !== undefined ? req.body.active : true,
+        stopOnReply: req.body.stopOnReply !== undefined ? req.body.stopOnReply : true,
+        stopOnOpen: req.body.stopOnOpen || false,
+        stopOnClick: req.body.stopOnClick || false,
+        stopOnMeeting: req.body.stopOnMeeting !== undefined ? req.body.stopOnMeeting : true,
+      };
+
+      const [newSequence] = await db.insert(followUpSequences)
+        .values(sequenceData)
+        .returning();
+
+      res.json(newSequence);
+    } catch (error: any) {
+      console.error('Error creating sequence:', error);
+      res.status(500).json({ error: 'Failed to create sequence' });
+    }
+  });
+
+  // PUT /api/sequences/:id - Update a sequence
+  app.put("/api/sequences/:id", async (req, res) => {
+    try {
+      const sequenceId = parseInt(req.params.id);
+      
+      const updateData: any = {};
+      if (req.body.name !== undefined) updateData.name = req.body.name;
+      if (req.body.description !== undefined) updateData.description = req.body.description;
+      if (req.body.active !== undefined) updateData.active = req.body.active;
+      if (req.body.stopOnReply !== undefined) updateData.stopOnReply = req.body.stopOnReply;
+      if (req.body.stopOnOpen !== undefined) updateData.stopOnOpen = req.body.stopOnOpen;
+      if (req.body.stopOnClick !== undefined) updateData.stopOnClick = req.body.stopOnClick;
+      if (req.body.stopOnMeeting !== undefined) updateData.stopOnMeeting = req.body.stopOnMeeting;
+
+      updateData.updatedAt = new Date();
+
+      const [updated] = await db.update(followUpSequences)
+        .set(updateData)
+        .where(eq(followUpSequences.id, sequenceId))
+        .returning();
+
+      if (!updated) {
+        return res.status(404).json({ error: 'Sequence not found' });
+      }
+
+      res.json(updated);
+    } catch (error: any) {
+      console.error('Error updating sequence:', error);
+      res.status(500).json({ error: 'Failed to update sequence' });
+    }
+  });
+
+  // DELETE /api/sequences/:id - Delete a sequence
+  app.delete("/api/sequences/:id", async (req, res) => {
+    try {
+      const sequenceId = parseInt(req.params.id);
+      
+      // Delete all steps first
+      await db.delete(sequenceSteps)
+        .where(eq(sequenceSteps.sequenceId, sequenceId));
+      
+      // Delete the sequence
+      await db.delete(followUpSequences)
+        .where(eq(followUpSequences.id, sequenceId));
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Error deleting sequence:', error);
+      res.status(500).json({ error: 'Failed to delete sequence' });
+    }
+  });
+
+  // POST /api/sequences/:id/steps - Add a step to a sequence
+  app.post("/api/sequences/:id/steps", async (req, res) => {
+    try {
+      const sequenceId = parseInt(req.params.id);
+      
+      const stepData = {
+        sequenceId,
+        stepNumber: req.body.stepNumber,
+        delayDays: req.body.delayDays,
+        subject: req.body.subject || '',
+        body: req.body.body,
+        variantName: req.body.variantName || 'A',
+        variantPercentage: req.body.variantPercentage || 100,
+      };
+
+      const [newStep] = await db.insert(sequenceSteps)
+        .values(stepData)
+        .returning();
+
+      res.json(newStep);
+    } catch (error: any) {
+      console.error('Error creating sequence step:', error);
+      res.status(500).json({ error: 'Failed to create sequence step' });
+    }
+  });
+
+  // PUT /api/sequences/:sequenceId/steps/:stepId - Update a sequence step
+  app.put("/api/sequences/:sequenceId/steps/:stepId", async (req, res) => {
+    try {
+      const stepId = parseInt(req.params.stepId);
+      
+      const updateData: any = {};
+      if (req.body.stepNumber !== undefined) updateData.stepNumber = req.body.stepNumber;
+      if (req.body.delayDays !== undefined) updateData.delayDays = req.body.delayDays;
+      if (req.body.subject !== undefined) updateData.subject = req.body.subject;
+      if (req.body.body !== undefined) updateData.body = req.body.body;
+      if (req.body.variantName !== undefined) updateData.variantName = req.body.variantName;
+      if (req.body.variantPercentage !== undefined) updateData.variantPercentage = req.body.variantPercentage;
+
+      const [updated] = await db.update(sequenceSteps)
+        .set(updateData)
+        .where(eq(sequenceSteps.id, stepId))
+        .returning();
+
+      if (!updated) {
+        return res.status(404).json({ error: 'Step not found' });
+      }
+
+      res.json(updated);
+    } catch (error: any) {
+      console.error('Error updating sequence step:', error);
+      res.status(500).json({ error: 'Failed to update sequence step' });
+    }
+  });
+
+  // DELETE /api/sequences/:sequenceId/steps/:stepId - Delete a sequence step
+  app.delete("/api/sequences/:sequenceId/steps/:stepId", async (req, res) => {
+    try {
+      const stepId = parseInt(req.params.stepId);
+      
+      await db.delete(sequenceSteps)
+        .where(eq(sequenceSteps.id, stepId));
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Error deleting sequence step:', error);
+      res.status(500).json({ error: 'Failed to delete sequence step' });
+    }
+  });
+
+  // POST /api/campaigns/:id/enroll-sequence - Enroll a campaign in a sequence
+  app.post("/api/campaigns/:id/enroll-sequence", async (req, res) => {
+    try {
+      const { SequenceAutomationService } = await import("./sequence-automation");
+      const campaignId = parseInt(req.params.id);
+      const sequenceId = parseInt(req.body.sequenceId);
+      
+      await SequenceAutomationService.enrollCampaignInSequence(campaignId, sequenceId);
+      
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Error enrolling campaign in sequence:', error);
+      res.status(500).json({ error: 'Failed to enroll campaign in sequence' });
+    }
+  });
+
+  const httpServer = createServer(app);
+
+  return httpServer;
+}

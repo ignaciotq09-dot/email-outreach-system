@@ -1,0 +1,1 @@
+export interface SessionData { userId?: number; pendingUserInfo?: { name: string; companyName: string; position: string | null; provider: "gmail" | "outlook"; timestamp: number; expiresAt: number; state: string }; oauthState?: string; oauthFlow?: "signup" | "login" | "reconnect"; csrfToken?: string; }

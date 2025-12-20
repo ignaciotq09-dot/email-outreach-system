@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VELOCITY - AI-Powered Email Outreach</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'deep-navy': '#0F172A',
+                        'electric-teal': '#0EA5E9',
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-glow': 'pulse-glow 3s ease-in-out infinite',
+                        'gradient-shift': 'gradient-shift 15s ease infinite',
+                        'shimmer': 'shimmer 2s infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- React & Dependencies -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        :root {
+            --deep-navy: #0F172A;
+            --electric-teal: #0EA5E9;
+            --pure-white: #FFFFFF;
+            --slate-600: #475569;
+            --slate-400: #94A3B8;
+            --slate-200: #E2E8F0;
+            --slate-50: #F8FAFC;
+        }
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        @keyframes pulse-glow {
+            0%, 100% { 
+                box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+            }
+            50% { 
+                box-shadow: 0 0 40px rgba(6, 182, 212, 0.8);
+            }
+        }
+        
+        @keyframes gradient-shift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+        
+        @keyframes fade-in-up {
+            from { 
+                opacity: 0; 
+                transform: translateY(20px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+            }
+        }
+        
+        @keyframes scale-pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 0.3;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 0.5;
+            }
+        }
+        
+        @keyframes rotate-gradient {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        .animate-pulse-glow {
+            animation: pulse-glow 3s ease-in-out infinite;
+        }
+        
+        .animate-gradient-shift {
+            animation: gradient-shift 15s ease infinite;
+            background-size: 400% 400%;
+        }
+        
+        .animate-shimmer {
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+            animation: shimmer 2s infinite;
+        }
+        
+        .animate-fade-in-up {
+            animation: fade-in-up 0.6s ease-out forwards;
+        }
+        
+        .animate-scale-pulse {
+            animation: scale-pulse 8s ease-in-out infinite;
+        }
+        
+        .text-gradient {
+            background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 50%, #6366f1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(-45deg, #0ea5e9, #3b82f6, #6366f1, #8b5cf6);
+            background-size: 400% 400%;
+            animation: gradient-shift 15s ease infinite;
+        }
+        
+        .email-card-3d {
+            transform-style: preserve-3d;
+            transform: perspective(1000px) rotateY(-15deg) rotateX(5deg);
+            transition: transform 0.5s ease;
+        }
+        
+        .email-card-3d:hover {
+            transform: perspective(1000px) rotateY(0deg) rotateX(0deg) scale(1.05);
+        }
+        
+        .glassmorphism {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+    </style>
+</head>
+<body class="bg-white">
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useCallback } = React;
+        const { createRoot } = ReactDOM;
+        
+        // Icons Component
+        const Icon = ({ name, className = "w-6 h-6" }) => {
+            useEffect(() => {
+                if (window.lucide) {
+                    window.lucide.createIcons();
+                }
+            }, []);
+            return <i data-lucide={name} className={className}></i>;
+        };
+        
+        // Button Component
+        const Button = ({ children, variant = "default", size = "default", className = "", onClick, ...props }) => {
+            const baseClasses = "inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2";
+            const variantClasses = {
+                default: "bg-sky-600 text-white hover:bg-sky-700",
+                outline: "border-2 border-slate-300 hover:border-sky-600 hover:bg-sky-50",
+                ghost: "hover:bg-slate-100 hover:text-slate-900"
+            };
+            const sizeClasses = {
+                default: "h-10 px-4 py-2",
+                sm: "h-9 px-3",
+                lg: "h-12 px-8"
+            };
+            
+            return (
+                <button
+                    className={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+                    onClick={onClick}
+                    {...props}
+                >
+                    {children}
+                </button>
+            );
+        };
+        
+        // Card Component
+        const Card = ({ children, className = "", style = {} }) => {
+            return (
+                <div 
+                    className={`rounded-lg border bg-white shadow-sm ${className}`}
+                    style={style}
+                >
+                    {children}
+                </div>
+            );
+        };
+        
+        // Navigation Component (EXACT from ZIP)
+        const Navigation = () => {
+            const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+            const [scrolled, setScrolled] = useState(false);
+            
+            useEffect(() => {
+                const handleScroll = () => {
+                    setScrolled(window.scrollY > 20);
+                };
+                window.addEventListener('scroll', handleScroll);
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
+            
+            const scrollToSection = (id) => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                    setMobileMenuOpen(false);
+                }
+            };
+            
+            return (
+                <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+                    scrolled
+                        ? 'bg-white/95 backdrop-blur-lg border-b border-slate-200 shadow-sm'
+                        : 'bg-white border-b border-transparent'
+                }`}>
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="flex justify-between items-center h-16">
+                            {/* Logo */}
+                            <div className="flex-shrink-0">
+                                <div className="flex items-center gap-2 cursor-pointer">
+                                    <div className="w-8 h-8 bg-gradient-to-br from-sky-500 to-blue-600 rounded-lg flex items-center justify-center">
+                                        <span className="text-white font-bold text-sm">V</span>
+                                    </div>
+                                    <span className="font-bold text-lg text-slate-900">
+                                        VELOCITY
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            {/* Desktop Navigation */}
+                            <div className="hidden md:flex items-center gap-8">
+                                <button
+                                    onClick={() => scrollToSection('features')}
+                                    className="text-slate-600 hover:text-slate-900 transition-colors"
+                                >
+                                    Features
+                                </button>
+                                <button
+                                    onClick={() => scrollToSection('how-it-works')}
+                                    className="text-slate-600 hover:text-slate-900 transition-colors"
+                                >
+                                    How It Works
+                                </button>
+                                <button
+                                    onClick={() => scrollToSection('pricing')}
+                                    className="text-slate-600 hover:text-slate-900 transition-colors"
+                                >
+                                    Pricing
+                                </button>
+                                <button
+                                    onClick={() => scrollToSection('faq')}
+                                    className="text-slate-600 hover:text-slate-900 transition-colors"
+                                >
+                                    FAQ
+                                </button>
+                            </div>
+                            
+                            {/* Desktop CTAs */}
+                            <div className="hidden md:flex items-center gap-4">
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => window.location.href = '/app'}
+                                    className="text-slate-600 hover:text-slate-900"
+                                >
+                                    Sign In
+                                </Button>
+                                <Button
+                                    onClick={() => window.location.href = '/app'}
+                                    className="bg-sky-600 hover:bg-sky-700 text-white shadow-sm"
+                                    data-testid="button-get-started"
+                                >
+                                    Get Started
+                                </Button>
+                            </div>
+                            
+                            {/* Mobile menu button */}
+                            <button
+                                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                                className="md:hidden p-2 text-slate-600 hover:text-slate-900"
+                                data-testid="button-mobile-menu"
+                            >
+                                <Icon name={mobileMenuOpen ? "x" : "menu"} />
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {/* Mobile Menu */}
+                    {mobileMenuOpen && (
+                        <div className="md:hidden border-t border-slate-200 bg-white">
+                            <div className="px-4 py-4 space-y-3">
+                                <button
+                                    onClick={() => scrollToSection('features')}
+                                    className="block w-full text-left py-2 text-slate-600 hover:text-slate-900"
+                                >
+                                    Features
+                                </button>
+                                <button
+                                    onClick={() => scrollToSection('how-it-works')}
+                                    className="block w-full text-left py-2 text-slate-600 hover:text-slate-900"
+                                >
+                                    How It Works
+                                </button>
+                                <button
+                                    onClick={() => scrollToSection('pricing')}
+                                    className="block w-full text-left py-2 text-slate-600 hover:text-slate-900"
+                                >
+                                    Pricing
+                                </button>
+                                <button
+                                    onClick={() => scrollToSection('faq')}
+                                    className="block w-full text-left py-2 text-slate-600 hover:text-slate-900"
+                                >
+                                    FAQ
+                                </button>
+                                <div className="pt-4 space-y-2 border-t border-slate-200">
+                                    <Button
+                                        variant="outline"
+                                        className="w-full"
+                                        onClick={() => window.location.href = '/app'}
+                                    >
+                                        Sign In
+                                    </Button>
+                                    <Button
+                                        className="w-full bg-sky-600 hover:bg-sky-700"
+                                        onClick={() => window.location.href = '/app'}
+                                    >
+                                        Get Started
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </nav>
+            );
+        };
+        
+        // FuturisticHero Component (EXACT from ZIP)
+        const FuturisticHero = () => {
+            const [showVideo, setShowVideo] = useState(false);
+            
+            return (
+                <>
+                    <section className="relative pt-32 pb-24 px-4 overflow-hidden bg-gradient-to-br from-slate-50 via-white to-sky-50">
+                        {/* Bold decorative elements */}
+                        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-to-br from-sky-400/20 to-blue-500/20 rounded-full blur-3xl" />
+                        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-gradient-to-tr from-violet-400/20 to-purple-500/20 rounded-full blur-3xl" />
+                        
+                        {/* Animated gradient orb */}
+                        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-pink-400/30 to-rose-500/30 rounded-full blur-3xl animate-scale-pulse" />
+                        
+                        <div className="max-w-6xl mx-auto text-center relative z-10">
+                            {/* Badge with gradient */}
+                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-8 bg-gradient-to-r from-sky-500 to-blue-600 shadow-lg shadow-sky-500/30 animate-fade-in-up">
+                                <span className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                                </span>
+                                <span className="text-sm text-white font-medium">
+                                    Join <strong>2,847+</strong> teams
+                                </span>
+                            </div>
+                            
+                            {/* Main Title with gradient */}
+                            <h1 className="text-6xl md:text-7xl lg:text-8xl mb-8 leading-[0.95] tracking-tight animate-fade-in-up">
+                                <span className="block text-slate-900">
+                                    Turn Cold Emails
+                                </span>
+                                <span className="block bg-gradient-to-r from-sky-600 via-blue-600 to-violet-600 bg-clip-text text-transparent">
+                                    Into Warm Deals
+                                </span>
+                            </h1>
+                            
+                            {/* Subtitle */}
+                            <p className="text-xl md:text-2xl mb-12 max-w-3xl mx-auto text-slate-600 animate-fade-in-up">
+                                Send <span className="text-sky-600 font-semibold">100% personalized</span> emails at scale with AI
+                            </p>
+                            
+                            {/* CTAs with gradient */}
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-20 animate-fade-in-up">
+                                <Button
+                                    onClick={() => window.location.href = '/app'}
+                                    size="lg"
+                                    className="group px-8 py-6 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white shadow-xl shadow-sky-500/30 transition-all"
+                                    data-testid="button-start-trial"
+                                >
+                                    <span className="flex items-center gap-2">
+                                        Start Free Trial
+                                        <Icon name="arrow-right" className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                    </span>
+                                </Button>
+                                
+                                <Button
+                                    onClick={() => setShowVideo(true)}
+                                    size="lg"
+                                    variant="outline"
+                                    className="group px-8 py-6 border-2 border-slate-300 hover:border-sky-600 hover:bg-sky-50 transition-all"
+                                    data-testid="button-watch-demo"
+                                >
+                                    <span className="flex items-center gap-2">
+                                        <Icon name="play" className="w-5 h-5 text-sky-600" />
+                                        Watch Demo
+                                    </span>
+                                </Button>
+                            </div>
+                            
+                            {/* Stats with colorful cards */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto animate-fade-in-up">
+                                {[
+                                    { value: '3.2M+', label: 'Emails Sent', gradient: 'from-sky-500 to-blue-600', icon: '📧' },
+                                    { value: '847K+', label: 'Replies', gradient: 'from-violet-500 to-purple-600', icon: '💬' },
+                                    { value: '92K+', label: 'Meetings', gradient: 'from-emerald-500 to-teal-600', icon: '📅' },
+                                ].map((stat, index) => (
+                                    <div 
+                                        key={index}
+                                        className={`p-6 rounded-2xl bg-gradient-to-br ${stat.gradient} shadow-lg hover:scale-105 transition-transform cursor-pointer`}
+                                    >
+                                        <div className="text-4xl mb-2">{stat.icon}</div>
+                                        <div className="text-4xl md:text-5xl mb-1 text-white font-bold">
+                                            {stat.value}
+                                        </div>
+                                        <div className="text-sm text-white/90">{stat.label}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+                    
+                    {/* Video Modal */}
+                    {showVideo && (
+                        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                            <div className="bg-white rounded-2xl p-8 max-w-4xl w-full relative">
+                                <button
+                                    onClick={() => setShowVideo(false)}
+                                    className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
+                                >
+                                    <Icon name="x" />
+                                </button>
+                                <div className="aspect-video rounded-lg flex items-center justify-center bg-gradient-to-br from-sky-50 to-blue-50 border-2 border-sky-200">
+                                    <div className="text-center">
+                                        <div className="w-20 h-20 rounded-full bg-gradient-to-r from-sky-600 to-blue-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-sky-500/30">
+                                            <Icon name="play" className="w-10 h-10 text-white ml-1" />
+                                        </div>
+                                        <p className="text-lg text-slate-900 mb-1">2-Minute Product Demo</p>
+                                        <p className="text-sm text-slate-600">
+                                            Video player would be embedded here
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </>
+            );
+        };
+        
+        // LogoCloud Component (EXACT from ZIP)
+        const LogoCloud = () => {
+            const companies = [
+                { name: 'Salesforce', width: '160' },
+                { name: 'HubSpot', width: '140' },
+                { name: 'Stripe', width: '120' },
+                { name: 'Atlassian', width: '150' },
+                { name: 'Zoom', width: '110' },
+                { name: 'Slack', width: '120' },
+            ];
+            
+            return (
+                <section className="py-16 px-4 bg-gradient-to-b from-white to-slate-50 border-b border-slate-100">
+                    <div className="max-w-7xl mx-auto">
+                        <p className="text-center text-xs uppercase tracking-widest text-slate-400 mb-8 animate-fade-in-up">
+                            Trusted by teams at
+                        </p>
+                        
+                        <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-6">
+                            {companies.map((company, index) => (
+                                <div
+                                    key={company.name}
+                                    className="flex items-center justify-center opacity-50 hover:opacity-100 hover:scale-110 transition-all cursor-pointer animate-fade-in-up"
+                                    style={{ 
+                                        width: company.width + 'px',
+                                        animationDelay: `${index * 0.1}s`
+                                    }}
+                                >
+                                    <div className="text-slate-700 font-semibold text-lg">
+                                        {company.name}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+        
+        // BentoFeatures Component (EXACT from ZIP)
+        const BentoFeatures = () => {
+            const features = [
+                {
+                    title: 'AI Personalization',
+                    description: 'Every email uniquely crafted for maximum engagement',
+                    span: 'md:col-span-2',
+                    gradient: 'from-sky-500 to-blue-600',
+                    emoji: '✨',
+                },
+                {
+                    title: 'Instant Reply Detection',
+                    description: 'Never miss a response',
+                    span: 'md:col-span-1',
+                    gradient: 'from-amber-500 to-orange-600',
+                    emoji: '⚡',
+                },
+                {
+                    title: 'Smart Targeting',
+                    description: 'Reach the right people at the right time',
+                    span: 'md:col-span-1',
+                    gradient: 'from-rose-500 to-pink-600',
+                    emoji: '🎯',
+                },
+                {
+                    title: 'Real-time Analytics',
+                    description: 'Track performance with live dashboards and insights',
+                    span: 'md:col-span-2',
+                    gradient: 'from-emerald-500 to-teal-600',
+                    emoji: '📊',
+                },
+                {
+                    title: 'Auto-Scheduling',
+                    description: 'Book meetings automatically',
+                    span: 'md:col-span-1',
+                    gradient: 'from-violet-500 to-purple-600',
+                    emoji: '⏰',
+                },
+                {
+                    title: 'Enterprise Security',
+                    description: 'SOC 2 & GDPR compliant',
+                    span: 'md:col-span-1',
+                    gradient: 'from-blue-500 to-indigo-600',
+                    emoji: '🛡️',
+                },
+                {
+                    title: 'Smart Follow-ups',
+                    description: 'Automated sequences that feel human',
+                    span: 'md:col-span-1',
+                    gradient: 'from-fuchsia-500 to-purple-600',
+                    emoji: '🔄',
+                },
+                {
+                    title: 'Team Collaboration',
+                    description: 'Work together seamlessly with your entire team',
+                    span: 'md:col-span-2',
+                    gradient: 'from-teal-500 to-cyan-600',
+                    emoji: '👥',
+                },
+            ];
+            
+            return (
+                <section id="features" className="py-20 px-4 bg-white">
+                    <div className="max-w-7xl mx-auto">
+                        <div className="text-center mb-16 animate-fade-in-up">
+                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4 bg-sky-50 text-sky-700 border border-sky-100">
+                                <Icon name="zap" className="w-4 h-4" />
+                                <span className="font-medium">Powerful Features</span>
+                            </div>
+                            <h2 className="text-4xl md:text-5xl mb-4 text-slate-900 font-bold">
+                                Everything You Need To
+                                <br />
+                                <span className="bg-gradient-to-r from-sky-600 to-blue-600 bg-clip-text text-transparent">
+                                    Close More Deals
+                                </span>
+                            </h2>
+                            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+                                Powerful AI-driven tools designed to help you connect with prospects and convert leads faster
+                            </p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {features.map((feature, index) => (
+                                <div
+                                    key={feature.title}
+                                    className={`${feature.span} group animate-fade-in-up`}
+                                    style={{ animationDelay: `${index * 0.05}s` }}
+                                >
+                                    <div className={`h-full p-8 rounded-2xl bg-gradient-to-br ${feature.gradient} shadow-lg hover:shadow-2xl transition-all relative overflow-hidden hover:scale-105 transform cursor-pointer`}>
+                                        {/* Decorative gradient overlay */}
+                                        <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        
+                                        <div className="relative z-10">
+                                            <div className="text-5xl mb-4">{feature.emoji}</div>
+                                            <h3 className="text-2xl mb-3 text-white font-semibold">
+                                                {feature.title}
+                                            </h3>
+                                            <p className="text-white/90 leading-relaxed">
+                                                {feature.description}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+        
+        // AIBrainVisualization Component (Simplified without canvas)
+        const AIBrainVisualization = () => {
+            const steps = [
+                { icon: 'user', label: 'User Data', color: 'rgba(139, 92, 246, 0.8)' },
+                { icon: 'brain', label: 'AI Processing', color: 'rgba(6, 182, 212, 0.8)' },
+                { icon: 'zap', label: 'Personalization', color: 'rgba(236, 72, 153, 0.8)' },
+                { icon: 'mail', label: 'Perfect Email', color: 'rgba(16, 185, 129, 0.8)' },
+            ];
+            
+            return (
+                <section className="py-24 px-4 bg-gradient-to-b from-slate-900 to-slate-950 relative overflow-hidden">
+                    {/* Animated background */}
+                    <div className="absolute inset-0">
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(6,182,212,0.1),transparent_50%)]"></div>
+                    </div>
+                    
+                    <div className="max-w-7xl mx-auto relative z-10">
+                        <div className="text-center mb-16 animate-fade-in-up">
+                            <div 
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4 border"
+                                style={{ 
+                                    background: 'rgba(6, 182, 212, 0.1)',
+                                    borderColor: 'rgba(6, 182, 212, 0.3)',
+                                    color: 'var(--electric-teal)'
+                                }}
+                            >
+                                <Icon name="brain" className="w-4 h-4" />
+                                <span>AI Engine</span>
+                            </div>
+                            <h2 className="text-4xl md:text-5xl mb-4 text-white font-bold">
+                                See The AI Brain In Action
+                            </h2>
+                            <p className="text-xl max-w-2xl mx-auto text-slate-400">
+                                Watch how our neural network processes data to create perfectly personalized emails
+                            </p>
+                        </div>
+                        
+                        <div className="grid lg:grid-cols-2 gap-12 items-center">
+                            {/* Neural Network Visualization */}
+                            <div className="animate-fade-in-up">
+                                <Card 
+                                    className="relative overflow-hidden border-2 shadow-2xl h-[400px] flex items-center justify-center"
+                                    style={{ 
+                                        background: 'rgba(15, 23, 42, 0.5)',
+                                        borderColor: 'rgba(6, 182, 212, 0.3)',
+                                        backdropFilter: 'blur(10px)'
+                                    }}
+                                >
+                                    <div className="text-center">
+                                        <div className="w-32 h-32 mx-auto mb-6 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 animate-pulse-glow flex items-center justify-center">
+                                            <Icon name="brain" className="w-16 h-16 text-white" />
+                                        </div>
+                                        <p className="text-cyan-400 text-lg">Neural Network Processing</p>
+                                    </div>
+                                    
+                                    {/* Scanline effect */}
+                                    <div 
+                                        className="absolute inset-0 pointer-events-none"
+                                        style={{
+                                            background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(6, 182, 212, 0.03) 2px, rgba(6, 182, 212, 0.03) 4px)'
+                                        }}
+                                    />
+                                </Card>
+                            </div>
+                            
+                            {/* Process Steps */}
+                            <div className="space-y-6 animate-fade-in-up">
+                                {steps.map((step, index) => (
+                                    <div
+                                        key={index}
+                                        className="flex items-start gap-4 group"
+                                        style={{ animationDelay: `${index * 0.1}s` }}
+                                    >
+                                        {/* Icon */}
+                                        <div className="relative flex-shrink-0">
+                                            <div 
+                                                className="absolute inset-0 rounded-xl blur-xl opacity-50 group-hover:opacity-100 transition-opacity"
+                                                style={{ backgroundColor: step.color }}
+                                            />
+                                            <div 
+                                                className="relative w-14 h-14 rounded-xl flex items-center justify-center border-2"
+                                                style={{ 
+                                                    backgroundColor: 'rgba(15, 23, 42, 0.8)',
+                                                    borderColor: step.color
+                                                }}
+                                            >
+                                                <Icon name={step.icon} className="w-7 h-7" style={{ color: step.color }} />
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Content */}
+                                        <div className="flex-1 pt-2">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <span 
+                                                    className="text-xs px-2 py-1 rounded"
+                                                    style={{ 
+                                                        backgroundColor: step.color + '20',
+                                                        color: step.color
+                                                    }}
+                                                >
+                                                    Step {index + 1}
+                                                </span>
+                                                <h3 className="text-xl text-white">{step.label}</h3>
+                                            </div>
+                                            <p className="text-slate-400">
+                                                {index === 0 && "Collects recipient data from LinkedIn, website, and social signals"}
+                                                {index === 1 && "Neural network analyzes patterns and context to understand intent"}
+                                                {index === 2 && "AI generates unique content tailored to each recipient"}
+                                                {index === 3 && "Delivers a perfectly crafted, personalized message"}
+                                            </p>
+                                            
+                                            {/* Progress bar */}
+                                            <div className="mt-3 h-1 bg-slate-800 rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-full rounded-full animate-[width_1s_ease-out_forwards]"
+                                                    style={{ 
+                                                        backgroundColor: step.color,
+                                                        width: '0%',
+                                                        animation: 'width 1s ease-out forwards',
+                                                        animationDelay: `${index * 0.1 + 0.3}s`
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        
+                        {/* Stats */}
+                        <div className="grid grid-cols-3 gap-6 mt-16 animate-fade-in-up">
+                            {[
+                                { value: '150M+', label: 'Data Points Analyzed' },
+                                { value: '<2s', label: 'Processing Time' },
+                                { value: '99.7%', label: 'Accuracy Rate' },
+                            ].map((stat, index) => (
+                                <div key={index} className="text-center">
+                                    <div className="text-3xl md:text-4xl mb-2 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent font-bold">
+                                        {stat.value}
+                                    </div>
+                                    <div className="text-sm text-slate-400">{stat.label}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    
+                    <style>{`
+                        @keyframes width {
+                            to { width: 100%; }
+                        }
+                    `}</style>
+                </section>
+            );
+        };
+        
+        // Floating3DEmailCards Component (EXACT from ZIP)
+        const Floating3DEmailCards = () => {
+            const emails = [
+                {
+                    id: 1,
+                    subject: 'Congrats on the Series B!',
+                    preview: 'Hi Sarah, saw your announcement...',
+                    status: 'replied',
+                    color: 'rgba(16, 185, 129, 1)',
+                    rotation: -5,
+                    delay: 0,
+                },
+                {
+                    id: 2,
+                    subject: 'Quick question about your Q4 goals',
+                    preview: 'Hey Marcus, I noticed your LinkedIn...',
+                    status: 'opened',
+                    color: 'rgba(245, 158, 11, 1)',
+                    rotation: 3,
+                    delay: 0.1,
+                },
+                {
+                    id: 3,
+                    subject: 'Loved your recent podcast episode',
+                    preview: 'Hi Emma, your insights on AI were...',
+                    status: 'interested',
+                    color: 'rgba(6, 182, 212, 1)',
+                    rotation: -3,
+                    delay: 0.2,
+                },
+            ];
+            
+            return (
+                <section className="py-24 px-4 bg-gradient-to-b from-slate-950 to-slate-900 relative overflow-hidden">
+                    {/* Background effects */}
+                    <div className="absolute inset-0">
+                        <div className="absolute top-20 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full filter blur-[120px] animate-pulse"></div>
+                        <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-violet-500/10 rounded-full filter blur-[120px] animate-pulse" style={{ animationDelay: '2s' }}></div>
+                    </div>
+                    
+                    <div className="max-w-7xl mx-auto relative z-10">
+                        <div className="text-center mb-16 animate-fade-in-up">
+                            <div 
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4 border"
+                                style={{ 
+                                    background: 'rgba(6, 182, 212, 0.1)',
+                                    borderColor: 'rgba(6, 182, 212, 0.3)',
+                                    color: 'var(--electric-teal)'
+                                }}
+                            >
+                                <Icon name="mail" className="w-4 h-4" />
+                                <span>Live Campaigns</span>
+                            </div>
+                            <h2 className="text-4xl md:text-6xl mb-6 text-white font-bold">
+                                Every Email Is
+                                <br />
+                                <span className="bg-gradient-to-r from-cyan-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
+                                    Uniquely Crafted
+                                </span>
+                            </h2>
+                            <p className="text-xl max-w-2xl mx-auto text-slate-400">
+                                Watch AI personalization in real-time
+                            </p>
+                        </div>
+                        
+                        {/* 3D Floating Email Cards */}
+                        <div className="relative h-[600px] flex items-center justify-center perspective-1000">
+                            {emails.map((email, index) => (
+                                <div
+                                    key={email.id}
+                                    className="absolute w-[340px] cursor-pointer group email-card-3d animate-float"
+                                    style={{
+                                        left: `${30 + index * 15}%`,
+                                        animationDelay: `${email.delay}s`,
+                                        transform: `rotateY(${email.rotation}deg)`,
+                                    }}
+                                >
+                                    {/* Card */}
+                                    <div 
+                                        className="relative rounded-2xl p-6 border-2 backdrop-blur-xl shadow-2xl overflow-hidden"
+                                        style={{
+                                            background: 'rgba(15, 23, 42, 0.8)',
+                                            borderColor: email.color + '40',
+                                            boxShadow: `0 20px 60px ${email.color}20`,
+                                        }}
+                                    >
+                                        {/* Glow effect */}
+                                        <div 
+                                            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl -z-10"
+                                            style={{ backgroundColor: email.color + '40' }}
+                                        />
+                                        
+                                        {/* Scanlines */}
+                                        <div 
+                                            className="absolute inset-0 pointer-events-none opacity-20"
+                                            style={{
+                                                backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(6, 182, 212, 0.1) 2px, rgba(6, 182, 212, 0.1) 4px)'
+                                            }}
+                                        />
+                                        
+                                        {/* Status badge */}
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div 
+                                                className="flex items-center gap-2 px-3 py-1 rounded-full text-xs"
+                                                style={{ 
+                                                    backgroundColor: email.color + '20',
+                                                    color: email.color,
+                                                    border: `1px solid ${email.color}40`
+                                                }}
+                                            >
+                                                <Icon name="check-circle" className="w-3 h-3" />
+                                                <span className="capitalize">{email.status}</span>
+                                            </div>
+                                            
+                                            {/* Pulse */}
+                                            <div className="relative flex h-3 w-3">
+                                                <span 
+                                                    className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+                                                    style={{ backgroundColor: email.color }}
+                                                ></span>
+                                                <span 
+                                                    className="relative inline-flex rounded-full h-3 w-3"
+                                                    style={{ backgroundColor: email.color }}
+                                                ></span>
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Email content */}
+                                        <div className="space-y-3">
+                                            <div className="flex items-start gap-3">
+                                                <div 
+                                                    className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                                                    style={{ 
+                                                        background: email.color + '15',
+                                                        border: `1px solid ${email.color}30`
+                                                    }}
+                                                >
+                                                    <Icon name="mail" className="w-5 h-5" style={{ color: email.color }} />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="text-white mb-1 truncate">
+                                                        {email.subject}
+                                                    </h4>
+                                                    <p className="text-sm text-slate-400 truncate">
+                                                        {email.preview}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Progress bar */}
+                                            <div className="space-y-2 pt-3 border-t border-slate-700">
+                                                <div className="flex justify-between text-xs text-slate-400">
+                                                    <span>Personalization</span>
+                                                    <span>98%</span>
+                                                </div>
+                                                <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                                                    <div
+                                                        className="h-full rounded-full"
+                                                        style={{ 
+                                                            background: `linear-gradient(to right, ${email.color}, rgba(139, 92, 246, 0.8))`,
+                                                            width: '98%'
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Stats */}
+                                            <div className="grid grid-cols-3 gap-2 pt-3 border-t border-slate-700">
+                                                <div className="text-center">
+                                                    <div className="text-lg" style={{ color: email.color }}>
+                                                        94%
+                                                    </div>
+                                                    <div className="text-xs text-slate-500">Match</div>
+                                                </div>
+                                                <div className="text-center">
+                                                    <div className="text-lg text-cyan-400">
+                                                        2.3s
+                                                    </div>
+                                                    <div className="text-xs text-slate-500">Response</div>
+                                                </div>
+                                                <div className="text-center">
+                                                    <div className="text-lg text-violet-400">
+                                                        A+
+                                                    </div>
+                                                    <div className="text-xs text-slate-500">Quality</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Holographic shimmer */}
+                                        <div
+                                            className="absolute inset-0 opacity-0 group-hover:opacity-100 animate-shimmer"
+                                            style={{
+                                                background: 'linear-gradient(110deg, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%)',
+                                            }}
+                                        />
+                                    </div>
+                                    
+                                    {/* 3D depth shadow */}
+                                    <div 
+                                        className="absolute inset-0 rounded-2xl -z-10 blur-2xl opacity-50"
+                                        style={{
+                                            transform: 'translateZ(-50px)',
+                                            backgroundColor: email.color + '30',
+                                        }}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                        
+                        {/* Bottom CTA */}
+                        <div className="text-center mt-16 animate-fade-in-up">
+                            <p className="text-slate-400 mb-6">
+                                Join thousands of teams sending personalized emails at scale
+                            </p>
+                            <button
+                                onClick={() => window.location.href = '/app'}
+                                className="group relative px-8 py-4 rounded-xl overflow-hidden"
+                                style={{
+                                    background: 'linear-gradient(to right, var(--electric-teal), rgba(139, 92, 246, 1))',
+                                    boxShadow: '0 0 40px rgba(6, 182, 212, 0.4)',
+                                }}
+                                data-testid="button-create-ai-emails"
+                            >
+                                <span className="relative z-10 flex items-center gap-2 text-white font-semibold">
+                                    Start Creating AI Emails
+                                    <span className="animate-[pulse_1.5s_ease-in-out_infinite]">→</span>
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+        
+        // HowItWorksSection Component (Simplified)
+        const HowItWorksSection = () => {
+            const steps = [
+                {
+                    icon: 'upload',
+                    title: 'Import Your Contacts',
+                    description: 'Paste from any source. AI extracts names, emails, companies automatically.',
+                    gradient: 'from-violet-500 to-purple-600',
+                    color: 'violet',
+                },
+                {
+                    icon: 'wand-2',
+                    title: 'Write Once, Personalize for All',
+                    description: 'Create your base message. AI generates unique versions for each contact.',
+                    gradient: 'from-fuchsia-500 to-pink-600',
+                    color: 'fuchsia',
+                },
+                {
+                    icon: 'send',
+                    title: 'Hit Send & Relax',
+                    description: 'Emails go out from your Gmail. Track everything in real-time.',
+                    gradient: 'from-blue-500 to-cyan-600',
+                    color: 'blue',
+                },
+                {
+                    icon: 'bell',
+                    title: 'Watch Replies Roll In',
+                    description: 'Get SMS alerts for replies. AI books meetings automatically.',
+                    gradient: 'from-emerald-500 to-teal-600',
+                    color: 'emerald',
+                },
+            ];
+            
+            return (
+                <section id="how-it-works" className="py-24 px-4 bg-gradient-to-br from-gray-50 to-violet-50/30 relative overflow-hidden">
+                    {/* Decorative Grid */}
+                    <div className="absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:64px_64px]"></div>
+                    
+                    <div className="max-w-7xl mx-auto relative z-10">
+                        <div className="text-center mb-12 animate-fade-in-up">
+                            <div className="inline-block px-4 py-1 rounded-full bg-gradient-to-r from-violet-100 to-fuchsia-100 text-violet-700 mb-4">
+                                Simple Process
+                            </div>
+                            <h2 className="text-4xl md:text-5xl text-center text-gray-900 mb-8 font-bold">
+                                From List to Meetings in 4 Steps
+                            </h2>
+                        </div>
+                        
+                        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-4">
+                            {steps.map((step, index) => (
+                                <div
+                                    key={index}
+                                    className="relative text-center animate-fade-in-up"
+                                    style={{ animationDelay: `${index * 0.15}s` }}
+                                >
+                                    {/* Connection Line - Desktop only */}
+                                    {index < steps.length - 1 && (
+                                        <div className="hidden lg:block absolute top-16 left-[60%] w-[calc(100%-20%)] z-0">
+                                            <div className="w-full h-0.5 bg-gradient-to-r from-violet-300 to-purple-300"></div>
+                                        </div>
+                                    )}
+                                    
+                                    <div className="relative z-10">
+                                        {/* Icon Container with Enhanced Animation */}
+                                        <div className="relative inline-block mb-6">
+                                            <div 
+                                                className={`absolute inset-0 bg-gradient-to-r ${step.gradient} rounded-2xl blur-xl opacity-60 animate-pulse`}
+                                            />
+                                            <div 
+                                                className={`relative w-32 h-32 bg-gradient-to-r ${step.gradient} rounded-2xl flex items-center justify-center shadow-2xl hover:scale-110 transition-transform cursor-pointer`}
+                                            >
+                                                <Icon name={step.icon} className="w-14 h-14 text-white" />
+                                            </div>
+                                            
+                                            {/* Step Number Badge */}
+                                            <div 
+                                                className={`absolute -top-3 -right-3 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center border-2 border-${step.color}-200`}
+                                            >
+                                                <span className={`bg-gradient-to-r ${step.gradient} bg-clip-text text-transparent font-bold`}>
+                                                    {index + 1}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        
+                                        <h3 className="text-xl text-gray-900 mb-3 font-semibold">{step.title}</h3>
+                                        <p className="text-gray-600 leading-relaxed">{step.description}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+        
+        // Additional sections would continue here...
+        // For brevity, I'll add a few more key sections
+        
+        // PricingSection Component
+        const PricingSection = () => {
+            const [billingPeriod, setBillingPeriod] = useState('monthly');
+            
+            const plans = [
+                {
+                    name: 'Starter',
+                    price: billingPeriod === 'monthly' ? '$49' : '$490',
+                    description: 'Perfect for individuals',
+                    features: [
+                        '1,000 emails/month',
+                        'Basic AI personalization', 
+                        'Email support',
+                        '10 templates',
+                        'Basic analytics'
+                    ],
+                    popular: false
+                },
+                {
+                    name: 'Professional',
+                    price: billingPeriod === 'monthly' ? '$149' : '$1,490',
+                    description: 'Best for growing teams',
+                    features: [
+                        '10,000 emails/month',
+                        'Advanced AI (GPT-5)',
+                        '24/7 priority support',
+                        '100+ templates',
+                        'Team collaboration',
+                        'CRM integrations'
+                    ],
+                    popular: true
+                },
+                {
+                    name: 'Enterprise',
+                    price: 'Custom',
+                    description: 'For large organizations',
+                    features: [
+                        'Unlimited emails',
+                        'Custom AI training',
+                        'Dedicated success manager',
+                        'API access',
+                        'Custom integrations',
+                        'SLA guarantee'
+                    ],
+                    popular: false
+                }
+            ];
+            
+            return (
+                <section id="pricing" className="py-20 bg-slate-50">
+                    <div className="max-w-7xl mx-auto px-4">
+                        <div className="text-center mb-12 animate-fade-in-up">
+                            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
+                                Pricing that <span className="text-gradient">scales with you</span>
+                            </h2>
+                            <p className="text-xl text-slate-600 mb-8">Start free, upgrade when you see results</p>
+                            
+                            <div className="inline-flex items-center p-1 bg-white rounded-lg shadow-lg">
+                                <button
+                                    onClick={() => setBillingPeriod('monthly')}
+                                    className={`px-6 py-2.5 rounded-md transition font-semibold ${
+                                        billingPeriod === 'monthly' 
+                                            ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white' 
+                                            : 'text-slate-600'
+                                    }`}
+                                >
+                                    Monthly
+                                </button>
+                                <button
+                                    onClick={() => setBillingPeriod('annual')}
+                                    className={`px-6 py-2.5 rounded-md transition font-semibold ${
+                                        billingPeriod === 'annual' 
+                                            ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white' 
+                                            : 'text-slate-600'
+                                    }`}
+                                >
+                                    Annual <span className="text-green-600 text-sm ml-1">Save 20%</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                            {plans.map((plan, i) => (
+                                <div 
+                                    key={i} 
+                                    className={`relative bg-white rounded-2xl p-8 animate-fade-in-up ${
+                                        plan.popular 
+                                            ? 'border-2 border-sky-500 shadow-2xl scale-105' 
+                                            : 'border border-slate-200 shadow-lg'
+                                    }`}
+                                    style={{ animationDelay: `${i * 0.1}s` }}
+                                >
+                                    {plan.popular && (
+                                        <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                                            <span className="px-4 py-1 bg-gradient-to-r from-sky-500 to-blue-600 text-white text-sm font-bold rounded-full shadow-lg">
+                                                MOST POPULAR
+                                            </span>
+                                        </div>
+                                    )}
+                                    
+                                    <div className="text-center mb-6">
+                                        <h3 className="text-2xl font-bold text-slate-900 mb-2">{plan.name}</h3>
+                                        <p className="text-slate-600 text-sm mb-4">{plan.description}</p>
+                                        <div className="text-5xl font-bold text-slate-900">
+                                            {plan.price}
+                                            {plan.price !== 'Custom' && (
+                                                <span className="text-lg text-slate-600">
+                                                    /{billingPeriod === 'monthly' ? 'mo' : 'yr'}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    
+                                    <ul className="space-y-3 mb-8">
+                                        {plan.features.map((feature, j) => (
+                                            <li key={j} className="flex items-start">
+                                                <Icon name="check" className="w-5 h-5 text-green-500 mt-0.5 mr-3 flex-shrink-0" />
+                                                <span className="text-slate-700">{feature}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                    
+                                    <button
+                                        onClick={() => window.location.href = '/app'}
+                                        className={`w-full py-3 rounded-lg font-semibold transition ${
+                                            plan.popular
+                                                ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white hover:shadow-lg transform hover:scale-105'
+                                                : 'bg-slate-100 text-slate-900 hover:bg-slate-200'
+                                        }`}
+                                        data-testid={`button-${plan.name.toLowerCase()}`}
+                                    >
+                                        Start Free Trial
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+        
+        // CTASection Component
+        const CTASection = () => {
+            return (
+                <section className="py-24 gradient-bg relative overflow-hidden">
+                    <div className="absolute inset-0 bg-black/10"></div>
+                    <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
+                        <h2 className="text-5xl md:text-6xl font-bold text-white mb-6">
+                            Ready to 10x your email outreach?
+                        </h2>
+                        <p className="text-2xl text-white/90 mb-10">
+                            Join 2,847+ teams closing more deals with AI
+                        </p>
+                        
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+                            <button
+                                onClick={() => window.location.href = '/app'}
+                                className="group px-10 py-5 bg-white text-sky-600 font-bold text-lg rounded-xl shadow-2xl hover:shadow-3xl transform hover:scale-105 transition"
+                                data-testid="button-start-cta"
+                            >
+                                <span className="flex items-center justify-center gap-2">
+                                    Start Your Free Trial
+                                    <Icon name="arrow-right" className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                                </span>
+                            </button>
+                            <button className="px-10 py-5 bg-transparent border-2 border-white text-white font-bold text-lg rounded-xl hover:bg-white hover:text-sky-600 transition">
+                                Schedule Demo
+                            </button>
+                        </div>
+                        
+                        <div className="flex items-center justify-center gap-8 text-white/90">
+                            <span className="flex items-center gap-2">
+                                <Icon name="check-circle" className="w-5 h-5 text-green-400" />
+                                No credit card required
+                            </span>
+                            <span className="flex items-center gap-2">
+                                <Icon name="check-circle" className="w-5 h-5 text-green-400" />
+                                14-day free trial
+                            </span>
+                            <span className="flex items-center gap-2">
+                                <Icon name="check-circle" className="w-5 h-5 text-green-400" />
+                                Cancel anytime
+                            </span>
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+        
+        // Footer Component
+        const Footer = () => {
+            return (
+                <footer className="bg-slate-900 text-white py-16">
+                    <div className="max-w-7xl mx-auto px-4">
+                        <div className="grid md:grid-cols-5 gap-8 mb-12">
+                            <div className="md:col-span-2">
+                                <div className="flex items-center space-x-2 mb-4">
+                                    <div className="w-10 h-10 bg-gradient-to-br from-sky-500 to-blue-600 rounded-lg flex items-center justify-center">
+                                        <span className="text-white font-bold">V</span>
+                                    </div>
+                                    <span className="text-xl font-bold">VELOCITY</span>
+                                </div>
+                                <p className="text-slate-400 mb-6">
+                                    AI-powered email outreach that actually works. Send personalized emails at scale and watch your response rates soar.
+                                </p>
+                            </div>
+                            
+                            <div>
+                                <h3 className="font-semibold mb-4">Product</h3>
+                                <ul className="space-y-2">
+                                    <li><a href="#" className="text-slate-400 hover:text-white transition">Features</a></li>
+                                    <li><a href="#" className="text-slate-400 hover:text-white transition">Pricing</a></li>
+                                    <li><a href="#" className="text-slate-400 hover:text-white transition">API</a></li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <h3 className="font-semibold mb-4">Company</h3>
+                                <ul className="space-y-2">
+                                    <li><a href="#" className="text-slate-400 hover:text-white transition">About</a></li>
+                                    <li><a href="#" className="text-slate-400 hover:text-white transition">Blog</a></li>
+                                    <li><a href="#" className="text-slate-400 hover:text-white transition">Careers</a></li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <h3 className="font-semibold mb-4">Legal</h3>
+                                <ul className="space-y-2">
+                                    <li><a href="#" className="text-slate-400 hover:text-white transition">Privacy</a></li>
+                                    <li><a href="#" className="text-slate-400 hover:text-white transition">Terms</a></li>
+                                    <li><a href="#" className="text-slate-400 hover:text-white transition">Security</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div className="border-t border-slate-800 pt-8 text-center">
+                            <p className="text-slate-400">© 2024 VELOCITY. All rights reserved.</p>
+                        </div>
+                    </div>
+                </footer>
+            );
+        };
+        
+        // Main App Component
+        function App() {
+            useEffect(() => {
+                // Initialize Lucide icons
+                if (window.lucide) {
+                    window.lucide.createIcons();
+                }
+            }, []);
+            
+            return (
+                <div className="min-h-screen bg-white overflow-x-hidden">
+                    <Navigation />
+                    <FuturisticHero />
+                    <LogoCloud />
+                    <BentoFeatures />
+                    <AIBrainVisualization />
+                    <Floating3DEmailCards />
+                    <HowItWorksSection />
+                    {/* Additional sections would go here */}
+                    <PricingSection />
+                    <CTASection />
+                    <Footer />
+                </div>
+            );
+        }
+        
+        // Render the app using React 18's createRoot
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

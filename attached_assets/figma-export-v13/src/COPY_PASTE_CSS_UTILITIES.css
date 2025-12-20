@@ -1,0 +1,374 @@
+/* ============================================
+   COPY THIS ENTIRE FILE CONTENTS
+   PASTE AT THE END OF: /src/styles/globals.css
+   ============================================ */
+
+/* ============================================
+   CUSTOM TYPOGRAPHY SYSTEM
+   ============================================ */
+
+/* Hero/Display Typography */
+.text-hero {
+  font-size: clamp(3rem, 8vw, 5.5rem);
+  font-weight: var(--font-weight-black);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+}
+
+.text-display-xl {
+  font-size: 4.5rem; /* 72px */
+  font-weight: var(--font-weight-black);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+}
+
+@media (max-width: 768px) {
+  .text-display-xl {
+    font-size: 3rem; /* 48px on mobile */
+  }
+}
+
+.text-display-lg {
+  font-size: 4rem; /* 64px */
+  font-weight: var(--font-weight-bold);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+@media (max-width: 768px) {
+  .text-display-lg {
+    font-size: 2.5rem; /* 40px on mobile */
+  }
+}
+
+.text-display {
+  font-size: 3rem; /* 48px */
+  font-weight: var(--font-weight-bold);
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+}
+
+@media (max-width: 768px) {
+  .text-display {
+    font-size: 2rem; /* 32px on mobile */
+  }
+}
+
+.text-display-sm {
+  font-size: 2.25rem; /* 36px */
+  font-weight: var(--font-weight-bold);
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+@media (max-width: 768px) {
+  .text-display-sm {
+    font-size: 1.75rem; /* 28px on mobile */
+  }
+}
+
+/* ============================================
+   Z-INDEX SYSTEM
+   Prevents layering chaos
+   ============================================ */
+
+:root {
+  --z-base: 0;
+  --z-dropdown: 1000;
+  --z-sticky: 1100;
+  --z-fixed: 1200;
+  --z-modal-backdrop: 1300;
+  --z-modal: 1400;
+  --z-popover: 1500;
+  --z-tooltip: 1600;
+}
+
+.z-dropdown { z-index: var(--z-dropdown) !important; }
+.z-sticky { z-index: var(--z-sticky) !important; }
+.z-fixed { z-index: var(--z-fixed) !important; }
+.z-modal-backdrop { z-index: var(--z-modal-backdrop) !important; }
+.z-modal { z-index: var(--z-modal) !important; }
+.z-popover { z-index: var(--z-popover) !important; }
+.z-tooltip { z-index: var(--z-tooltip) !important; }
+
+/* ============================================
+   BRAND SPACING UTILITIES
+   Use your design system spacing
+   ============================================ */
+
+.gap-brand-xs { gap: var(--space-xs); }
+.gap-brand-sm { gap: var(--space-sm); }
+.gap-brand-md { gap: var(--space-md); }
+.gap-brand-lg { gap: var(--space-lg); }
+.gap-brand-xl { gap: var(--space-xl); }
+.gap-brand-2xl { gap: var(--space-2xl); }
+.gap-brand-3xl { gap: var(--space-3xl); }
+.gap-brand-4xl { gap: var(--space-4xl); }
+
+.p-brand-xs { padding: var(--space-xs); }
+.p-brand-sm { padding: var(--space-sm); }
+.p-brand-md { padding: var(--space-md); }
+.p-brand-lg { padding: var(--space-lg); }
+.p-brand-xl { padding: var(--space-xl); }
+.p-brand-2xl { padding: var(--space-2xl); }
+.p-brand-3xl { padding: var(--space-3xl); }
+.p-brand-4xl { padding: var(--space-4xl); }
+
+.m-brand-xs { margin: var(--space-xs); }
+.m-brand-sm { margin: var(--space-sm); }
+.m-brand-md { margin: var(--space-md); }
+.m-brand-lg { margin: var(--space-lg); }
+.m-brand-xl { margin: var(--space-xl); }
+.m-brand-2xl { margin: var(--space-2xl); }
+.m-brand-3xl { margin: var(--space-3xl); }
+.m-brand-4xl { margin: var(--space-4xl); }
+
+/* ============================================
+   CUSTOM SHADOW UTILITIES
+   Use design system shadows
+   ============================================ */
+
+.shadow-brand-subtle {
+  box-shadow: var(--shadow-subtle);
+}
+
+.shadow-brand-medium {
+  box-shadow: var(--shadow-medium);
+}
+
+.shadow-brand-strong {
+  box-shadow: var(--shadow-strong);
+}
+
+.shadow-brand-glow-sky {
+  box-shadow: 0 10px 40px rgba(14, 165, 233, 0.3);
+}
+
+.shadow-brand-glow-blue {
+  box-shadow: 0 10px 40px rgba(37, 99, 235, 0.3);
+}
+
+/* ============================================
+   CUSTOM ANIMATION UTILITIES
+   ============================================ */
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-gradient-shift {
+  background-size: 200% 200%;
+  animation: gradient-shift 8s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  animation: shimmer 2s linear infinite;
+  background-size: 2000px 100%;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+.animate-rotate-gradient {
+  animation: rotate-gradient 20s linear infinite;
+}
+
+/* ============================================
+   GRADIENT UTILITIES
+   Brand-specific gradients
+   ============================================ */
+
+.bg-gradient-brand-primary {
+  background: linear-gradient(135deg, var(--electric-teal), #2563EB);
+}
+
+.bg-gradient-brand-accent {
+  background: linear-gradient(135deg, #0EA5E9, #3B82F6);
+}
+
+.bg-gradient-brand-dark {
+  background: linear-gradient(135deg, var(--deep-navy), #1E293B);
+}
+
+.bg-gradient-brand-light {
+  background: linear-gradient(135deg, var(--pure-white), var(--slate-50));
+}
+
+/* Text gradients */
+.text-gradient-brand {
+  background: linear-gradient(135deg, #0EA5E9, #2563EB, #7C3AED);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-sky-blue {
+  background: linear-gradient(135deg, var(--electric-teal), #2563EB);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ============================================
+   CONTAINER UTILITIES
+   Standard container widths
+   ============================================ */
+
+.container-narrow {
+  max-width: 672px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.container-content {
+  max-width: 896px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.container-text {
+  max-width: 768px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* ============================================
+   BUTTON ENHANCEMENTS
+   ============================================ */
+
+.btn-brand-primary {
+  background: linear-gradient(135deg, #0EA5E9, #2563EB);
+  color: white;
+  font-weight: var(--font-weight-medium);
+  padding: 0.75rem 2rem;
+  border-radius: var(--radius-medium);
+  box-shadow: 0 10px 25px rgba(14, 165, 233, 0.3);
+  transition: all 0.3s ease;
+}
+
+.btn-brand-primary:hover {
+  background: linear-gradient(135deg, #0284C7, #1D4ED8);
+  box-shadow: 0 15px 35px rgba(14, 165, 233, 0.4);
+  transform: translateY(-2px);
+}
+
+/* ============================================
+   GLASSMORPHISM UTILITIES
+   ============================================ */
+
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glass-dark {
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ============================================
+   FOCUS STATES
+   Accessibility improvements
+   ============================================ */
+
+.focus-brand {
+  outline: 2px solid var(--electric-teal);
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--electric-teal);
+  outline-offset: 2px;
+}
+
+/* ============================================
+   SMOOTH SCROLL BEHAVIOR
+   ============================================ */
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* ============================================
+   PREVENT LAYOUT SHIFT
+   Reserve space for dynamic content
+   ============================================ */
+
+.aspect-video {
+  aspect-ratio: 16 / 9;
+}
+
+.aspect-square {
+  aspect-ratio: 1 / 1;
+}
+
+.aspect-portrait {
+  aspect-ratio: 3 / 4;
+}
+
+/* ============================================
+   RESPONSIVE UTILITIES
+   Hide/show at breakpoints
+   ============================================ */
+
+@media (max-width: 640px) {
+  .hide-mobile { display: none !important; }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .hide-tablet { display: none !important; }
+}
+
+@media (min-width: 1025px) {
+  .hide-desktop { display: none !important; }
+}
+
+@media (max-width: 640px) {
+  .show-mobile { display: block !important; }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .show-tablet { display: block !important; }
+}
+
+@media (min-width: 1025px) {
+  .show-desktop { display: block !important; }
+}
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+
+@media print {
+  .no-print { display: none !important; }
+  
+  body {
+    background: white;
+    color: black;
+  }
+  
+  a {
+    text-decoration: underline;
+  }
+}
+
+/* ============================================
+   END OF CUSTOM UTILITIES
+   ============================================ */
