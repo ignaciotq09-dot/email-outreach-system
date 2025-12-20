@@ -1,2 +1,3 @@
 // Re-export from modular structure for backward compatibility
-export { PerformanceMetrics, EmailPerformancePredictor, performancePredictor } from "./performance/index";
+export type { PerformanceMetrics } from "./performance/index";
+export { EmailPerformancePredictor, performancePredictor } from "./performance/index";
