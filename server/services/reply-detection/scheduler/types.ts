@@ -29,3 +29,4 @@ export const HEALTH_CHECK_INTERVAL_MS = 5 * 60 * 1000;
 export const DEAD_MAN_SWITCH_THRESHOLD_MS = 60 * 60 * 1000;
 export const TOKEN_REFRESH_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
 export const ALERT_COOLDOWN_MS = 6 * 60 * 60 * 1000;
+export const alertCooldowns = new Map<string, Date>();
