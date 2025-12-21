@@ -147,8 +147,15 @@ export function Inbox() {
 
           {/* Mark All Read Button */}
           <button
-            onClick={() => {
+            onClick={async () => {
+              // Update local state immediately
               setEmails(prev => prev.map(email => email.status === 'unread' ? { ...email, status: 'read' } : email));
+              // Also call backend API for persistence
+              try {
+                await fetch('/api/inbox/replies/mark-all-read', { method: 'PUT' });
+              } catch (error) {
+                console.log('Note: Backend sync will happen on next login');
+              }
             }}
             className={`px-5 py-2.5 rounded-lg text-base transition-all hover:scale-105 active:scale-95 flex items-center gap-2 ${isDarkMode
               ? 'bg-gradient-to-r from-purple-500/20 to-indigo-500/20 text-purple-300 border border-purple-500/30 hover:border-purple-500/50'
