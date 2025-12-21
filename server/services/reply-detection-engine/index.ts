@@ -16,14 +16,6 @@
 
 export {
   replyDetectionEngine,
-  getQueueStats,
-  getDeadLetterQueue,
-  getRecentAnomalies,
-  getReconciliationHistory,
-  getPendingReviewEntries,
-  getDeadLetterStats,
-  reviewDeadLetterEntry,
-  invalidateHealthCache,
 } from "./engine";
 
 export {
@@ -33,7 +25,15 @@ export {
   getJobById,
   updateJobStatus,
   logAnomaly,
+  getQueueStats,
+  getDeadLetterQueue,
+  getRecentAnomalies,
 } from "./job-queue";
+
+export { getReconciliationHistory } from "./reconciliation";
+export { getPendingReviewEntries, getDeadLetterStats, reviewDeadLetterEntry } from "./dead-letter";
+export { invalidateHealthCache } from "./health-checker";
+
 
 import { createDetectionJob as internalCreateJob } from "./job-queue";
 import type { DetectionProvider } from "./types";
@@ -46,7 +46,7 @@ export async function queueReplyDetectionForSentEmail(
   delayMinutes: number = 5
 ): Promise<void> {
   const scheduledFor = new Date(Date.now() + delayMinutes * 60 * 1000);
-  
+
   await internalCreateJob({
     userId,
     sentEmailId,
@@ -59,7 +59,7 @@ export async function queueReplyDetectionForSentEmail(
       triggeredBy: "email_sent" as const,
     },
   });
-  
+
   console.log(`[ReplyDetectionEngine] Queued detection for email ${sentEmailId} in ${delayMinutes} minutes`);
 }
 
