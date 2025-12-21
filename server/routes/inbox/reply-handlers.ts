@@ -52,3 +52,46 @@ export async function updateReplyStatus(req: Request, res: Response): Promise<an
     res.json(updatedReply);
   } catch (error) { console.error('Error updating reply status:', error); res.status(500).json({ error: 'Failed to update reply status' }); }
 }
+
+// Mark all replies as read/handled for a user
+export async function markAllRead(req: Request, res: Response): Promise<any> {
+  try {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const result = await db.update(replies)
+      .set({ status: 'handled' })
+      .where(and(eq(replies.userId, userId), eq(replies.status, 'new')));
+
+    console.log(`[Inbox] Marked all replies as read for user ${userId}`);
+    res.json({ success: true, message: 'All replies marked as read' });
+  } catch (error) {
+    console.error('Error marking all replies as read:', error);
+    res.status(500).json({ error: 'Failed to mark all replies as read' });
+  }
+}
+
+// Archive a specific reply
+export async function archiveReply(req: Request, res: Response): Promise<any> {
+  try {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const replyId = parseInt(req.params.id);
+
+    const [existingReply] = await db.select().from(replies)
+      .where(and(eq(replies.id, replyId), eq(replies.userId, userId)));
+
+    if (!existingReply) return res.status(404).json({ error: 'Reply not found' });
+
+    const [archivedReply] = await db.update(replies)
+      .set({ status: 'archived' })
+      .where(eq(replies.id, replyId))
+      .returning();
+
+    console.log(`[Inbox] Archived reply ${replyId} for user ${userId}`);
+    res.json(archivedReply);
+  } catch (error) {
+    console.error('Error archiving reply:', error);
+    res.status(500).json({ error: 'Failed to archive reply' });
+  }
+}

@@ -29,6 +29,7 @@ import { registerLinkedInRoutes } from "./linkedin";
 import { registerWorkflowRoutes } from "./workflow";
 import deepDiveRoutes from "./deep-dive";
 import { healthRouter } from "./health";
+import { registerMeetingsRoutes } from "./meetings-crud";
 
 export function registerAllRoutes(app: Express) {
   // Health check routes (no auth required) - register FIRST
@@ -88,4 +89,7 @@ export function registerAllRoutes(app: Express) {
 
   // Contact deep dive enrichment
   app.use(deepDiveRoutes);
+
+  // Meetings CRUD routes
+  registerMeetingsRoutes(app);
 }
