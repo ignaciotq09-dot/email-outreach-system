@@ -520,10 +520,12 @@ export function Meetings() {
               </div>
 
               {/* Filter Button */}
-              <button className={`px-4 py-2 rounded-lg text-base transition-all flex items-center gap-2 border ${isDarkMode
-                ? 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'
-                : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
-                }`}>
+              <button
+                onClick={() => alert('Filter by platform:\n\n• Zoom\n• Google Meet\n• Teams\n• Phone\n• In Person\n\nUse the tabs above to filter by status!')}
+                className={`px-4 py-2 rounded-lg text-base transition-all flex items-center gap-2 border ${isDarkMode
+                  ? 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'
+                  : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                  }`}>
                 <Filter className="w-4 h-4" />
                 <span>Filter</span>
               </button>
