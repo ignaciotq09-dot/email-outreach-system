@@ -1,4 +1,4 @@
-import { pgTable, text, varchar, integer, timestamp, serial, index } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, serial, index, boolean } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -24,6 +24,9 @@ export const sentSms = pgTable("sent_sms", {
   sentAt: timestamp("sent_at").defaultNow(),
   deliveredAt: timestamp("delivered_at"),
   updatedAt: timestamp("updated_at").defaultNow(),
+  // Archival system for efficient sent SMS display
+  archived: boolean("archived").default(false),
+  archivedAt: timestamp("archived_at"),
 }, (table) => ({
   userIdIdx: index("sent_sms_user_id_idx").on(table.userId),
   contactIdIdx: index("sent_sms_contact_id_idx").on(table.contactId),
@@ -31,6 +34,9 @@ export const sentSms = pgTable("sent_sms", {
   statusIdx: index("sent_sms_status_idx").on(table.status),
   sentAtIdx: index("sent_sms_sent_at_idx").on(table.sentAt),
   twilioSidIdx: index("sent_sms_twilio_sid_idx").on(table.twilioSid),
+  // Archival indexes
+  archivedIdx: index("sent_sms_archived_idx").on(table.archived),
+  userIdArchivedIdx: index("sent_sms_user_id_archived_idx").on(table.userId, table.archived),
 }));
 
 export const smsSettings = pgTable("sms_settings", {

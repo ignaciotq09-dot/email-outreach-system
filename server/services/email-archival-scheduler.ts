@@ -1,11 +1,12 @@
 /**
- * Email Archival Scheduler
+ * Email & SMS Archival Scheduler
  * 
- * Runs the email archival job daily at 2 AM to archive old emails
- * and keep the Sent tab fast (only 100 recent emails per user).
+ * Runs the archival jobs daily at 2 AM to archive old emails and SMS
+ * and keep the Sent tab fast (only 100 recent items per user).
  */
 
 import { archiveOldEmails } from "./email-archival";
+import { archiveOldSms } from "./sms-archival";
 
 let schedulerTimer: NodeJS.Timeout | null = null;
 let isRunning = false;
@@ -32,16 +33,25 @@ function msUntilNextRun(): number {
 }
 
 /**
- * Run the archival job and schedule next run
+ * Run both email and SMS archival jobs and schedule next run
  */
 async function runArchivalJob() {
-    console.log("[EmailArchivalScheduler] Running scheduled archival job...");
+    console.log("[ArchivalScheduler] Running scheduled archival jobs...");
 
+    // Run Email Archival
     try {
-        const result = await archiveOldEmails();
-        console.log(`[EmailArchivalScheduler] Completed: ${result.usersProcessed} users, ${result.emailsArchived} emails archived`);
+        const emailResult = await archiveOldEmails();
+        console.log(`[ArchivalScheduler] Emails: ${emailResult.usersProcessed} users, ${emailResult.emailsArchived} archived`);
     } catch (error) {
-        console.error("[EmailArchivalScheduler] Job failed:", error);
+        console.error("[ArchivalScheduler] Email archival failed:", error);
+    }
+
+    // Run SMS Archival
+    try {
+        const smsResult = await archiveOldSms();
+        console.log(`[ArchivalScheduler] SMS: ${smsResult.usersProcessed} users, ${smsResult.smsArchived} archived`);
+    } catch (error) {
+        console.error("[ArchivalScheduler] SMS archival failed:", error);
     }
 
     // Schedule next run for tomorrow at 2 AM
