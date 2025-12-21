@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { 
-  Mail, 
+import {
+  Mail,
   Inbox as InboxIcon,
   Star,
   Archive,
@@ -52,15 +52,15 @@ export function Inbox() {
     const checkDarkMode = () => {
       setIsDarkMode(document.documentElement.classList.contains('dark'));
     };
-    
+
     checkDarkMode();
-    
+
     const observer = new MutationObserver(checkDarkMode);
-    observer.observe(document.documentElement, { 
-      attributes: true, 
-      attributeFilter: ['class'] 
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
     });
-    
+
     return () => observer.disconnect();
   }, []);
 
@@ -107,8 +107,8 @@ export function Inbox() {
   };
 
   const toggleStar = (emailId: string) => {
-    setEmails(prev => 
-      prev.map(email => 
+    setEmails(prev =>
+      prev.map(email =>
         email.id === emailId ? { ...email, isStarred: !email.isStarred } : email
       )
     );
@@ -133,7 +133,7 @@ export function Inbox() {
       </div>
 
       <div className="max-w-7xl mx-auto p-4 space-y-4 relative z-10">
-        
+
         {/* Page Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -146,11 +146,14 @@ export function Inbox() {
           </div>
 
           {/* Mark All Read Button */}
-          <button className={`px-5 py-2.5 rounded-lg text-base transition-all hover:scale-105 active:scale-95 flex items-center gap-2 ${
-            isDarkMode
+          <button
+            onClick={() => {
+              setEmails(prev => prev.map(email => email.status === 'unread' ? { ...email, status: 'read' } : email));
+            }}
+            className={`px-5 py-2.5 rounded-lg text-base transition-all hover:scale-105 active:scale-95 flex items-center gap-2 ${isDarkMode
               ? 'bg-gradient-to-r from-purple-500/20 to-indigo-500/20 text-purple-300 border border-purple-500/30 hover:border-purple-500/50'
               : 'bg-gradient-to-r from-purple-50 to-indigo-50 text-purple-700 border border-purple-300 hover:border-purple-400'
-          }`}>
+              }`}>
             <CheckCircle2 className="w-5 h-5" />
             <span>Mark All Read</span>
           </button>
@@ -159,11 +162,10 @@ export function Inbox() {
         {/* Stats Cards */}
         <div className="grid grid-cols-4 gap-3">
           {/* Total Emails */}
-          <div className={`relative overflow-hidden rounded-xl p-4 border transition-all ${
-            isDarkMode
-              ? 'bg-white/5 backdrop-blur-xl border-white/10 hover:border-purple-500/30'
-              : 'bg-white/80 backdrop-blur-xl border-purple-200/50 hover:border-purple-300'
-          }`}>
+          <div className={`relative overflow-hidden rounded-xl p-4 border transition-all ${isDarkMode
+            ? 'bg-white/5 backdrop-blur-xl border-white/10 hover:border-purple-500/30'
+            : 'bg-white/80 backdrop-blur-xl border-purple-200/50 hover:border-purple-300'
+            }`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -173,20 +175,18 @@ export function Inbox() {
                   {stats.total}
                 </p>
               </div>
-              <div className={`p-2.5 rounded-lg ${
-                isDarkMode ? 'bg-purple-500/10' : 'bg-purple-100'
-              }`}>
+              <div className={`p-2.5 rounded-lg ${isDarkMode ? 'bg-purple-500/10' : 'bg-purple-100'
+                }`}>
                 <InboxIcon className={`w-6 h-6 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`} />
               </div>
             </div>
           </div>
 
           {/* Unread */}
-          <div className={`relative overflow-hidden rounded-xl p-4 border transition-all ${
-            isDarkMode
-              ? 'bg-white/5 backdrop-blur-xl border-white/10 hover:border-amber-500/30'
-              : 'bg-white/80 backdrop-blur-xl border-amber-200/50 hover:border-amber-300'
-          }`}>
+          <div className={`relative overflow-hidden rounded-xl p-4 border transition-all ${isDarkMode
+            ? 'bg-white/5 backdrop-blur-xl border-white/10 hover:border-amber-500/30'
+            : 'bg-white/80 backdrop-blur-xl border-amber-200/50 hover:border-amber-300'
+            }`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -196,20 +196,18 @@ export function Inbox() {
                   {stats.unread}
                 </p>
               </div>
-              <div className={`p-2.5 rounded-lg ${
-                isDarkMode ? 'bg-amber-500/10' : 'bg-amber-100'
-              }`}>
+              <div className={`p-2.5 rounded-lg ${isDarkMode ? 'bg-amber-500/10' : 'bg-amber-100'
+                }`}>
                 <Mail className={`w-6 h-6 ${isDarkMode ? 'text-amber-400' : 'text-amber-600'}`} />
               </div>
             </div>
           </div>
 
           {/* Replied */}
-          <div className={`relative overflow-hidden rounded-xl p-4 border transition-all ${
-            isDarkMode
-              ? 'bg-white/5 backdrop-blur-xl border-white/10 hover:border-green-500/30'
-              : 'bg-white/80 backdrop-blur-xl border-green-200/50 hover:border-green-300'
-          }`}>
+          <div className={`relative overflow-hidden rounded-xl p-4 border transition-all ${isDarkMode
+            ? 'bg-white/5 backdrop-blur-xl border-white/10 hover:border-green-500/30'
+            : 'bg-white/80 backdrop-blur-xl border-green-200/50 hover:border-green-300'
+            }`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -219,20 +217,18 @@ export function Inbox() {
                   {stats.replied}
                 </p>
               </div>
-              <div className={`p-2.5 rounded-lg ${
-                isDarkMode ? 'bg-green-500/10' : 'bg-green-100'
-              }`}>
+              <div className={`p-2.5 rounded-lg ${isDarkMode ? 'bg-green-500/10' : 'bg-green-100'
+                }`}>
                 <Reply className={`w-6 h-6 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`} />
               </div>
             </div>
           </div>
 
           {/* Starred */}
-          <div className={`relative overflow-hidden rounded-xl p-4 border transition-all ${
-            isDarkMode
-              ? 'bg-white/5 backdrop-blur-xl border-white/10 hover:border-yellow-500/30'
-              : 'bg-white/80 backdrop-blur-xl border-yellow-200/50 hover:border-yellow-300'
-          }`}>
+          <div className={`relative overflow-hidden rounded-xl p-4 border transition-all ${isDarkMode
+            ? 'bg-white/5 backdrop-blur-xl border-white/10 hover:border-yellow-500/30'
+            : 'bg-white/80 backdrop-blur-xl border-yellow-200/50 hover:border-yellow-300'
+            }`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -242,9 +238,8 @@ export function Inbox() {
                   {stats.starred}
                 </p>
               </div>
-              <div className={`p-2.5 rounded-lg ${
-                isDarkMode ? 'bg-yellow-500/10' : 'bg-yellow-100'
-              }`}>
+              <div className={`p-2.5 rounded-lg ${isDarkMode ? 'bg-yellow-500/10' : 'bg-yellow-100'
+                }`}>
                 <Star className={`w-6 h-6 ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'}`} />
               </div>
             </div>
@@ -252,25 +247,23 @@ export function Inbox() {
         </div>
 
         {/* Filters and Tabs */}
-        <div className={`rounded-xl p-4 border ${
-          isDarkMode
-            ? 'bg-white/5 backdrop-blur-xl border-white/10'
-            : 'bg-white/80 backdrop-blur-xl border-purple-200/50'
-        }`}>
+        <div className={`rounded-xl p-4 border ${isDarkMode
+          ? 'bg-white/5 backdrop-blur-xl border-white/10'
+          : 'bg-white/80 backdrop-blur-xl border-purple-200/50'
+          }`}>
           <div className="flex items-center justify-between gap-3">
             {/* Left - Tabs */}
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => setSelectedTab('all')}
-                className={`px-4 py-2 rounded-lg text-base transition-all ${
-                  selectedTab === 'all'
-                    ? isDarkMode
-                      ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                      : 'bg-purple-100 text-purple-700 border border-purple-300'
-                    : isDarkMode
-                      ? 'text-gray-400 hover:text-gray-300 hover:bg-white/5'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                }`}
+                className={`px-4 py-2 rounded-lg text-base transition-all ${selectedTab === 'all'
+                  ? isDarkMode
+                    ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                    : 'bg-purple-100 text-purple-700 border border-purple-300'
+                  : isDarkMode
+                    ? 'text-gray-400 hover:text-gray-300 hover:bg-white/5'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  }`}
               >
                 <div className="flex items-center gap-2">
                   <InboxIcon className="w-4 h-4" />
@@ -280,30 +273,28 @@ export function Inbox() {
 
               <button
                 onClick={() => setSelectedTab('unread')}
-                className={`px-4 py-2 rounded-lg text-base transition-all ${
-                  selectedTab === 'unread'
-                    ? isDarkMode
-                      ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                      : 'bg-purple-100 text-purple-700 border border-purple-300'
-                    : isDarkMode
-                      ? 'text-gray-400 hover:text-gray-300 hover:bg-white/5'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                }`}
+                className={`px-4 py-2 rounded-lg text-base transition-all ${selectedTab === 'unread'
+                  ? isDarkMode
+                    ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                    : 'bg-purple-100 text-purple-700 border border-purple-300'
+                  : isDarkMode
+                    ? 'text-gray-400 hover:text-gray-300 hover:bg-white/5'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  }`}
               >
                 <span>Unread ({stats.unread})</span>
               </button>
 
               <button
                 onClick={() => setSelectedTab('starred')}
-                className={`px-4 py-2 rounded-lg text-base transition-all ${
-                  selectedTab === 'starred'
-                    ? isDarkMode
-                      ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                      : 'bg-purple-100 text-purple-700 border border-purple-300'
-                    : isDarkMode
-                      ? 'text-gray-400 hover:text-gray-300 hover:bg-white/5'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                }`}
+                className={`px-4 py-2 rounded-lg text-base transition-all ${selectedTab === 'starred'
+                  ? isDarkMode
+                    ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                    : 'bg-purple-100 text-purple-700 border border-purple-300'
+                  : isDarkMode
+                    ? 'text-gray-400 hover:text-gray-300 hover:bg-white/5'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  }`}
               >
                 <div className="flex items-center gap-2">
                   <Star className="w-4 h-4" />
@@ -315,29 +306,28 @@ export function Inbox() {
             {/* Right - Search and Filters */}
             <div className="flex items-center gap-2">
               {/* Search */}
-              <div className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${
-                isDarkMode
-                  ? 'bg-white/5 border-white/10 text-gray-300'
-                  : 'bg-white border-gray-200 text-gray-700'
-              }`}>
+              <div className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${isDarkMode
+                ? 'bg-white/5 border-white/10 text-gray-300'
+                : 'bg-white border-gray-200 text-gray-700'
+                }`}>
                 <Search className="w-4 h-4 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search inbox..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className={`bg-transparent outline-none text-base w-48 placeholder:text-gray-500 ${
-                    isDarkMode ? 'text-gray-200' : 'text-gray-900'
-                  }`}
+                  className={`bg-transparent outline-none text-base w-48 placeholder:text-gray-500 ${isDarkMode ? 'text-gray-200' : 'text-gray-900'
+                    }`}
                 />
               </div>
 
               {/* Filter Button */}
-              <button className={`px-4 py-2 rounded-lg text-base transition-all flex items-center gap-2 border ${
-                isDarkMode
+              <button
+                onClick={() => alert('Filter options:\n\n• All: Shows all emails\n• Unread: Shows only unread\n• Starred: Shows only starred\n\nUse the tabs above to filter!')}
+                className={`px-4 py-2 rounded-lg text-base transition-all flex items-center gap-2 border ${isDarkMode
                   ? 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'
                   : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
-              }`}>
+                  }`}>
                 <Filter className="w-4 h-4" />
                 <span>Filter</span>
               </button>
@@ -351,11 +341,10 @@ export function Inbox() {
         </div>
 
         {/* Email List */}
-        <div className={`rounded-xl border overflow-hidden ${
-          isDarkMode
-            ? 'bg-white/5 backdrop-blur-xl border-white/10'
-            : 'bg-white/80 backdrop-blur-xl border-purple-200/50'
-        }`}>
+        <div className={`rounded-xl border overflow-hidden ${isDarkMode
+          ? 'bg-white/5 backdrop-blur-xl border-white/10'
+          : 'bg-white/80 backdrop-blur-xl border-purple-200/50'
+          }`}>
           {/* Email Rows */}
           <div className="divide-y divide-white/5">
             {filteredEmails.map((email) => {
@@ -365,21 +354,19 @@ export function Inbox() {
               return (
                 <div
                   key={email.id}
-                  className={`px-5 py-4 transition-all ${
-                    isDarkMode
-                      ? 'hover:bg-white/5 border-white/5'
-                      : 'hover:bg-purple-50/50 border-gray-100'
-                  } ${email.status === 'unread' ? 'bg-purple-500/5' : ''}`}
+                  className={`px-5 py-4 transition-all ${isDarkMode
+                    ? 'hover:bg-white/5 border-white/5'
+                    : 'hover:bg-purple-50/50 border-gray-100'
+                    } ${email.status === 'unread' ? 'bg-purple-500/5' : ''}`}
                 >
                   <div className="flex items-start gap-4">
                     {/* Star */}
-                    <button 
+                    <button
                       onClick={() => toggleStar(email.id)}
-                      className={`mt-1 transition-all hover:scale-110 ${
-                        email.isStarred 
-                          ? 'text-yellow-400' 
-                          : isDarkMode ? 'text-gray-600 hover:text-gray-400' : 'text-gray-300 hover:text-gray-500'
-                      }`}
+                      className={`mt-1 transition-all hover:scale-110 ${email.isStarred
+                        ? 'text-yellow-400'
+                        : isDarkMode ? 'text-gray-600 hover:text-gray-400' : 'text-gray-300 hover:text-gray-500'
+                        }`}
                     >
                       <Star className={`w-5 h-5 ${email.isStarred ? 'fill-current' : ''}`} />
                     </button>
@@ -389,11 +376,10 @@ export function Inbox() {
                       <div className="flex items-start justify-between gap-4 mb-2">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-3">
-                            <h3 className={`text-base ${
-                              email.status === 'unread' 
-                                ? isDarkMode ? 'text-white' : 'text-gray-900'
-                                : isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                            }`}>
+                            <h3 className={`text-base ${email.status === 'unread'
+                              ? isDarkMode ? 'text-white' : 'text-gray-900'
+                              : isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                              }`}>
                               {email.senderName}
                             </h3>
                             <span className={`text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
@@ -412,9 +398,8 @@ export function Inbox() {
                           </span>
 
                           {/* Status Badge */}
-                          <div className={`inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-sm ${
-                            statusConfig.bgColor
-                          } ${statusConfig.borderColor} ${statusConfig.textColor}`}>
+                          <div className={`inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-sm ${statusConfig.bgColor
+                            } ${statusConfig.borderColor} ${statusConfig.textColor}`}>
                             <StatusIcon className="w-4 h-4" />
                             <span>{statusConfig.label}</span>
                           </div>
@@ -423,11 +408,10 @@ export function Inbox() {
 
                       {/* Subject and Preview */}
                       <div className="mb-2">
-                        <h4 className={`text-base mb-1 ${
-                          email.status === 'unread' 
-                            ? isDarkMode ? 'text-white' : 'text-gray-900'
-                            : isDarkMode ? 'text-gray-400' : 'text-gray-700'
-                        }`}>
+                        <h4 className={`text-base mb-1 ${email.status === 'unread'
+                          ? isDarkMode ? 'text-white' : 'text-gray-900'
+                          : isDarkMode ? 'text-gray-400' : 'text-gray-700'
+                          }`}>
                           {email.subject}
                         </h4>
                         <p className={`text-sm line-clamp-2 ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>
@@ -437,29 +421,44 @@ export function Inbox() {
 
                       {/* Actions */}
                       <div className="flex items-center gap-2">
-                        <button className={`px-3 py-1.5 rounded-lg text-sm transition-all flex items-center gap-1.5 ${
-                          isDarkMode
+                        <button
+                          onClick={() => {
+                            alert(`Reply to ${email.senderName} at ${email.email}\n\nTip: Go to Compose tab to write your reply!`);
+                            setEmails(prev => prev.map(e => e.id === email.id ? { ...e, status: 'read' } : e));
+                          }}
+                          className={`px-3 py-1.5 rounded-lg text-sm transition-all flex items-center gap-1.5 ${isDarkMode
                             ? 'bg-purple-500/10 text-purple-300 border border-purple-500/30 hover:bg-purple-500/20'
                             : 'bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100'
-                        }`}>
+                            }`}>
                           <Reply className="w-3.5 h-3.5" />
                           <span>Reply</span>
                         </button>
 
-                        <button className={`px-3 py-1.5 rounded-lg text-sm transition-all flex items-center gap-1.5 ${
-                          isDarkMode
+                        <button
+                          onClick={() => {
+                            setEmails(prev => prev.filter(e => e.id !== email.id));
+                          }}
+                          className={`px-3 py-1.5 rounded-lg text-sm transition-all flex items-center gap-1.5 ${isDarkMode
                             ? 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'
                             : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
-                        }`}>
+                            }`}>
                           <Archive className="w-3.5 h-3.5" />
                           <span>Archive</span>
                         </button>
 
-                        <button className={`p-1.5 rounded-lg transition-all ${
-                          isDarkMode
+                        <button
+                          onClick={() => {
+                            const action = prompt('Choose action:\n1. Mark as unread\n2. Delete\n\nEnter 1 or 2:');
+                            if (action === '1') {
+                              setEmails(prev => prev.map(e => e.id === email.id ? { ...e, status: 'unread' } : e));
+                            } else if (action === '2') {
+                              setEmails(prev => prev.filter(e => e.id !== email.id));
+                            }
+                          }}
+                          className={`p-1.5 rounded-lg transition-all ${isDarkMode
                             ? 'text-gray-400 hover:text-gray-300 hover:bg-white/5'
                             : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                        }`}>
+                            }`}>
                           <MoreVertical className="w-4 h-4" />
                         </button>
                       </div>

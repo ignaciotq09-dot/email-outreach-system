@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { 
+import {
   Calendar,
   Video,
   Clock,
@@ -35,90 +35,90 @@ interface Meeting {
 }
 
 const MOCK_MEETINGS: Meeting[] = [
-  { 
-    id: '1', 
-    attendeeName: 'Sarah Mitchell', 
-    company: 'TechVentures Inc', 
+  {
+    id: '1',
+    attendeeName: 'Sarah Mitchell',
+    company: 'TechVentures Inc',
     email: 'sarah.m@techventures.com',
     title: 'Product Demo & Partnership Discussion',
-    date: 'Dec 18, 2025', 
-    time: '2:00 PM', 
+    date: 'Dec 18, 2025',
+    time: '2:00 PM',
     duration: '30 min',
     platform: 'zoom',
     status: 'upcoming',
     meetingLink: 'https://zoom.us/j/123456789',
     notes: 'Interested in enterprise plan'
   },
-  { 
-    id: '2', 
-    attendeeName: 'Michael Chen', 
-    company: 'Growth Partners', 
+  {
+    id: '2',
+    attendeeName: 'Michael Chen',
+    company: 'Growth Partners',
     email: 'michael.c@growthpartners.com',
     title: 'Strategy Session',
-    date: 'Dec 18, 2025', 
-    time: '4:30 PM', 
+    date: 'Dec 18, 2025',
+    time: '4:30 PM',
     duration: '45 min',
     platform: 'google-meet',
     status: 'upcoming',
     meetingLink: 'https://meet.google.com/xyz-abcd-efg'
   },
-  { 
-    id: '3', 
-    attendeeName: 'Emily Johnson', 
-    company: 'Startup Labs', 
+  {
+    id: '3',
+    attendeeName: 'Emily Johnson',
+    company: 'Startup Labs',
     email: 'emily.j@startuplabs.com',
     title: 'Initial Consultation',
-    date: 'Dec 19, 2025', 
-    time: '10:00 AM', 
+    date: 'Dec 19, 2025',
+    time: '10:00 AM',
     duration: '30 min',
     platform: 'teams',
     status: 'upcoming',
     meetingLink: 'https://teams.microsoft.com/l/meetup-join/...'
   },
-  { 
-    id: '4', 
-    attendeeName: 'David Park', 
-    company: 'Innovation Corp', 
+  {
+    id: '4',
+    attendeeName: 'David Park',
+    company: 'Innovation Corp',
     email: 'david.p@innovationcorp.com',
     title: 'Follow-up Call',
-    date: 'Dec 19, 2025', 
-    time: '3:00 PM', 
+    date: 'Dec 19, 2025',
+    time: '3:00 PM',
     duration: '15 min',
     platform: 'phone',
     status: 'upcoming'
   },
-  { 
-    id: '5', 
-    attendeeName: 'Lisa Anderson', 
-    company: 'Digital Solutions', 
+  {
+    id: '5',
+    attendeeName: 'Lisa Anderson',
+    company: 'Digital Solutions',
     email: 'lisa.a@digitalsolutions.com',
     title: 'Contract Review Meeting',
-    date: 'Dec 15, 2025', 
-    time: '11:00 AM', 
+    date: 'Dec 15, 2025',
+    time: '11:00 AM',
     duration: '60 min',
     platform: 'zoom',
     status: 'completed'
   },
-  { 
-    id: '6', 
-    attendeeName: 'James Wilson', 
-    company: 'Cloud Services Ltd', 
+  {
+    id: '6',
+    attendeeName: 'James Wilson',
+    company: 'Cloud Services Ltd',
     email: 'james.w@cloudservices.com',
     title: 'Technical Integration Discussion',
-    date: 'Dec 14, 2025', 
-    time: '2:00 PM', 
+    date: 'Dec 14, 2025',
+    time: '2:00 PM',
     duration: '45 min',
     platform: 'google-meet',
     status: 'completed'
   },
-  { 
-    id: '7', 
-    attendeeName: 'Rachel Green', 
-    company: 'Marketing Pro', 
+  {
+    id: '7',
+    attendeeName: 'Rachel Green',
+    company: 'Marketing Pro',
     email: 'rachel.g@marketingpro.com',
     title: 'Campaign Planning Session',
-    date: 'Dec 13, 2025', 
-    time: '1:00 PM', 
+    date: 'Dec 13, 2025',
+    time: '1:00 PM',
     duration: '30 min',
     platform: 'teams',
     status: 'cancelled'
@@ -137,15 +137,15 @@ export function Meetings() {
     const checkDarkMode = () => {
       setIsDarkMode(document.documentElement.classList.contains('dark'));
     };
-    
+
     checkDarkMode();
-    
+
     const observer = new MutationObserver(checkDarkMode);
-    observer.observe(document.documentElement, { 
-      attributes: true, 
-      attributeFilter: ['class'] 
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
     });
-    
+
     return () => observer.disconnect();
   }, []);
 
@@ -257,7 +257,7 @@ export function Meetings() {
       </div>
 
       <div className="max-w-7xl mx-auto p-4 space-y-4 relative z-10">
-        
+
         {/* Page Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -270,27 +270,44 @@ export function Meetings() {
           </div>
 
           {/* Create Meeting Button */}
-          <button className={`px-5 py-2.5 rounded-lg text-base transition-all hover:scale-105 active:scale-95 flex items-center gap-2 ${
-            isDarkMode
+          <button
+            onClick={() => {
+              const title = prompt('Meeting title:');
+              if (title) {
+                const newMeeting = {
+                  id: String(Date.now()),
+                  attendeeName: 'New Attendee',
+                  company: 'Company',
+                  email: '',
+                  title,
+                  date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+                  time: '10:00 AM',
+                  duration: '30 min',
+                  platform: 'zoom' as const,
+                  status: 'upcoming' as const,
+                  meetingLink: 'https://zoom.us/j/' + Date.now()
+                };
+                setMeetings(prev => [newMeeting, ...prev]);
+              }
+            }}
+            className={`px-5 py-2.5 rounded-lg text-base transition-all hover:scale-105 active:scale-95 flex items-center gap-2 ${isDarkMode
               ? 'bg-gradient-to-r from-purple-500/20 to-indigo-500/20 text-purple-300 border border-purple-500/30 hover:border-purple-500/50'
               : 'bg-gradient-to-r from-purple-50 to-indigo-50 text-purple-700 border border-purple-300 hover:border-purple-400'
-          }`}>
+              }`}>
             <Calendar className="w-5 h-5" />
             <span>Schedule Meeting</span>
           </button>
         </div>
 
         {/* Booking Link Card */}
-        <div className={`rounded-xl p-4 border ${
-          isDarkMode
-            ? 'bg-white/5 backdrop-blur-xl border-white/10'
-            : 'bg-white/80 backdrop-blur-xl border-purple-200/50'
-        }`}>
+        <div className={`rounded-xl p-4 border ${isDarkMode
+          ? 'bg-white/5 backdrop-blur-xl border-white/10'
+          : 'bg-white/80 backdrop-blur-xl border-purple-200/50'
+          }`}>
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 flex-1">
-              <div className={`p-2.5 rounded-lg ${
-                isDarkMode ? 'bg-purple-500/10' : 'bg-purple-100'
-              }`}>
+              <div className={`p-2.5 rounded-lg ${isDarkMode ? 'bg-purple-500/10' : 'bg-purple-100'
+                }`}>
                 <LinkIcon className={`w-5 h-5 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`} />
               </div>
               <div className="flex-1">
@@ -302,40 +319,38 @@ export function Meetings() {
                     type="text"
                     value={bookingLink}
                     onChange={(e) => setBookingLink(e.target.value)}
-                    className={`text-base flex-1 bg-transparent outline-none ${
-                      isDarkMode ? 'text-purple-300' : 'text-purple-700'
-                    }`}
+                    className={`text-base flex-1 bg-transparent outline-none ${isDarkMode ? 'text-purple-300' : 'text-purple-700'
+                      }`}
                   />
                 </div>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-2">
-              <button 
+              <button
                 onClick={copyBookingLink}
-                className={`px-4 py-2 rounded-lg text-base transition-all flex items-center gap-2 border ${
-                  isDarkMode
-                    ? 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'
-                    : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
-                }`}>
+                className={`px-4 py-2 rounded-lg text-base transition-all flex items-center gap-2 border ${isDarkMode
+                  ? 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'
+                  : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                  }`}>
                 <Copy className="w-4 h-4" />
                 <span>Copy</span>
               </button>
 
-              <button className={`px-4 py-2 rounded-lg text-base transition-all flex items-center gap-2 border ${
-                isDarkMode
-                  ? 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'
-                  : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
-              }`}>
+              <button className={`px-4 py-2 rounded-lg text-base transition-all flex items-center gap-2 border ${isDarkMode
+                ? 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'
+                : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                }`}>
                 <Edit className="w-4 h-4" />
                 <span>Edit</span>
               </button>
 
-              <button className={`p-2 rounded-lg transition-all border ${
-                isDarkMode
+              <button
+                onClick={() => window.open(bookingLink, '_blank')}
+                className={`p-2 rounded-lg transition-all border ${isDarkMode
                   ? 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'
                   : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
-              }`}>
+                  }`}>
                 <ExternalLink className="w-4 h-4" />
               </button>
             </div>
@@ -345,11 +360,10 @@ export function Meetings() {
         {/* Stats Cards */}
         <div className="grid grid-cols-4 gap-3">
           {/* Total Meetings */}
-          <div className={`relative overflow-hidden rounded-xl p-4 border transition-all ${
-            isDarkMode
-              ? 'bg-white/5 backdrop-blur-xl border-white/10 hover:border-purple-500/30'
-              : 'bg-white/80 backdrop-blur-xl border-purple-200/50 hover:border-purple-300'
-          }`}>
+          <div className={`relative overflow-hidden rounded-xl p-4 border transition-all ${isDarkMode
+            ? 'bg-white/5 backdrop-blur-xl border-white/10 hover:border-purple-500/30'
+            : 'bg-white/80 backdrop-blur-xl border-purple-200/50 hover:border-purple-300'
+            }`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -359,20 +373,18 @@ export function Meetings() {
                   {stats.total}
                 </p>
               </div>
-              <div className={`p-2.5 rounded-lg ${
-                isDarkMode ? 'bg-purple-500/10' : 'bg-purple-100'
-              }`}>
+              <div className={`p-2.5 rounded-lg ${isDarkMode ? 'bg-purple-500/10' : 'bg-purple-100'
+                }`}>
                 <Calendar className={`w-6 h-6 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`} />
               </div>
             </div>
           </div>
 
           {/* Upcoming */}
-          <div className={`relative overflow-hidden rounded-xl p-4 border transition-all ${
-            isDarkMode
-              ? 'bg-white/5 backdrop-blur-xl border-white/10 hover:border-blue-500/30'
-              : 'bg-white/80 backdrop-blur-xl border-blue-200/50 hover:border-blue-300'
-          }`}>
+          <div className={`relative overflow-hidden rounded-xl p-4 border transition-all ${isDarkMode
+            ? 'bg-white/5 backdrop-blur-xl border-white/10 hover:border-blue-500/30'
+            : 'bg-white/80 backdrop-blur-xl border-blue-200/50 hover:border-blue-300'
+            }`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -382,20 +394,18 @@ export function Meetings() {
                   {stats.upcoming}
                 </p>
               </div>
-              <div className={`p-2.5 rounded-lg ${
-                isDarkMode ? 'bg-blue-500/10' : 'bg-blue-100'
-              }`}>
+              <div className={`p-2.5 rounded-lg ${isDarkMode ? 'bg-blue-500/10' : 'bg-blue-100'
+                }`}>
                 <Clock className={`w-6 h-6 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
               </div>
             </div>
           </div>
 
           {/* Completed */}
-          <div className={`relative overflow-hidden rounded-xl p-4 border transition-all ${
-            isDarkMode
-              ? 'bg-white/5 backdrop-blur-xl border-white/10 hover:border-green-500/30'
-              : 'bg-white/80 backdrop-blur-xl border-green-200/50 hover:border-green-300'
-          }`}>
+          <div className={`relative overflow-hidden rounded-xl p-4 border transition-all ${isDarkMode
+            ? 'bg-white/5 backdrop-blur-xl border-white/10 hover:border-green-500/30'
+            : 'bg-white/80 backdrop-blur-xl border-green-200/50 hover:border-green-300'
+            }`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -405,20 +415,18 @@ export function Meetings() {
                   {stats.completed}
                 </p>
               </div>
-              <div className={`p-2.5 rounded-lg ${
-                isDarkMode ? 'bg-green-500/10' : 'bg-green-100'
-              }`}>
+              <div className={`p-2.5 rounded-lg ${isDarkMode ? 'bg-green-500/10' : 'bg-green-100'
+                }`}>
                 <CheckCircle2 className={`w-6 h-6 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`} />
               </div>
             </div>
           </div>
 
           {/* Cancelled */}
-          <div className={`relative overflow-hidden rounded-xl p-4 border transition-all ${
-            isDarkMode
-              ? 'bg-white/5 backdrop-blur-xl border-white/10 hover:border-red-500/30'
-              : 'bg-white/80 backdrop-blur-xl border-red-200/50 hover:border-red-300'
-          }`}>
+          <div className={`relative overflow-hidden rounded-xl p-4 border transition-all ${isDarkMode
+            ? 'bg-white/5 backdrop-blur-xl border-white/10 hover:border-red-500/30'
+            : 'bg-white/80 backdrop-blur-xl border-red-200/50 hover:border-red-300'
+            }`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -428,9 +436,8 @@ export function Meetings() {
                   {stats.cancelled}
                 </p>
               </div>
-              <div className={`p-2.5 rounded-lg ${
-                isDarkMode ? 'bg-red-500/10' : 'bg-red-100'
-              }`}>
+              <div className={`p-2.5 rounded-lg ${isDarkMode ? 'bg-red-500/10' : 'bg-red-100'
+                }`}>
                 <XCircle className={`w-6 h-6 ${isDarkMode ? 'text-red-400' : 'text-red-600'}`} />
               </div>
             </div>
@@ -438,25 +445,23 @@ export function Meetings() {
         </div>
 
         {/* Filters and Tabs */}
-        <div className={`rounded-xl p-4 border ${
-          isDarkMode
-            ? 'bg-white/5 backdrop-blur-xl border-white/10'
-            : 'bg-white/80 backdrop-blur-xl border-purple-200/50'
-        }`}>
+        <div className={`rounded-xl p-4 border ${isDarkMode
+          ? 'bg-white/5 backdrop-blur-xl border-white/10'
+          : 'bg-white/80 backdrop-blur-xl border-purple-200/50'
+          }`}>
           <div className="flex items-center justify-between gap-3">
             {/* Left - Tabs */}
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => setSelectedTab('upcoming')}
-                className={`px-4 py-2 rounded-lg text-base transition-all ${
-                  selectedTab === 'upcoming'
-                    ? isDarkMode
-                      ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                      : 'bg-purple-100 text-purple-700 border border-purple-300'
-                    : isDarkMode
-                      ? 'text-gray-400 hover:text-gray-300 hover:bg-white/5'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                }`}
+                className={`px-4 py-2 rounded-lg text-base transition-all ${selectedTab === 'upcoming'
+                  ? isDarkMode
+                    ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                    : 'bg-purple-100 text-purple-700 border border-purple-300'
+                  : isDarkMode
+                    ? 'text-gray-400 hover:text-gray-300 hover:bg-white/5'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  }`}
               >
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4" />
@@ -466,30 +471,28 @@ export function Meetings() {
 
               <button
                 onClick={() => setSelectedTab('all')}
-                className={`px-4 py-2 rounded-lg text-base transition-all ${
-                  selectedTab === 'all'
-                    ? isDarkMode
-                      ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                      : 'bg-purple-100 text-purple-700 border border-purple-300'
-                    : isDarkMode
-                      ? 'text-gray-400 hover:text-gray-300 hover:bg-white/5'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                }`}
+                className={`px-4 py-2 rounded-lg text-base transition-all ${selectedTab === 'all'
+                  ? isDarkMode
+                    ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                    : 'bg-purple-100 text-purple-700 border border-purple-300'
+                  : isDarkMode
+                    ? 'text-gray-400 hover:text-gray-300 hover:bg-white/5'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  }`}
               >
                 <span>All ({stats.total})</span>
               </button>
 
               <button
                 onClick={() => setSelectedTab('completed')}
-                className={`px-4 py-2 rounded-lg text-base transition-all ${
-                  selectedTab === 'completed'
-                    ? isDarkMode
-                      ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                      : 'bg-purple-100 text-purple-700 border border-purple-300'
-                    : isDarkMode
-                      ? 'text-gray-400 hover:text-gray-300 hover:bg-white/5'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                }`}
+                className={`px-4 py-2 rounded-lg text-base transition-all ${selectedTab === 'completed'
+                  ? isDarkMode
+                    ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                    : 'bg-purple-100 text-purple-700 border border-purple-300'
+                  : isDarkMode
+                    ? 'text-gray-400 hover:text-gray-300 hover:bg-white/5'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  }`}
               >
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4" />
@@ -501,29 +504,26 @@ export function Meetings() {
             {/* Right - Search and Filters */}
             <div className="flex items-center gap-2">
               {/* Search */}
-              <div className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${
-                isDarkMode
-                  ? 'bg-white/5 border-white/10 text-gray-300'
-                  : 'bg-white border-gray-200 text-gray-700'
-              }`}>
+              <div className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${isDarkMode
+                ? 'bg-white/5 border-white/10 text-gray-300'
+                : 'bg-white border-gray-200 text-gray-700'
+                }`}>
                 <Search className="w-4 h-4 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search meetings..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className={`bg-transparent outline-none text-base w-48 placeholder:text-gray-500 ${
-                    isDarkMode ? 'text-gray-200' : 'text-gray-900'
-                  }`}
+                  className={`bg-transparent outline-none text-base w-48 placeholder:text-gray-500 ${isDarkMode ? 'text-gray-200' : 'text-gray-900'
+                    }`}
                 />
               </div>
 
               {/* Filter Button */}
-              <button className={`px-4 py-2 rounded-lg text-base transition-all flex items-center gap-2 border ${
-                isDarkMode
-                  ? 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'
-                  : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
-              }`}>
+              <button className={`px-4 py-2 rounded-lg text-base transition-all flex items-center gap-2 border ${isDarkMode
+                ? 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'
+                : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                }`}>
                 <Filter className="w-4 h-4" />
                 <span>Filter</span>
               </button>
@@ -537,11 +537,10 @@ export function Meetings() {
         </div>
 
         {/* Meetings List */}
-        <div className={`rounded-xl border overflow-hidden ${
-          isDarkMode
-            ? 'bg-white/5 backdrop-blur-xl border-white/10'
-            : 'bg-white/80 backdrop-blur-xl border-purple-200/50'
-        }`}>
+        <div className={`rounded-xl border overflow-hidden ${isDarkMode
+          ? 'bg-white/5 backdrop-blur-xl border-white/10'
+          : 'bg-white/80 backdrop-blur-xl border-purple-200/50'
+          }`}>
           {/* Meeting Rows */}
           <div className="divide-y divide-white/5">
             {filteredMeetings.map((meeting) => {
@@ -552,11 +551,10 @@ export function Meetings() {
               return (
                 <div
                   key={meeting.id}
-                  className={`px-5 py-4 transition-all ${
-                    isDarkMode
-                      ? 'hover:bg-white/5 border-white/5'
-                      : 'hover:bg-purple-50/50 border-gray-100'
-                  } ${meeting.status === 'upcoming' ? 'bg-purple-500/5' : ''}`}
+                  className={`px-5 py-4 transition-all ${isDarkMode
+                    ? 'hover:bg-white/5 border-white/5'
+                    : 'hover:bg-purple-50/50 border-gray-100'
+                    } ${meeting.status === 'upcoming' ? 'bg-purple-500/5' : ''}`}
                 >
                   <div className="flex items-start gap-4">
                     {/* Calendar Icon */}
@@ -568,15 +566,13 @@ export function Meetings() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-4 mb-2">
                         <div className="flex-1 min-w-0">
-                          <h3 className={`text-base mb-1 ${
-                            isDarkMode ? 'text-white' : 'text-gray-900'
-                          }`}>
+                          <h3 className={`text-base mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'
+                            }`}>
                             {meeting.title}
                           </h3>
                           <div className="flex items-center gap-3">
-                            <span className={`text-base ${
-                              isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                            }`}>
+                            <span className={`text-base ${isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                              }`}>
                               {meeting.attendeeName}
                             </span>
                             <span className={`text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
@@ -600,9 +596,8 @@ export function Meetings() {
                           </div>
 
                           {/* Status Badge */}
-                          <div className={`inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-sm whitespace-nowrap ${
-                            statusConfig.bgColor
-                          } ${statusConfig.borderColor} ${statusConfig.color}`}>
+                          <div className={`inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-sm whitespace-nowrap ${statusConfig.bgColor
+                            } ${statusConfig.borderColor} ${statusConfig.color}`}>
                             <span>{statusConfig.label}</span>
                           </div>
                         </div>
@@ -610,13 +605,12 @@ export function Meetings() {
 
                       {/* Platform & Notes */}
                       <div className="flex items-center gap-3 mb-2">
-                        <div className={`inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-sm ${
-                          platformConfig.bgColor
-                        } ${platformConfig.borderColor} ${platformConfig.color}`}>
+                        <div className={`inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-sm ${platformConfig.bgColor
+                          } ${platformConfig.borderColor} ${platformConfig.color}`}>
                           <PlatformIcon className="w-3.5 h-3.5" />
                           <span>{platformConfig.label}</span>
                         </div>
-                        
+
                         {meeting.notes && (
                           <span className={`text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>
                             Note: {meeting.notes}
@@ -627,11 +621,12 @@ export function Meetings() {
                       {/* Actions */}
                       <div className="flex items-center gap-2">
                         {meeting.status === 'upcoming' && meeting.meetingLink && (
-                          <button className={`px-3 py-1.5 rounded-lg text-sm transition-all flex items-center gap-1.5 ${
-                            isDarkMode
+                          <button
+                            onClick={() => window.open(meeting.meetingLink, '_blank')}
+                            className={`px-3 py-1.5 rounded-lg text-sm transition-all flex items-center gap-1.5 ${isDarkMode
                               ? 'bg-purple-500/10 text-purple-300 border border-purple-500/30 hover:bg-purple-500/20'
                               : 'bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100'
-                          }`}>
+                              }`}>
                             <Video className="w-3.5 h-3.5" />
                             <span>Join Meeting</span>
                           </button>
@@ -639,20 +634,24 @@ export function Meetings() {
 
                         {meeting.status === 'upcoming' && (
                           <>
-                            <button className={`px-3 py-1.5 rounded-lg text-sm transition-all flex items-center gap-1.5 ${
-                              isDarkMode
-                                ? 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'
-                                : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
-                            }`}>
+                            <button className={`px-3 py-1.5 rounded-lg text-sm transition-all flex items-center gap-1.5 ${isDarkMode
+                              ? 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'
+                              : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                              }`}>
                               <Edit className="w-3.5 h-3.5" />
                               <span>Reschedule</span>
                             </button>
 
-                            <button className={`px-3 py-1.5 rounded-lg text-sm transition-all flex items-center gap-1.5 ${
-                              isDarkMode
+                            <button
+                              onClick={() => {
+                                if (confirm('Are you sure you want to cancel this meeting?')) {
+                                  setMeetings(prev => prev.map(m => m.id === meeting.id ? { ...m, status: 'cancelled' } : m));
+                                }
+                              }}
+                              className={`px-3 py-1.5 rounded-lg text-sm transition-all flex items-center gap-1.5 ${isDarkMode
                                 ? 'bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20'
                                 : 'bg-red-50 text-red-700 border border-red-200 hover:bg-red-100'
-                            }`}>
+                                }`}>
                               <XCircle className="w-3.5 h-3.5" />
                               <span>Cancel</span>
                             </button>
@@ -660,11 +659,10 @@ export function Meetings() {
                         )}
 
                         {meeting.status === 'completed' && (
-                          <button className={`px-3 py-1.5 rounded-lg text-sm transition-all flex items-center gap-1.5 ${
-                            isDarkMode
-                              ? 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'
-                              : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
-                          }`}>
+                          <button className={`px-3 py-1.5 rounded-lg text-sm transition-all flex items-center gap-1.5 ${isDarkMode
+                            ? 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'
+                            : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                            }`}>
                             <Edit className="w-3.5 h-3.5" />
                             <span>Add Notes</span>
                           </button>
