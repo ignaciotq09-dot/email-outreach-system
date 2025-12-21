@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { 
-  Mail, 
+import {
+  Mail,
   Clock,
   TrendingUp,
   CheckCircle2,
@@ -12,7 +12,10 @@ import {
   Filter,
   Calendar,
   Users,
-  BarChart3
+  BarChart3,
+  Archive,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 interface SentEmail {
@@ -45,22 +48,66 @@ export function SentEmails() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [emails, setEmails] = useState(MOCK_EMAILS);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTab, setSelectedTab] = useState<'all' | 'emails' | 'sms'>('emails');
+  const [selectedTab, setSelectedTab] = useState<'emails' | 'sms' | 'archived'>('emails');
+
+  // Archived emails state
+  const [archivedEmails, setArchivedEmails] = useState<SentEmail[]>([]);
+  const [archivedLoading, setArchivedLoading] = useState(false);
+  const [archivedPagination, setArchivedPagination] = useState({
+    page: 0,
+    pageSize: 50,
+    totalCount: 0,
+    totalPages: 0,
+    hasMore: false
+  });
+
+  // Fetch archived emails when archived tab is selected
+  useEffect(() => {
+    if (selectedTab === 'archived') {
+      fetchArchivedEmails(0);
+    }
+  }, [selectedTab]);
+
+  const fetchArchivedEmails = async (page: number) => {
+    setArchivedLoading(true);
+    try {
+      const response = await fetch(`/api/emails/archived?page=${page}&pageSize=50`);
+      if (response.ok) {
+        const data = await response.json();
+        // Transform API data to match component format
+        const transformedEmails = data.emails.map((email: any) => ({
+          id: String(email.id),
+          recipientName: email.contact?.name || 'Unknown',
+          company: email.contact?.company || 'Unknown',
+          email: email.contact?.email || '',
+          subject: email.subject || 'No Subject',
+          date: email.sentAt ? new Date(email.sentAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '',
+          status: email.replyReceived ? 'replied' : email.opened ? 'opened' : 'no-reply'
+        }));
+        setArchivedEmails(transformedEmails);
+        setArchivedPagination(data.pagination);
+      }
+    } catch (error) {
+      console.error('Error fetching archived emails:', error);
+    } finally {
+      setArchivedLoading(false);
+    }
+  };
 
   // Detect dark mode
   useEffect(() => {
     const checkDarkMode = () => {
       setIsDarkMode(document.documentElement.classList.contains('dark'));
     };
-    
+
     checkDarkMode();
-    
+
     const observer = new MutationObserver(checkDarkMode);
-    observer.observe(document.documentElement, { 
-      attributes: true, 
-      attributeFilter: ['class'] 
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
     });
-    
+
     return () => observer.disconnect();
   }, []);
 
@@ -127,7 +174,7 @@ export function SentEmails() {
       </div>
 
       <div className="max-w-7xl mx-auto p-4 space-y-4 relative z-10">
-        
+
         {/* Page Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -140,11 +187,10 @@ export function SentEmails() {
           </div>
 
           {/* Send Auto Follow-up Button */}
-          <button className={`px-5 py-2.5 rounded-lg text-base transition-all hover:scale-105 active:scale-95 flex items-center gap-2 ${
-            isDarkMode
-              ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 border border-amber-500/30 hover:border-amber-500/50'
-              : 'bg-gradient-to-r from-amber-50 to-orange-50 text-amber-700 border border-amber-300 hover:border-amber-400'
-          }`}>
+          <button className={`px-5 py-2.5 rounded-lg text-base transition-all hover:scale-105 active:scale-95 flex items-center gap-2 ${isDarkMode
+            ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 border border-amber-500/30 hover:border-amber-500/50'
+            : 'bg-gradient-to-r from-amber-50 to-orange-50 text-amber-700 border border-amber-300 hover:border-amber-400'
+            }`}>
             <Mail className="w-5 h-5" />
             <span>Send Auto Follow-up</span>
           </button>
@@ -153,11 +199,10 @@ export function SentEmails() {
         {/* Stats Cards */}
         <div className="grid grid-cols-4 gap-3">
           {/* Total Sent */}
-          <div className={`relative overflow-hidden rounded-xl p-4 border transition-all ${
-            isDarkMode
-              ? 'bg-white/5 backdrop-blur-xl border-white/10 hover:border-purple-500/30'
-              : 'bg-white/80 backdrop-blur-xl border-purple-200/50 hover:border-purple-300'
-          }`}>
+          <div className={`relative overflow-hidden rounded-xl p-4 border transition-all ${isDarkMode
+            ? 'bg-white/5 backdrop-blur-xl border-white/10 hover:border-purple-500/30'
+            : 'bg-white/80 backdrop-blur-xl border-purple-200/50 hover:border-purple-300'
+            }`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -167,20 +212,18 @@ export function SentEmails() {
                   {stats.total}
                 </p>
               </div>
-              <div className={`p-2.5 rounded-lg ${
-                isDarkMode ? 'bg-purple-500/10' : 'bg-purple-100'
-              }`}>
+              <div className={`p-2.5 rounded-lg ${isDarkMode ? 'bg-purple-500/10' : 'bg-purple-100'
+                }`}>
                 <Mail className={`w-6 h-6 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`} />
               </div>
             </div>
           </div>
 
           {/* Opened */}
-          <div className={`relative overflow-hidden rounded-xl p-4 border transition-all ${
-            isDarkMode
-              ? 'bg-white/5 backdrop-blur-xl border-white/10 hover:border-blue-500/30'
-              : 'bg-white/80 backdrop-blur-xl border-blue-200/50 hover:border-blue-300'
-          }`}>
+          <div className={`relative overflow-hidden rounded-xl p-4 border transition-all ${isDarkMode
+            ? 'bg-white/5 backdrop-blur-xl border-white/10 hover:border-blue-500/30'
+            : 'bg-white/80 backdrop-blur-xl border-blue-200/50 hover:border-blue-300'
+            }`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -190,20 +233,18 @@ export function SentEmails() {
                   {stats.opened}
                 </p>
               </div>
-              <div className={`p-2.5 rounded-lg ${
-                isDarkMode ? 'bg-blue-500/10' : 'bg-blue-100'
-              }`}>
+              <div className={`p-2.5 rounded-lg ${isDarkMode ? 'bg-blue-500/10' : 'bg-blue-100'
+                }`}>
                 <MailOpen className={`w-6 h-6 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
               </div>
             </div>
           </div>
 
           {/* Replied */}
-          <div className={`relative overflow-hidden rounded-xl p-4 border transition-all ${
-            isDarkMode
-              ? 'bg-white/5 backdrop-blur-xl border-white/10 hover:border-green-500/30'
-              : 'bg-white/80 backdrop-blur-xl border-green-200/50 hover:border-green-300'
-          }`}>
+          <div className={`relative overflow-hidden rounded-xl p-4 border transition-all ${isDarkMode
+            ? 'bg-white/5 backdrop-blur-xl border-white/10 hover:border-green-500/30'
+            : 'bg-white/80 backdrop-blur-xl border-green-200/50 hover:border-green-300'
+            }`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -213,20 +254,18 @@ export function SentEmails() {
                   {stats.replied}
                 </p>
               </div>
-              <div className={`p-2.5 rounded-lg ${
-                isDarkMode ? 'bg-green-500/10' : 'bg-green-100'
-              }`}>
+              <div className={`p-2.5 rounded-lg ${isDarkMode ? 'bg-green-500/10' : 'bg-green-100'
+                }`}>
                 <Reply className={`w-6 h-6 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`} />
               </div>
             </div>
           </div>
 
           {/* Response Rate */}
-          <div className={`relative overflow-hidden rounded-xl p-4 border transition-all ${
-            isDarkMode
-              ? 'bg-white/5 backdrop-blur-xl border-white/10 hover:border-indigo-500/30'
-              : 'bg-white/80 backdrop-blur-xl border-indigo-200/50 hover:border-indigo-300'
-          }`}>
+          <div className={`relative overflow-hidden rounded-xl p-4 border transition-all ${isDarkMode
+            ? 'bg-white/5 backdrop-blur-xl border-white/10 hover:border-indigo-500/30'
+            : 'bg-white/80 backdrop-blur-xl border-indigo-200/50 hover:border-indigo-300'
+            }`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -236,9 +275,8 @@ export function SentEmails() {
                   0%
                 </p>
               </div>
-              <div className={`p-2.5 rounded-lg ${
-                isDarkMode ? 'bg-indigo-500/10' : 'bg-indigo-100'
-              }`}>
+              <div className={`p-2.5 rounded-lg ${isDarkMode ? 'bg-indigo-500/10' : 'bg-indigo-100'
+                }`}>
                 <TrendingUp className={`w-6 h-6 ${isDarkMode ? 'text-indigo-400' : 'text-indigo-600'}`} />
               </div>
             </div>
@@ -246,25 +284,23 @@ export function SentEmails() {
         </div>
 
         {/* Filters and Tabs */}
-        <div className={`rounded-xl p-4 border ${
-          isDarkMode
-            ? 'bg-white/5 backdrop-blur-xl border-white/10'
-            : 'bg-white/80 backdrop-blur-xl border-purple-200/50'
-        }`}>
+        <div className={`rounded-xl p-4 border ${isDarkMode
+          ? 'bg-white/5 backdrop-blur-xl border-white/10'
+          : 'bg-white/80 backdrop-blur-xl border-purple-200/50'
+          }`}>
           <div className="flex items-center justify-between gap-3">
             {/* Left - Tabs */}
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => setSelectedTab('emails')}
-                className={`px-4 py-2 rounded-lg text-base transition-all ${
-                  selectedTab === 'emails'
-                    ? isDarkMode
-                      ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                      : 'bg-purple-100 text-purple-700 border border-purple-300'
-                    : isDarkMode
-                      ? 'text-gray-400 hover:text-gray-300 hover:bg-white/5'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                }`}
+                className={`px-4 py-2 rounded-lg text-base transition-all ${selectedTab === 'emails'
+                  ? isDarkMode
+                    ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                    : 'bg-purple-100 text-purple-700 border border-purple-300'
+                  : isDarkMode
+                    ? 'text-gray-400 hover:text-gray-300 hover:bg-white/5'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  }`}
               >
                 <div className="flex items-center gap-2">
                   <Mail className="w-4 h-4" />
@@ -274,46 +310,59 @@ export function SentEmails() {
 
               <button
                 onClick={() => setSelectedTab('sms')}
-                className={`px-4 py-2 rounded-lg text-base transition-all ${
-                  selectedTab === 'sms'
-                    ? isDarkMode
-                      ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                      : 'bg-purple-100 text-purple-700 border border-purple-300'
-                    : isDarkMode
-                      ? 'text-gray-400 hover:text-gray-300 hover:bg-white/5'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                }`}
+                className={`px-4 py-2 rounded-lg text-base transition-all ${selectedTab === 'sms'
+                  ? isDarkMode
+                    ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                    : 'bg-purple-100 text-purple-700 border border-purple-300'
+                  : isDarkMode
+                    ? 'text-gray-400 hover:text-gray-300 hover:bg-white/5'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  }`}
               >
                 <span>SMS (0)</span>
+              </button>
+
+              <button
+                onClick={() => setSelectedTab('archived')}
+                className={`px-4 py-2 rounded-lg text-base transition-all ${selectedTab === 'archived'
+                  ? isDarkMode
+                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                    : 'bg-amber-100 text-amber-700 border border-amber-300'
+                  : isDarkMode
+                    ? 'text-gray-400 hover:text-gray-300 hover:bg-white/5'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Archive className="w-4 h-4" />
+                  <span>Archived</span>
+                </div>
               </button>
             </div>
 
             {/* Right - Search and Filters */}
             <div className="flex items-center gap-2">
               {/* Search */}
-              <div className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${
-                isDarkMode
-                  ? 'bg-white/5 border-white/10 text-gray-300'
-                  : 'bg-white border-gray-200 text-gray-700'
-              }`}>
+              <div className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${isDarkMode
+                ? 'bg-white/5 border-white/10 text-gray-300'
+                : 'bg-white border-gray-200 text-gray-700'
+                }`}>
                 <Search className="w-4 h-4 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search emails..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className={`bg-transparent outline-none text-base w-48 placeholder:text-gray-500 ${
-                    isDarkMode ? 'text-gray-200' : 'text-gray-900'
-                  }`}
+                  className={`bg-transparent outline-none text-base w-48 placeholder:text-gray-500 ${isDarkMode ? 'text-gray-200' : 'text-gray-900'
+                    }`}
                 />
               </div>
 
               {/* Filter Button */}
-              <button className={`px-4 py-2 rounded-lg text-base transition-all flex items-center gap-2 border ${
-                isDarkMode
-                  ? 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'
-                  : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
-              }`}>
+              <button className={`px-4 py-2 rounded-lg text-base transition-all flex items-center gap-2 border ${isDarkMode
+                ? 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'
+                : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                }`}>
                 <Filter className="w-4 h-4" />
                 <span>Filter</span>
               </button>
@@ -327,17 +376,15 @@ export function SentEmails() {
         </div>
 
         {/* Email List */}
-        <div className={`rounded-xl border overflow-hidden ${
-          isDarkMode
+        <div className={`rounded-xl border overflow-hidden ${isDarkMode
             ? 'bg-white/5 backdrop-blur-xl border-white/10'
             : 'bg-white/80 backdrop-blur-xl border-purple-200/50'
-        }`}>
-          {/* Table Header */}
-          <div className={`grid grid-cols-12 gap-4 px-5 py-3.5 border-b text-sm ${
-            isDarkMode
-              ? 'bg-white/5 border-white/10 text-gray-400'
-              : 'bg-gray-50 border-gray-200 text-gray-600'
           }`}>
+          {/* Table Header */}
+          <div className={`grid grid-cols-12 gap-4 px-5 py-3.5 border-b text-sm ${isDarkMode
+            ? 'bg-white/5 border-white/10 text-gray-400'
+            : 'bg-gray-50 border-gray-200 text-gray-600'
+            }`}>
             <div className="col-span-2">Recipient</div>
             <div className="col-span-2">Company</div>
             <div className="col-span-3">Email</div>
@@ -346,20 +393,35 @@ export function SentEmails() {
             <div className="col-span-1 text-right">Actions</div>
           </div>
 
+          {/* Loading State for Archived */}
+          {selectedTab === 'archived' && archivedLoading && (
+            <div className={`p-8 text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              Loading archived emails...
+            </div>
+          )}
+
+          {/* Empty State for Archived */}
+          {selectedTab === 'archived' && !archivedLoading && archivedEmails.length === 0 && (
+            <div className={`p-8 text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              <Archive className="w-12 h-12 mx-auto mb-3 opacity-50" />
+              <p>No archived emails yet</p>
+              <p className="text-sm mt-1 opacity-75">Emails older than your 100 most recent will appear here</p>
+            </div>
+          )}
+
           {/* Email Rows */}
           <div className="divide-y divide-white/5">
-            {emails.map((email) => {
+            {(selectedTab === 'archived' ? archivedEmails : emails).map((email) => {
               const statusConfig = getStatusConfig(email.status);
               const StatusIcon = statusConfig.icon;
 
               return (
                 <div
                   key={email.id}
-                  className={`grid grid-cols-12 gap-4 px-5 py-4 items-center text-base transition-all ${
-                    isDarkMode
-                      ? 'hover:bg-white/5 border-white/5'
-                      : 'hover:bg-purple-50/50 border-gray-100'
-                  }`}
+                  className={`grid grid-cols-12 gap-4 px-5 py-4 items-center text-base transition-all ${isDarkMode
+                    ? 'hover:bg-white/5 border-white/5'
+                    : 'hover:bg-purple-50/50 border-gray-100'
+                    }`}
                 >
                   {/* Recipient */}
                   <div className={`col-span-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
@@ -383,9 +445,8 @@ export function SentEmails() {
 
                   {/* Status */}
                   <div className="col-span-2">
-                    <div className={`inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-sm ${
-                      statusConfig.bgColor
-                    } ${statusConfig.borderColor} ${statusConfig.textColor}`}>
+                    <div className={`inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-sm ${statusConfig.bgColor
+                      } ${statusConfig.borderColor} ${statusConfig.textColor}`}>
                       <StatusIcon className="w-4 h-4" />
                       <span>{statusConfig.label}</span>
                     </div>
@@ -393,9 +454,8 @@ export function SentEmails() {
 
                   {/* Actions */}
                   <div className="col-span-1 text-right">
-                    <button className={`p-1.5 rounded hover:bg-white/10 transition-all ${
-                      isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-900'
-                    }`}>
+                    <button className={`p-1.5 rounded hover:bg-white/10 transition-all ${isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-900'
+                      }`}>
                       <ChevronDown className="w-5 h-5" />
                     </button>
                   </div>
@@ -403,6 +463,42 @@ export function SentEmails() {
               );
             })}
           </div>
+
+          {/* Pagination for Archived */}
+          {selectedTab === 'archived' && archivedPagination.totalPages > 1 && (
+            <div className={`flex items-center justify-between px-5 py-3 border-t ${isDarkMode ? 'border-white/10' : 'border-gray-200'
+              }`}>
+              <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                Page {archivedPagination.page + 1} of {archivedPagination.totalPages} ({archivedPagination.totalCount} emails)
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => fetchArchivedEmails(archivedPagination.page - 1)}
+                  disabled={archivedPagination.page === 0}
+                  className={`p-2 rounded-lg transition-all ${archivedPagination.page === 0
+                      ? 'opacity-50 cursor-not-allowed'
+                      : isDarkMode
+                        ? 'hover:bg-white/10 text-gray-300'
+                        : 'hover:bg-gray-100 text-gray-700'
+                    } ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => fetchArchivedEmails(archivedPagination.page + 1)}
+                  disabled={!archivedPagination.hasMore}
+                  className={`p-2 rounded-lg transition-all ${!archivedPagination.hasMore
+                      ? 'opacity-50 cursor-not-allowed'
+                      : isDarkMode
+                        ? 'hover:bg-white/10 text-gray-300'
+                        : 'hover:bg-gray-100 text-gray-700'
+                    } ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
