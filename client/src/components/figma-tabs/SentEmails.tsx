@@ -50,9 +50,11 @@ export function SentEmails() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTab, setSelectedTab] = useState<'emails' | 'sms' | 'archived'>('emails');
 
-  // Archived emails state
+  // Archived content state
   const [archivedEmails, setArchivedEmails] = useState<SentEmail[]>([]);
+  const [archivedSms, setArchivedSms] = useState<SentEmail[]>([]);
   const [archivedLoading, setArchivedLoading] = useState(false);
+  const [archivedType, setArchivedType] = useState<'emails' | 'sms'>('emails');
   const [archivedPagination, setArchivedPagination] = useState({
     page: 0,
     pageSize: 50,
@@ -61,34 +63,51 @@ export function SentEmails() {
     hasMore: false
   });
 
-  // Fetch archived emails when archived tab is selected
+  // Fetch archived content when archived tab is selected or type changes
   useEffect(() => {
     if (selectedTab === 'archived') {
-      fetchArchivedEmails(0);
+      fetchArchivedContent(0);
     }
-  }, [selectedTab]);
+  }, [selectedTab, archivedType]);
 
-  const fetchArchivedEmails = async (page: number) => {
+  const fetchArchivedContent = async (page: number) => {
     setArchivedLoading(true);
     try {
-      const response = await fetch(`/api/emails/archived?page=${page}&pageSize=50`);
-      if (response.ok) {
-        const data = await response.json();
-        // Transform API data to match component format
-        const transformedEmails = data.emails.map((email: any) => ({
-          id: String(email.id),
-          recipientName: email.contact?.name || 'Unknown',
-          company: email.contact?.company || 'Unknown',
-          email: email.contact?.email || '',
-          subject: email.subject || 'No Subject',
-          date: email.sentAt ? new Date(email.sentAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '',
-          status: email.replyReceived ? 'replied' : email.opened ? 'opened' : 'no-reply'
-        }));
-        setArchivedEmails(transformedEmails);
-        setArchivedPagination(data.pagination);
+      if (archivedType === 'emails') {
+        const response = await fetch(`/api/emails/archived?page=${page}&pageSize=50`);
+        if (response.ok) {
+          const data = await response.json();
+          const transformedEmails = data.emails.map((email: any) => ({
+            id: String(email.id),
+            recipientName: email.contact?.name || 'Unknown',
+            company: email.contact?.company || 'Unknown',
+            email: email.contact?.email || '',
+            subject: email.subject || 'No Subject',
+            date: email.sentAt ? new Date(email.sentAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '',
+            status: email.replyReceived ? 'replied' : email.opened ? 'opened' : 'no-reply'
+          }));
+          setArchivedEmails(transformedEmails);
+          setArchivedPagination(data.pagination);
+        }
+      } else {
+        const response = await fetch(`/api/sms/archived?page=${page}&pageSize=50`);
+        if (response.ok) {
+          const data = await response.json();
+          const transformedSms = data.sms.map((sms: any) => ({
+            id: String(sms.id),
+            recipientName: sms.contact?.name || 'Unknown',
+            company: sms.contact?.company || 'Unknown',
+            email: sms.contact?.email || sms.toPhone || '',
+            subject: sms.message?.substring(0, 50) + (sms.message?.length > 50 ? '...' : '') || 'SMS',
+            date: sms.sentAt ? new Date(sms.sentAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '',
+            status: sms.status === 'delivered' ? 'replied' : sms.status === 'sent' ? 'opened' : 'no-reply'
+          }));
+          setArchivedSms(transformedSms);
+          setArchivedPagination(data.pagination);
+        }
       }
     } catch (error) {
-      console.error('Error fetching archived emails:', error);
+      console.error('Error fetching archived content:', error);
     } finally {
       setArchivedLoading(false);
     }
@@ -377,8 +396,8 @@ export function SentEmails() {
 
         {/* Email List */}
         <div className={`rounded-xl border overflow-hidden ${isDarkMode
-            ? 'bg-white/5 backdrop-blur-xl border-white/10'
-            : 'bg-white/80 backdrop-blur-xl border-purple-200/50'
+          ? 'bg-white/5 backdrop-blur-xl border-white/10'
+          : 'bg-white/80 backdrop-blur-xl border-purple-200/50'
           }`}>
           {/* Table Header */}
           <div className={`grid grid-cols-12 gap-4 px-5 py-3.5 border-b text-sm ${isDarkMode
@@ -393,25 +412,69 @@ export function SentEmails() {
             <div className="col-span-1 text-right">Actions</div>
           </div>
 
+          {/* Archived Type Toggle (Emails/SMS) */}
+          {selectedTab === 'archived' && (
+            <div className={`flex items-center gap-2 px-5 py-3 border-b ${isDarkMode ? 'border-white/10 bg-white/5' : 'border-gray-200 bg-gray-50'
+              }`}>
+              <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Show:</span>
+              <button
+                onClick={() => setArchivedType('emails')}
+                className={`px-3 py-1.5 rounded-lg text-sm transition-all ${archivedType === 'emails'
+                    ? isDarkMode
+                      ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                      : 'bg-purple-100 text-purple-700 border border-purple-300'
+                    : isDarkMode
+                      ? 'text-gray-400 hover:bg-white/10'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+              >
+                <Mail className="w-4 h-4 inline mr-1" />
+                Emails
+              </button>
+              <button
+                onClick={() => setArchivedType('sms')}
+                className={`px-3 py-1.5 rounded-lg text-sm transition-all ${archivedType === 'sms'
+                    ? isDarkMode
+                      ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                      : 'bg-purple-100 text-purple-700 border border-purple-300'
+                    : isDarkMode
+                      ? 'text-gray-400 hover:bg-white/10'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+              >
+                SMS
+              </button>
+            </div>
+          )}
+
           {/* Loading State for Archived */}
           {selectedTab === 'archived' && archivedLoading && (
             <div className={`p-8 text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              Loading archived emails...
+              Loading archived {archivedType}...
             </div>
           )}
 
           {/* Empty State for Archived */}
-          {selectedTab === 'archived' && !archivedLoading && archivedEmails.length === 0 && (
-            <div className={`p-8 text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              <Archive className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>No archived emails yet</p>
-              <p className="text-sm mt-1 opacity-75">Emails older than your 100 most recent will appear here</p>
-            </div>
-          )}
+          {selectedTab === 'archived' && !archivedLoading &&
+            ((archivedType === 'emails' && archivedEmails.length === 0) ||
+              (archivedType === 'sms' && archivedSms.length === 0)) && (
+              <div className={`p-8 text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                <Archive className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>No archived {archivedType} yet</p>
+                <p className="text-sm mt-1 opacity-75">
+                  {archivedType === 'emails'
+                    ? 'Emails older than your 100 most recent will appear here'
+                    : 'SMS older than your 100 most recent will appear here'}
+                </p>
+              </div>
+            )}
 
-          {/* Email Rows */}
+          {/* Email/SMS Rows */}
           <div className="divide-y divide-white/5">
-            {(selectedTab === 'archived' ? archivedEmails : emails).map((email) => {
+            {(selectedTab === 'archived'
+              ? (archivedType === 'emails' ? archivedEmails : archivedSms)
+              : emails
+            ).map((email) => {
               const statusConfig = getStatusConfig(email.status);
               const StatusIcon = statusConfig.icon;
 
@@ -469,29 +532,29 @@ export function SentEmails() {
             <div className={`flex items-center justify-between px-5 py-3 border-t ${isDarkMode ? 'border-white/10' : 'border-gray-200'
               }`}>
               <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                Page {archivedPagination.page + 1} of {archivedPagination.totalPages} ({archivedPagination.totalCount} emails)
+                Page {archivedPagination.page + 1} of {archivedPagination.totalPages} ({archivedPagination.totalCount} {archivedType})
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => fetchArchivedEmails(archivedPagination.page - 1)}
+                  onClick={() => fetchArchivedContent(archivedPagination.page - 1)}
                   disabled={archivedPagination.page === 0}
                   className={`p-2 rounded-lg transition-all ${archivedPagination.page === 0
-                      ? 'opacity-50 cursor-not-allowed'
-                      : isDarkMode
-                        ? 'hover:bg-white/10 text-gray-300'
-                        : 'hover:bg-gray-100 text-gray-700'
+                    ? 'opacity-50 cursor-not-allowed'
+                    : isDarkMode
+                      ? 'hover:bg-white/10 text-gray-300'
+                      : 'hover:bg-gray-100 text-gray-700'
                     } ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </button>
                 <button
-                  onClick={() => fetchArchivedEmails(archivedPagination.page + 1)}
+                  onClick={() => fetchArchivedContent(archivedPagination.page + 1)}
                   disabled={!archivedPagination.hasMore}
                   className={`p-2 rounded-lg transition-all ${!archivedPagination.hasMore
-                      ? 'opacity-50 cursor-not-allowed'
-                      : isDarkMode
-                        ? 'hover:bg-white/10 text-gray-300'
-                        : 'hover:bg-gray-100 text-gray-700'
+                    ? 'opacity-50 cursor-not-allowed'
+                    : isDarkMode
+                      ? 'hover:bg-white/10 text-gray-300'
+                      : 'hover:bg-gray-100 text-gray-700'
                     } ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}
                 >
                   <ChevronRight className="w-5 h-5" />
