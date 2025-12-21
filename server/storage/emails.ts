@@ -1,6 +1,6 @@
 import { db } from "../db";
 import { sentEmails, replies, followUps, campaigns, campaignContacts, type SentEmail, type InsertSentEmail, type Reply, type InsertReply, type FollowUp, type InsertFollowUp, type SentEmailWithContact } from "@shared/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 
 export async function createSentEmail(userId: number, insertEmail: InsertSentEmail): Promise<SentEmail> {
   const [email] = await db.insert(sentEmails).values({ ...insertEmail, userId }).returning();
@@ -28,6 +28,14 @@ export async function getArchivedSentEmails(userId: number, limit: number = 50, 
     offset,
   });
   return results as SentEmailWithContact[];
+}
+
+// Get total count of archived emails for a user (for pagination)
+export async function getArchivedEmailsCount(userId: number): Promise<number> {
+  const result = await db.select({ count: sql<number>`count(*)` })
+    .from(sentEmails)
+    .where(and(eq(sentEmails.userId, userId), eq(sentEmails.archived, true)));
+  return Number(result[0]?.count || 0);
 }
 
 export async function getSentEmailById(userId: number, id: number): Promise<SentEmailWithContact | undefined> {
