@@ -378,10 +378,12 @@ export function SentEmails() {
               </div>
 
               {/* Filter Button */}
-              <button className={`px-4 py-2 rounded-lg text-base transition-all flex items-center gap-2 border ${isDarkMode
-                ? 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'
-                : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
-                }`}>
+              <button
+                onClick={() => alert('Filter options:\n\n• Emails tab: Regular emails\n• SMS tab: Text messages\n• Archived tab: Old items\n\nUse the tabs above to filter!')}
+                className={`px-4 py-2 rounded-lg text-base transition-all flex items-center gap-2 border ${isDarkMode
+                  ? 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'
+                  : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                  }`}>
                 <Filter className="w-4 h-4" />
                 <span>Filter</span>
               </button>
@@ -420,12 +422,12 @@ export function SentEmails() {
               <button
                 onClick={() => setArchivedType('emails')}
                 className={`px-3 py-1.5 rounded-lg text-sm transition-all ${archivedType === 'emails'
-                    ? isDarkMode
-                      ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                      : 'bg-purple-100 text-purple-700 border border-purple-300'
-                    : isDarkMode
-                      ? 'text-gray-400 hover:bg-white/10'
-                      : 'text-gray-600 hover:bg-gray-100'
+                  ? isDarkMode
+                    ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                    : 'bg-purple-100 text-purple-700 border border-purple-300'
+                  : isDarkMode
+                    ? 'text-gray-400 hover:bg-white/10'
+                    : 'text-gray-600 hover:bg-gray-100'
                   }`}
               >
                 <Mail className="w-4 h-4 inline mr-1" />
@@ -434,12 +436,12 @@ export function SentEmails() {
               <button
                 onClick={() => setArchivedType('sms')}
                 className={`px-3 py-1.5 rounded-lg text-sm transition-all ${archivedType === 'sms'
-                    ? isDarkMode
-                      ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                      : 'bg-purple-100 text-purple-700 border border-purple-300'
-                    : isDarkMode
-                      ? 'text-gray-400 hover:bg-white/10'
-                      : 'text-gray-600 hover:bg-gray-100'
+                  ? isDarkMode
+                    ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                    : 'bg-purple-100 text-purple-700 border border-purple-300'
+                  : isDarkMode
+                    ? 'text-gray-400 hover:bg-white/10'
+                    : 'text-gray-600 hover:bg-gray-100'
                   }`}
               >
                 SMS
