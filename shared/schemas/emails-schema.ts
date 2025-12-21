@@ -29,6 +29,9 @@ export const sentEmails = pgTable("sent_emails", {
   replySentiment: varchar("reply_sentiment", { length: 50 }),
   replyConfidence: integer("reply_confidence"),
   trackingEnabled: boolean("tracking_enabled").default(true), // Whether tracking pixels/links were embedded
+  // Archival system for efficient sent emails display
+  archived: boolean("archived").default(false), // Mark older emails as archived
+  archivedAt: timestamp("archived_at"), // When the email was archived
 }, (table) => ({
   userIdIdx: index("sent_emails_user_id_idx").on(table.userId),
   replyReceivedFalseIdx: index("sent_emails_reply_received_false_idx")
@@ -40,6 +43,9 @@ export const sentEmails = pgTable("sent_emails", {
   // Composite indexes for common query patterns
   contactIdSentAtIdx: index("sent_emails_contact_id_sent_at_idx").on(table.contactId, table.sentAt),
   userIdSentAtIdx: index("sent_emails_user_id_sent_at_idx").on(table.userId, table.sentAt),
+  // Archival index for fast filtering
+  archivedIdx: index("sent_emails_archived_idx").on(table.archived),
+  userIdArchivedIdx: index("sent_emails_user_id_archived_idx").on(table.userId, table.archived),
 }));
 
 export const replies = pgTable("replies", {

@@ -7,12 +7,25 @@ export async function createSentEmail(userId: number, insertEmail: InsertSentEma
   return email;
 }
 
-export async function getSentEmails(userId: number, limit: number = 50, offset: number = 0): Promise<SentEmailWithContact[]> {
+export async function getSentEmails(userId: number, limit: number = 100, offset: number = 0): Promise<SentEmailWithContact[]> {
   const results = await db.query.sentEmails.findMany({
-    where: eq(sentEmails.userId, userId),
+    where: and(eq(sentEmails.userId, userId), eq(sentEmails.archived, false)), // Only non-archived emails
     with: { contact: true, replies: true, followUps: true },
     orderBy: [desc(sentEmails.sentAt)],
-    limit, offset,
+    limit: Math.min(limit, 100), // Cap at 100 recent emails
+    offset,
+  });
+  return results as SentEmailWithContact[];
+}
+
+// Get archived sent emails with pagination
+export async function getArchivedSentEmails(userId: number, limit: number = 50, offset: number = 0): Promise<SentEmailWithContact[]> {
+  const results = await db.query.sentEmails.findMany({
+    where: and(eq(sentEmails.userId, userId), eq(sentEmails.archived, true)),
+    with: { contact: true, replies: true, followUps: true },
+    orderBy: [desc(sentEmails.sentAt)],
+    limit,
+    offset,
   });
   return results as SentEmailWithContact[];
 }
@@ -31,7 +44,11 @@ export async function updateSentEmailReplyStatus(userId: number, id: number, rep
 
 export async function getSentEmailsWithoutReplies(userId: number): Promise<SentEmailWithContact[]> {
   const results = await db.query.sentEmails.findMany({
-    where: and(eq(sentEmails.userId, userId), eq(sentEmails.replyReceived, false)),
+    where: and(
+      eq(sentEmails.userId, userId),
+      eq(sentEmails.replyReceived, false),
+      eq(sentEmails.archived, false) // Exclude archived emails from follow-up processing
+    ),
     with: { contact: true, replies: true, followUps: true },
   });
   return results as SentEmailWithContact[];
@@ -69,15 +86,15 @@ export async function getEmailsNeedingFollowUp(userId: number, getSentEmailsWith
   const emailsWithoutReplies = await getSentEmailsWithoutRepliesFn(userId);
   const now = new Date();
   const emailsNeedingFollowUp = [];
-  
+
   for (const email of emailsWithoutReplies) {
     const followUpCount = email.followUps?.length || 0;
     if (!email.sentAt) continue;
     const daysSinceSent = Math.floor((now.getTime() - new Date(email.sentAt).getTime()) / (1000 * 60 * 60 * 24));
-    
+
     let needsFollowUp = false;
     let followUpType = '';
-    
+
     if (followUpCount === 0 && daysSinceSent >= 3) { needsFollowUp = true; followUpType = 'first'; }
     else if (followUpCount === 1) {
       const firstFollowUp = email.followUps[0];
@@ -92,9 +109,9 @@ export async function getEmailsNeedingFollowUp(userId: number, getSentEmailsWith
         if (daysSinceSecondFollowUp >= 21) { needsFollowUp = true; followUpType = 'third'; }
       }
     }
-    
+
     if (needsFollowUp) emailsNeedingFollowUp.push({ ...email, followUpType, followUpCount });
   }
-  
+
   return emailsNeedingFollowUp;
 }
