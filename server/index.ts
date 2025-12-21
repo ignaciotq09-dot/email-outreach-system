@@ -12,6 +12,7 @@ import { EmailTrackingService } from "./services/email-tracking";
 import { startAutoReplyScheduler, stopAutoReplyScheduler } from "./services/auto-reply-scheduler";
 import { LinkedInJobProcessor } from "./services/linkedin-job-processor";
 import { startWorkflowScheduler, stopWorkflowScheduler } from "./services/workflow-scheduler";
+import { startEmailArchivalScheduler, stopEmailArchivalScheduler } from "./services/email-archival-scheduler";
 // Disabled: Replit Gmail routes conflict with custom OAuth connector
 // import replitGmailRoutes from "./routes/replit-gmail";
 
@@ -175,6 +176,10 @@ app.use((req, res, next) => {
     // Start the workflow automation scheduler (checks scheduled workflows every minute)
     startWorkflowScheduler();
     log('[WorkflowScheduler] Workflow automation scheduler started');
+
+    // Start the email archival scheduler (runs daily at 2 AM)
+    startEmailArchivalScheduler();
+    log('[EmailArchivalScheduler] Email archival scheduler started');
   });
 
   // Handle graceful shutdown
@@ -195,5 +200,7 @@ app.use((req, res, next) => {
     LinkedInJobProcessor.stop();
     log('[WorkflowScheduler] Stopping workflow scheduler');
     stopWorkflowScheduler();
+    log('[EmailArchivalScheduler] Stopping email archival scheduler');
+    stopEmailArchivalScheduler();
   });
 })();
