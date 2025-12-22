@@ -13,7 +13,7 @@ import {
 import { WritingStyleModal } from './WritingStyleModal';
 import { EmailVariants } from './EmailVariants';
 import { AddContacts } from './AddContacts';
-import { WRITING_STYLES, DEFAULT_ACTIVE_STYLES, type WritingStyleId } from '@shared/writing-styles';
+import { WRITING_STYLES, DEFAULT_ACTIVE_STYLES, MAX_ACTIVE_STYLES, type WritingStyleId } from '@shared/writing-styles';
 import { useComposeQueries } from '@/components/compose/hooks/useComposeQueries';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
@@ -42,13 +42,32 @@ export function ComposeAndSend() {
   const { toast } = useToast();
   const { variantDiversity, smsEnabled, linkedinEnabled } = useComposeQueries();
 
-  // Convert WRITING_STYLES object to array for rendering
-  const writingStylesArray = useMemo(() => {
-    return Object.entries(WRITING_STYLES).map(([id, style]) => ({
-      id: id as WritingStyleId,
-      ...style
-    }));
+  // Load active writing styles from localStorage (synced with Personalize tab)
+  const [activeStyleIds, setActiveStyleIds] = useState<WritingStyleId[]>(DEFAULT_ACTIVE_STYLES);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('activeWritingStyles');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Ensure no duplicates and limit to MAX_ACTIVE_STYLES
+        const unique = Array.from(new Set(parsed)) as WritingStyleId[];
+        setActiveStyleIds(unique.slice(0, MAX_ACTIVE_STYLES));
+      }
+    } catch (e) {
+      console.error('Failed to load active writing styles:', e);
+    }
   }, []);
+
+  // Convert only active writing styles to array for rendering
+  const writingStylesArray = useMemo(() => {
+    return activeStyleIds
+      .filter(id => WRITING_STYLES[id]) // Only include valid style IDs
+      .map(id => ({
+        id,
+        ...WRITING_STYLES[id]
+      }));
+  }, [activeStyleIds]);
 
   const [channels, setChannels] = useState(CHANNELS);
   const [message, setMessage] = useState('');
