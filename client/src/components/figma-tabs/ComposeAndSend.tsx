@@ -42,15 +42,17 @@ export function ComposeAndSend() {
   const { toast } = useToast();
   const { variantDiversity, smsEnabled, linkedinEnabled } = useComposeQueries();
 
-  // Load active writing styles from localStorage (synced with Personalize tab)
+  // Writing styles management (3 default + 1 optional, max 4, then replace only)
   const [activeStyleIds, setActiveStyleIds] = useState<WritingStyleId[]>(DEFAULT_ACTIVE_STYLES);
+  const [showAddStyleModal, setShowAddStyleModal] = useState(false);
+  const [replaceStyleId, setReplaceStyleId] = useState<WritingStyleId | null>(null);
 
+  // Load active writing styles from localStorage on mount
   useEffect(() => {
     try {
       const saved = localStorage.getItem('activeWritingStyles');
       if (saved) {
         const parsed = JSON.parse(saved);
-        // Ensure no duplicates and limit to MAX_ACTIVE_STYLES
         const unique = Array.from(new Set(parsed)) as WritingStyleId[];
         setActiveStyleIds(unique.slice(0, MAX_ACTIVE_STYLES));
       }
@@ -59,10 +61,43 @@ export function ComposeAndSend() {
     }
   }, []);
 
-  // Convert only active writing styles to array for rendering
+  // Save active styles to localStorage
+  const saveActiveStyles = (styles: WritingStyleId[]) => {
+    const unique = Array.from(new Set(styles)) as WritingStyleId[];
+    const limited = unique.slice(0, MAX_ACTIVE_STYLES);
+    setActiveStyleIds(limited);
+    localStorage.setItem('activeWritingStyles', JSON.stringify(limited));
+  };
+
+  // Add or replace a writing style
+  const addOrReplaceStyle = (newStyleId: WritingStyleId) => {
+    if (replaceStyleId) {
+      // Replace mode
+      const newStyles = activeStyleIds.map(id => id === replaceStyleId ? newStyleId : id);
+      saveActiveStyles(newStyles);
+      setReplaceStyleId(null);
+    } else if (activeStyleIds.length < MAX_ACTIVE_STYLES && !activeStyleIds.includes(newStyleId)) {
+      // Add mode
+      saveActiveStyles([...activeStyleIds, newStyleId]);
+    }
+    setShowAddStyleModal(false);
+  };
+
+  // Remove a writing style
+  const removeStyle = (styleId: WritingStyleId) => {
+    saveActiveStyles(activeStyleIds.filter(id => id !== styleId));
+  };
+
+  // Get available styles (not currently active)
+  const availableStyles = useMemo(() => {
+    return (Object.keys(WRITING_STYLES) as WritingStyleId[])
+      .filter(id => !activeStyleIds.includes(id));
+  }, [activeStyleIds]);
+
+  // Convert active styles to array for rendering
   const writingStylesArray = useMemo(() => {
     return activeStyleIds
-      .filter(id => WRITING_STYLES[id]) // Only include valid style IDs
+      .filter(id => WRITING_STYLES[id])
       .map(id => ({
         id,
         ...WRITING_STYLES[id]
@@ -440,8 +475,110 @@ export function ComposeAndSend() {
                       )}
                     </label>
                   ))}
+
+                  {/* Add/Replace Writing Style Button */}
+                  {availableStyles.length > 0 && (
+                    <button
+                      onClick={() => {
+                        setReplaceStyleId(null);
+                        setShowAddStyleModal(true);
+                      }}
+                      className={`w-full p-4 rounded-xl border-2 border-dashed text-sm transition-all flex items-center justify-center gap-2 ${isDarkMode
+                        ? 'border-white/20 text-gray-400 hover:border-purple-500/40 hover:bg-purple-950/30 hover:text-purple-300'
+                        : 'border-gray-300 text-gray-600 hover:border-purple-400 hover:bg-purple-50/60 hover:text-purple-700'
+                        }`}
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>{activeStyleIds.length >= MAX_ACTIVE_STYLES ? 'Replace Writing Style' : 'Add Writing Style'}</span>
+                    </button>
+                  )}
                 </div>
               </div>
+
+              {/* Add/Replace Writing Style Modal */}
+              {showAddStyleModal && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                  <div className={`rounded-xl p-5 max-w-md w-full border ${isDarkMode
+                    ? 'bg-[#0a0515] border-white/10'
+                    : 'bg-white border-purple-200'
+                    }`}>
+                    <h3 className={`text-lg font-medium mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {replaceStyleId
+                        ? 'Replace Writing Style'
+                        : activeStyleIds.length >= MAX_ACTIVE_STYLES
+                          ? 'Replace a Style'
+                          : 'Add Writing Style'}
+                    </h3>
+                    <p className={`text-sm mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      {replaceStyleId
+                        ? `Choose a style to replace "${WRITING_STYLES[replaceStyleId].name}"`
+                        : activeStyleIds.length >= MAX_ACTIVE_STYLES
+                          ? 'Maximum 4 styles reached. Select a style to replace, then choose a new one.'
+                          : `Select a writing style to add (${activeStyleIds.length}/${MAX_ACTIVE_STYLES})`
+                      }
+                    </p>
+
+                    {/* At max capacity without replace target - show current styles to pick which to replace */}
+                    {activeStyleIds.length >= MAX_ACTIVE_STYLES && !replaceStyleId ? (
+                      <div className="space-y-2 mb-4">
+                        <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>Click a style below to replace it:</p>
+                        {activeStyleIds.map((styleId) => {
+                          const style = WRITING_STYLES[styleId];
+                          return (
+                            <button
+                              key={styleId}
+                              onClick={() => setReplaceStyleId(styleId)}
+                              className={`w-full px-3 py-2.5 rounded-lg border text-left transition-all ${isDarkMode
+                                ? 'bg-purple-500/20 text-purple-300 border-purple-500/30 hover:bg-red-500/20 hover:border-red-500/30'
+                                : 'bg-purple-100 text-purple-700 border-purple-300 hover:bg-red-50 hover:border-red-300'
+                                }`}
+                            >
+                              <div className="font-medium text-sm">{style.name}</div>
+                              <div className={`text-xs mt-0.5 ${isDarkMode ? 'text-purple-400/70' : 'text-purple-600/70'}`}>
+                                {style.description}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="space-y-2 mb-4 max-h-[60vh] overflow-y-auto">
+                        {availableStyles.map((styleId) => {
+                          const style = WRITING_STYLES[styleId];
+                          return (
+                            <button
+                              key={styleId}
+                              onClick={() => addOrReplaceStyle(styleId)}
+                              className={`w-full px-3 py-2.5 rounded-lg border text-left transition-all ${isDarkMode
+                                ? 'bg-white/5 text-gray-300 border-white/10 hover:bg-purple-500/20 hover:border-purple-500/30'
+                                : 'bg-white text-gray-700 border-gray-200 hover:bg-purple-50 hover:border-purple-300'
+                                }`}
+                            >
+                              <div className="font-medium text-sm">{style.name}</div>
+                              <div className={`text-xs mt-0.5 ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                                {style.description}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    <button
+                      onClick={() => {
+                        setShowAddStyleModal(false);
+                        setReplaceStyleId(null);
+                      }}
+                      className={`w-full px-4 py-2 rounded-lg text-sm transition-all ${isDarkMode
+                        ? 'bg-white/10 text-gray-300 hover:bg-white/15'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Generate Button */}
               <button
