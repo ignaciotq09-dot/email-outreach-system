@@ -47,18 +47,12 @@ export function ComposeAndSend() {
   const [showAddStyleModal, setShowAddStyleModal] = useState(false);
   const [replaceStyleId, setReplaceStyleId] = useState<WritingStyleId | null>(null);
 
-  // Load active writing styles from localStorage on mount
+  // Clear old localStorage and start fresh with 3 defaults
+  // This ensures clean slate after the UI reorganization
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('activeWritingStyles');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        const unique = Array.from(new Set(parsed)) as WritingStyleId[];
-        setActiveStyleIds(unique.slice(0, MAX_ACTIVE_STYLES));
-      }
-    } catch (e) {
-      console.error('Failed to load active writing styles:', e);
-    }
+    // Reset to 3 defaults (clears any stale data from before)
+    localStorage.setItem('activeWritingStyles', JSON.stringify(DEFAULT_ACTIVE_STYLES));
+    setActiveStyleIds([...DEFAULT_ACTIVE_STYLES]);
   }, []);
 
   // Save active styles to localStorage
