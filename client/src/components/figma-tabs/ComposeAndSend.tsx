@@ -648,6 +648,10 @@ export function ComposeAndSend() {
         isOpen={showWritingStyleModal}
         onClose={() => setShowWritingStyleModal(false)}
         isDarkMode={isDarkMode}
+        activeStyleIds={activeStyleIds}
+        onAddStyle={selectNewStyle}
+        onRemoveStyle={removeStyle}
+        maxStyles={MAX_ACTIVE_STYLES}
       />
     </div>
   );
