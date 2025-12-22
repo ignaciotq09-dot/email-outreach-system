@@ -63,17 +63,21 @@ export function ComposeAndSend() {
     localStorage.setItem('activeWritingStyles', JSON.stringify(limited));
   };
 
-  // Add or replace a writing style
+  // Add or replace a writing style - closes modal immediately
   const addOrReplaceStyle = (newStyleId: WritingStyleId) => {
+    console.log('[WritingStyles] Adding/replacing style:', newStyleId, 'replaceTarget:', replaceStyleId);
+
     if (replaceStyleId) {
       // Replace mode
       const newStyles = activeStyleIds.map(id => id === replaceStyleId ? newStyleId : id);
       saveActiveStyles(newStyles);
-      setReplaceStyleId(null);
     } else if (activeStyleIds.length < MAX_ACTIVE_STYLES && !activeStyleIds.includes(newStyleId)) {
       // Add mode
       saveActiveStyles([...activeStyleIds, newStyleId]);
     }
+
+    // Always close modal and reset state
+    setReplaceStyleId(null);
     setShowAddStyleModal(false);
   };
 
