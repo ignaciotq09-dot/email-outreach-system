@@ -45,7 +45,7 @@ export function ComposeAndSend() {
   // Writing styles management (3 default + 1 optional, max 4, then replace only)
   const [activeStyleIds, setActiveStyleIds] = useState<WritingStyleId[]>(DEFAULT_ACTIVE_STYLES);
   const [showAddStyleModal, setShowAddStyleModal] = useState(false);
-  const [replaceStyleId, setReplaceStyleId] = useState<WritingStyleId | null>(null);
+  const [newStyleToAdd, setNewStyleToAdd] = useState<WritingStyleId | null>(null); // For replace flow: the new style selected first
 
   // Clear old localStorage and start fresh with 3 defaults
   // This ensures clean slate after the UI reorganization
@@ -63,21 +63,27 @@ export function ComposeAndSend() {
     localStorage.setItem('activeWritingStyles', JSON.stringify(limited));
   };
 
-  // Add or replace a writing style - closes modal immediately
-  const addOrReplaceStyle = (newStyleId: WritingStyleId) => {
-    console.log('[WritingStyles] Adding/replacing style:', newStyleId, 'replaceTarget:', replaceStyleId);
-
-    if (replaceStyleId) {
-      // Replace mode
-      const newStyles = activeStyleIds.map(id => id === replaceStyleId ? newStyleId : id);
-      saveActiveStyles(newStyles);
-    } else if (activeStyleIds.length < MAX_ACTIVE_STYLES && !activeStyleIds.includes(newStyleId)) {
-      // Add mode
-      saveActiveStyles([...activeStyleIds, newStyleId]);
+  // Step 1: Select a new style to add (if at max, goes to replace flow)
+  const selectNewStyle = (styleId: WritingStyleId) => {
+    if (activeStyleIds.length < MAX_ACTIVE_STYLES) {
+      // Under max: just add it
+      saveActiveStyles([...activeStyleIds, styleId]);
+      setShowAddStyleModal(false);
+      setNewStyleToAdd(null);
+    } else {
+      // At max: set it as the new style, now user picks which to replace
+      setNewStyleToAdd(styleId);
     }
+  };
 
-    // Always close modal and reset state
-    setReplaceStyleId(null);
+  // Step 2: Select which current style to replace with the new style
+  const replaceWithNewStyle = (oldStyleId: WritingStyleId) => {
+    if (newStyleToAdd) {
+      const newStyles = activeStyleIds.map(id => id === oldStyleId ? newStyleToAdd : id);
+      saveActiveStyles(newStyles);
+    }
+    // Close modal and reset
+    setNewStyleToAdd(null);
     setShowAddStyleModal(false);
   };
 
@@ -478,7 +484,7 @@ export function ComposeAndSend() {
                   {availableStyles.length > 0 && (
                     <button
                       onClick={() => {
-                        setReplaceStyleId(null);
+                        setNewStyleToAdd(null);
                         setShowAddStyleModal(true);
                       }}
                       className={`w-full p-4 rounded-xl border-2 border-dashed text-sm transition-all flex items-center justify-center gap-2 ${isDarkMode
@@ -501,31 +507,31 @@ export function ComposeAndSend() {
                     : 'bg-white border-purple-200'
                     }`}>
                     <h3 className={`text-lg font-medium mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {replaceStyleId
-                        ? 'Replace Writing Style'
+                      {newStyleToAdd
+                        ? 'Which style to replace?'
                         : activeStyleIds.length >= MAX_ACTIVE_STYLES
-                          ? 'Replace a Style'
+                          ? 'Add a New Style'
                           : 'Add Writing Style'}
                     </h3>
                     <p className={`text-sm mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                      {replaceStyleId
-                        ? `Choose a style to replace "${WRITING_STYLES[replaceStyleId].name}"`
+                      {newStyleToAdd
+                        ? `Select which current style to replace with "${WRITING_STYLES[newStyleToAdd].name}"`
                         : activeStyleIds.length >= MAX_ACTIVE_STYLES
-                          ? 'Maximum 4 styles reached. Select a style to replace, then choose a new one.'
+                          ? 'Select the new style you want to add, then choose which current style to replace.'
                           : `Select a writing style to add (${activeStyleIds.length}/${MAX_ACTIVE_STYLES})`
                       }
                     </p>
 
-                    {/* At max capacity without replace target - show current styles to pick which to replace */}
-                    {activeStyleIds.length >= MAX_ACTIVE_STYLES && !replaceStyleId ? (
+                    {/* Step 2: After selecting new style, show current styles to pick which to replace */}
+                    {newStyleToAdd ? (
                       <div className="space-y-2 mb-4">
-                        <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>Click a style below to replace it:</p>
+                        <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>Click a style to replace it with "{WRITING_STYLES[newStyleToAdd].name}":</p>
                         {activeStyleIds.map((styleId) => {
                           const style = WRITING_STYLES[styleId];
                           return (
                             <button
                               key={styleId}
-                              onClick={() => setReplaceStyleId(styleId)}
+                              onClick={() => replaceWithNewStyle(styleId)}
                               className={`w-full px-3 py-2.5 rounded-lg border text-left transition-all ${isDarkMode
                                 ? 'bg-purple-500/20 text-purple-300 border-purple-500/30 hover:bg-red-500/20 hover:border-red-500/30'
                                 : 'bg-purple-100 text-purple-700 border-purple-300 hover:bg-red-50 hover:border-red-300'
@@ -540,13 +546,14 @@ export function ComposeAndSend() {
                         })}
                       </div>
                     ) : (
+                      /* Step 1: Show available styles to add */
                       <div className="space-y-2 mb-4 max-h-[60vh] overflow-y-auto">
                         {availableStyles.map((styleId) => {
                           const style = WRITING_STYLES[styleId];
                           return (
                             <button
                               key={styleId}
-                              onClick={() => addOrReplaceStyle(styleId)}
+                              onClick={() => selectNewStyle(styleId)}
                               className={`w-full px-3 py-2.5 rounded-lg border text-left transition-all ${isDarkMode
                                 ? 'bg-white/5 text-gray-300 border-white/10 hover:bg-purple-500/20 hover:border-purple-500/30'
                                 : 'bg-white text-gray-700 border-gray-200 hover:bg-purple-50 hover:border-purple-300'
@@ -565,7 +572,7 @@ export function ComposeAndSend() {
                     <button
                       onClick={() => {
                         setShowAddStyleModal(false);
-                        setReplaceStyleId(null);
+                        setNewStyleToAdd(null);
                       }}
                       className={`w-full px-4 py-2 rounded-lg text-sm transition-all ${isDarkMode
                         ? 'bg-white/10 text-gray-300 hover:bg-white/15'
