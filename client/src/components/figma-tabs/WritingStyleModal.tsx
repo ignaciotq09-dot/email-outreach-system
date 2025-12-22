@@ -45,8 +45,8 @@ export function WritingStyleModal({
       >
         <div
           className={`rounded-2xl border shadow-2xl overflow-hidden ${isDarkMode
-              ? 'bg-[#0a0515] border-purple-500/30'
-              : 'bg-white border-purple-200'
+            ? 'bg-[#0a0515] border-purple-500/30'
+            : 'bg-white border-purple-200'
             }`}
         >
           {/* Header */}
@@ -75,8 +75,8 @@ export function WritingStyleModal({
               <button
                 onClick={onClose}
                 className={`p-1.5 rounded-lg transition-all ${isDarkMode
-                    ? 'text-gray-400 hover:text-white hover:bg-white/10'
-                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+                  ? 'text-gray-400 hover:text-white hover:bg-white/10'
+                  : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
                   }`}
               >
                 <X className="w-5 h-5" />
@@ -90,21 +90,33 @@ export function WritingStyleModal({
               {availableStyles.map((styleId) => {
                 const style = WRITING_STYLES[styleId];
                 return (
-                  <button
+                  <div
                     key={styleId}
-                    onClick={() => handleAdd(styleId)}
-                    className={`w-full p-3 rounded-xl border text-left transition-all hover:scale-[1.01] ${isDarkMode
-                        ? 'bg-white/5 border-white/10 hover:bg-purple-500/20 hover:border-purple-500/30'
-                        : 'bg-white border-gray-200 hover:bg-purple-50 hover:border-purple-300'
+                    className={`p-3 rounded-xl border transition-all ${isDarkMode
+                      ? 'bg-white/5 border-white/10'
+                      : 'bg-white border-gray-200'
                       }`}
                   >
-                    <div className="font-medium text-sm" style={{ color: isDarkMode ? '#f3e8ff' : '#1f2937' }}>
-                      {style.name}
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm" style={{ color: isDarkMode ? '#f3e8ff' : '#1f2937' }}>
+                          {style.name}
+                        </div>
+                        <div className="text-xs mt-0.5" style={{ color: isDarkMode ? '#a78bfa' : '#6b7280' }}>
+                          {style.description}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleAdd(styleId)}
+                        className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all hover:scale-105 ${isDarkMode
+                          ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30 hover:bg-purple-500/30'
+                          : 'bg-purple-500 text-white hover:bg-purple-600'
+                          }`}
+                      >
+                        Add
+                      </button>
                     </div>
-                    <div className="text-xs mt-0.5" style={{ color: isDarkMode ? '#a78bfa' : '#6b7280' }}>
-                      {style.description}
-                    </div>
-                  </button>
+                  </div>
                 );
               })}
 
@@ -124,8 +136,8 @@ export function WritingStyleModal({
             <button
               onClick={onClose}
               className={`w-full px-4 py-2 rounded-lg text-sm transition-all ${isDarkMode
-                  ? 'bg-white/10 text-gray-300 hover:bg-white/15'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-white/10 text-gray-300 hover:bg-white/15'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
               Close
