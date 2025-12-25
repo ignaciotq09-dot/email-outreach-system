@@ -25,11 +25,10 @@ import { registerSmsRoutes } from "./sms/index";
 import { registerAutoReplyRoutes } from "./auto-reply";
 import bookingRoutes from "./booking";
 import spintaxRoutes from "./spintax";
-import { registerLinkedInRoutes } from "./linkedin";
-import { registerWorkflowRoutes } from "./workflow";
 import deepDiveRoutes from "./deep-dive";
 import { healthRouter } from "./health";
 import { registerMeetingsRoutes } from "./meetings-crud";
+import { registerCompanyOnboardingRoutes } from "./company-onboarding";
 
 export function registerAllRoutes(app: Express) {
   // Health check routes (no auth required) - register FIRST
@@ -81,15 +80,12 @@ export function registerAllRoutes(app: Express) {
   // Spintax and send time optimization routes
   app.use('/api/spintax', spintaxRoutes);
 
-  // LinkedIn integration routes
-  registerLinkedInRoutes(app);
-
-  // Workflow automation routes
-  registerWorkflowRoutes(app);
-
   // Contact deep dive enrichment
   app.use(deepDiveRoutes);
 
   // Meetings CRUD routes
   registerMeetingsRoutes(app);
+
+  // Company onboarding routes
+  registerCompanyOnboardingRoutes(app);
 }

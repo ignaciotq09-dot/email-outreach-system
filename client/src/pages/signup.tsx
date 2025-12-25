@@ -35,15 +35,15 @@ export default function SignupPage() {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         toast({
           title: "Logged in as Dev User",
           description: "Redirecting to dashboard...",
         });
-        // Redirect to main app
-        window.location.href = '/dashboard';
+        // Redirect to onboarding (skip email but still do company onboarding)
+        window.location.href = '/onboarding';
       } else {
         toast({
           title: "Dev login failed",
@@ -82,7 +82,7 @@ export default function SignupPage() {
   // Handle OAuth provider selection
   const handleOAuthProvider = async (provider: 'gmail' | 'outlook' | 'yahoo') => {
     if (!step1Data) return;
-    
+
     try {
       // Store Step 1 data in server session for OAuth callback to retrieve
       const response = await fetch('/api/signup/set-profile', {
@@ -91,12 +91,12 @@ export default function SignupPage() {
         body: JSON.stringify(step1Data),
         credentials: 'include',
       });
-      
+
       if (!response.ok) {
         console.error('Failed to store profile data');
         return;
       }
-      
+
       // Redirect to OAuth flow
       window.location.href = `/api/connect/${provider}`;
     } catch (error) {
@@ -114,7 +114,7 @@ export default function SignupPage() {
       {/* Decorative blur orbs */}
       <div className="fixed top-20 left-20 w-72 h-72 bg-violet-400/30 rounded-full blur-3xl" />
       <div className="fixed bottom-20 right-20 w-96 h-96 bg-fuchsia-400/30 rounded-full blur-3xl" />
-      
+
       <div className="w-full max-w-md relative">
         {/* Logo/Brand */}
         <div className="flex items-center justify-center gap-3 mb-8">

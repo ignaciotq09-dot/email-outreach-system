@@ -72,6 +72,11 @@ export function registerSearchRoutes(app: Express) {
           locations: filters.locations,
           industries: filters.industries,
           companySizes: filters.companySizes,
+          companies: filters.companies || [],
+          // P0: Pass seniorities, keywords, and technologies
+          seniorities: filters.seniorities || [],
+          keywords: filters.keywords || [],
+          technologies: filters.technologies || [],
           page,
           perPage
         });
@@ -163,13 +168,31 @@ export function registerSearchRoutes(app: Express) {
         }
       };
 
-      if (parseResult.confidence.disambiguationNeeded) {
+      // Only report disambiguation needed if we TRULY need more info
+      // If we have job title + location, or job title + industry, that's enough context
+      const hasMinimumViableSearch = (
+        (parseResult.filters.jobTitles.length > 0 && parseResult.filters.locations.length > 0) ||
+        (parseResult.filters.jobTitles.length > 0 && parseResult.filters.industries.length > 0) ||
+        (parseResult.filters.companies?.length > 0)
+      );
+
+      // Only set disambiguation if AI says we need it AND we don't already have enough context
+      if (parseResult.confidence.disambiguationNeeded && !hasMinimumViableSearch && filteredLeads.length === 0) {
         response.disambiguationNeeded = true;
         response.disambiguationReason = parseResult.confidence.disambiguationReason;
         response.alternativeInterpretations = parseResult.confidence.alternativeInterpretations;
       }
 
       console.log(`[SmartSearch] Returning ${filteredLeads.length} leads (total: ${result.total}, attempts: ${searchAttempts})`);
+      console.log(`[SmartSearch] DIAGNOSTIC - Response data:`, {
+        leadsCount: filteredLeads.length,
+        paginationTotalResults: result.pagination.totalResults,
+        paginationPage: result.pagination.page,
+        paginationTotalPages: result.pagination.totalPages,
+        disambiguationNeeded: response.disambiguationNeeded || false,
+        hasMinimumViableSearch,
+        parseResultDisambiguation: parseResult.confidence.disambiguationNeeded
+      });
       res.json(response);
 
     } catch (error: any) {

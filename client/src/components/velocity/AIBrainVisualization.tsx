@@ -122,7 +122,7 @@ export function AIBrainVisualization() {
           if (isActive) {
             ctx.strokeStyle = `rgba(6, 182, 212, ${0.6 * pulseValue})`;
             ctx.lineWidth = 2;
-            
+
             // Draw glow
             ctx.shadowBlur = 10;
             ctx.shadowColor = 'rgba(6, 182, 212, 0.8)';
@@ -170,7 +170,7 @@ export function AIBrainVisualization() {
           );
           gradient.addColorStop(0, `rgba(6, 182, 212, ${pulseValue * 0.8})`);
           gradient.addColorStop(1, 'rgba(6, 182, 212, 0)');
-          
+
           ctx.fillStyle = gradient;
           ctx.beginPath();
           ctx.arc(node.x, node.y, size * 3, 0, Math.PI * 2);
@@ -178,7 +178,7 @@ export function AIBrainVisualization() {
         }
 
         // Node
-        ctx.fillStyle = isActive 
+        ctx.fillStyle = isActive
           ? `rgba(6, 182, 212, ${pulseValue})`
           : 'rgba(6, 182, 212, 0.6)';
         ctx.beginPath();
@@ -227,7 +227,7 @@ export function AIBrainVisualization() {
           transition={{ duration: 0.5 }}
           className="text-center mb-16"
         >
-          <div 
+          <div
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4 bg-white/10 backdrop-blur-sm border border-white/20"
           >
             <Brain className="w-4 h-4" />
@@ -249,9 +249,9 @@ export function AIBrainVisualization() {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <Card 
+            <Card
               className="relative overflow-hidden border-2 shadow-2xl"
-              style={{ 
+              style={{
                 background: 'rgba(15, 23, 42, 0.5)',
                 borderColor: 'rgba(6, 182, 212, 0.3)',
                 backdropFilter: 'blur(10px)'
@@ -262,9 +262,9 @@ export function AIBrainVisualization() {
                 className="w-full"
                 style={{ height: '400px' }}
               />
-              
+
               {/* Scanline effect */}
-              <div 
+              <div
                 className="absolute inset-0 pointer-events-none"
                 style={{
                   background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(6, 182, 212, 0.03) 2px, rgba(6, 182, 212, 0.03) 4px)'
@@ -293,16 +293,16 @@ export function AIBrainVisualization() {
                   className="flex items-start gap-4 group"
                 >
                   {/* Icon */}
-                  <div 
+                  <div
                     className="relative flex-shrink-0"
                   >
-                    <div 
+                    <div
                       className="absolute inset-0 rounded-xl blur-xl opacity-50 group-hover:opacity-100 transition-opacity"
                       style={{ backgroundColor: step.color }}
                     />
-                    <div 
+                    <div
                       className="relative w-14 h-14 rounded-xl flex items-center justify-center border-2"
-                      style={{ 
+                      style={{
                         backgroundColor: 'rgba(15, 23, 42, 0.8)',
                         borderColor: step.color
                       }}
@@ -314,9 +314,9 @@ export function AIBrainVisualization() {
                   {/* Content */}
                   <div className="flex-1 pt-2">
                     <div className="flex items-center gap-3 mb-2">
-                      <span 
+                      <span
                         className="text-xs px-2 py-1 rounded"
-                        style={{ 
+                        style={{
                           backgroundColor: step.color + '20',
                           color: step.color
                         }}
@@ -326,7 +326,7 @@ export function AIBrainVisualization() {
                       <h3 className="text-xl text-white">{step.label}</h3>
                     </div>
                     <p className="text-slate-400">
-                      {index === 0 && "Collects recipient data from LinkedIn, website, and social signals"}
+                      {index === 0 && "Collects recipient data from website, CRM, and social signals"}
                       {index === 1 && "Neural network analyzes patterns and context to understand intent"}
                       {index === 2 && "AI generates unique content tailored to each recipient"}
                       {index === 3 && "Delivers a perfectly crafted, personalized message"}
@@ -364,7 +364,7 @@ export function AIBrainVisualization() {
             { value: '99.7%', label: 'Accuracy Rate' },
           ].map((stat, index) => (
             <div key={index} className="text-center">
-              <div 
+              <div
                 className="text-3xl md:text-4xl mb-2 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent"
               >
                 {stat.value}

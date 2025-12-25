@@ -2,25 +2,23 @@ import { db } from "../../db";
 import { contacts, contactDeepDive } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import { enrichWithApollo } from "./apollo-enrichment";
-import { enrichWithLinkedIn } from "./linkedin-enrichment";
 import { searchWeb } from "./web-search";
 import { enrichCompany } from "./company-enrichment";
 import { synthesizeInsights } from "./ai-synthesis";
-import type { DeepDiveProgress } from "./types";
+import type { DeepDiveProgress, LinkedInEnrichmentResult } from "./types";
 import type { DeepDiveResult, WorkHistoryEntry, EducationEntry, SocialProfile } from "@shared/schemas/deep-dive-schema";
 
 const activeJobs = new Map<string, DeepDiveProgress>();
 
 export async function runDeepDive(userId: number, contactId: number): Promise<DeepDiveResult> {
   const jobKey = `${userId}-${contactId}`;
-  
+
   const progress: DeepDiveProgress = {
     contactId,
     status: 'in_progress',
     currentStep: 'Fetching contact',
     steps: [
       { name: 'Apollo Enrichment', status: 'pending' },
-      { name: 'LinkedIn Profile', status: 'pending' },
       { name: 'Company Intel', status: 'pending' },
       { name: 'Web Search', status: 'pending' },
       { name: 'AI Synthesis', status: 'pending' },
@@ -41,26 +39,23 @@ export async function runDeepDive(userId: number, contactId: number): Promise<De
     progress.steps[0].status = apolloResult.found ? 'completed' : 'skipped';
     progress.steps[0].data = apolloResult;
 
-    progress.currentStep = 'LinkedIn Profile';
-    progress.steps[1].status = 'running';
-    const linkedinResult = await enrichWithLinkedIn(contact, userId);
-    progress.steps[1].status = linkedinResult.found ? 'completed' : 'skipped';
-    progress.steps[1].data = linkedinResult;
+    // LinkedIn enrichment removed - using stub
+    const linkedinResult: LinkedInEnrichmentResult = { found: false, confidence: 0 };
 
     progress.currentStep = 'Company Intel';
-    progress.steps[2].status = 'running';
+    progress.steps[1].status = 'running';
     const companyResult = await enrichCompany(contact);
-    progress.steps[2].status = companyResult.found ? 'completed' : 'skipped';
-    progress.steps[2].data = companyResult;
+    progress.steps[1].status = companyResult.found ? 'completed' : 'skipped';
+    progress.steps[1].data = companyResult;
 
     progress.currentStep = 'Web Search';
-    progress.steps[3].status = 'running';
+    progress.steps[2].status = 'running';
     const webResult = await searchWeb(contact);
-    progress.steps[3].status = webResult.found ? 'completed' : 'skipped';
-    progress.steps[3].data = webResult;
+    progress.steps[2].status = webResult.found ? 'completed' : 'skipped';
+    progress.steps[2].data = webResult;
 
     progress.currentStep = 'AI Synthesis';
-    progress.steps[4].status = 'running';
+    progress.steps[3].status = 'running';
     const synthesis = await synthesizeInsights({
       contactName: contact.name,
       contactEmail: contact.email,
@@ -71,8 +66,8 @@ export async function runDeepDive(userId: number, contactId: number): Promise<De
       company: companyResult,
       webSearch: webResult,
     });
-    progress.steps[4].status = 'completed';
-    progress.steps[4].data = synthesis;
+    progress.steps[3].status = 'completed';
+    progress.steps[3].data = synthesis;
 
     const workHistory: WorkHistoryEntry[] = apolloResult.data?.employmentHistory?.map(j => ({
       company: j.organizationName,
@@ -94,14 +89,14 @@ export async function runDeepDive(userId: number, contactId: number): Promise<De
     if (contact.linkedinUrl) socialProfiles.push({ platform: 'LinkedIn', url: contact.linkedinUrl });
     if (apolloResult.data?.linkedinUrl && !contact.linkedinUrl) socialProfiles.push({ platform: 'LinkedIn', url: apolloResult.data.linkedinUrl });
 
-    const skills = [...new Set([...(apolloResult.data?.skills || []), ...(linkedinResult.data?.skills || [])])];
+    const skills = [...new Set([...(apolloResult.data?.skills || [])])];
 
     const result: DeepDiveResult = {
       contact: { id: contact.id, name: contact.name, email: contact.email, company: contact.company || undefined, position: contact.position || undefined },
       profile: {
         photoUrl: apolloResult.data?.photoUrl,
-        headline: apolloResult.data?.headline || linkedinResult.data?.headline,
-        summary: linkedinResult.data?.summary,
+        headline: apolloResult.data?.headline,
+        summary: undefined,
         location: apolloResult.data?.location || contact.location || undefined,
       },
       workHistory,
@@ -118,7 +113,7 @@ export async function runDeepDive(userId: number, contactId: number): Promise<De
         competitors: companyResult.data?.competitors,
       },
       triggerEvents: synthesis.triggerEvents,
-      recentActivity: linkedinResult.data?.recentPosts?.map(p => ({ platform: 'LinkedIn', content: p.content, date: p.date, engagement: p.likes ? `${p.likes} likes` : undefined })) || [],
+      recentActivity: [],
       insights: synthesis.insights,
       confidenceScores: {
         overall: Math.round((apolloResult.confidence + linkedinResult.confidence + companyResult.confidence + webResult.confidence) / 4 * 100) / 100,
@@ -186,7 +181,7 @@ export function getDeepDiveStatus(userId: number, contactId: number): DeepDivePr
 
 export async function getCachedDeepDive(userId: number, contactId: number): Promise<DeepDiveResult | null> {
   const [cached] = await db.select().from(contactDeepDive).where(and(eq(contactDeepDive.contactId, contactId), eq(contactDeepDive.userId, userId))).limit(1);
-  
+
   if (!cached || cached.enrichmentStatus !== 'completed') return null;
 
   const [contact] = await db.select().from(contacts).where(eq(contacts.id, contactId)).limit(1);

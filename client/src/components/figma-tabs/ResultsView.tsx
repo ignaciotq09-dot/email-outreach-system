@@ -36,6 +36,10 @@ interface ResultsViewProps {
   onAddSelectedToQueue?: () => void;
   isAddingToQueue?: boolean;
   quotaRemaining?: number;
+  // Pagination props
+  pagination?: { page: number; totalPages: number; totalResults: number } | null;
+  onLoadMore?: () => void;
+  isLoadingMore?: boolean;
 }
 
 export function ResultsView({
@@ -54,6 +58,9 @@ export function ResultsView({
   onAddSelectedToQueue,
   isAddingToQueue = false,
   quotaRemaining,
+  pagination,
+  onLoadMore,
+  isLoadingMore = false,
 }: ResultsViewProps) {
   const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
 
@@ -267,31 +274,54 @@ export function ResultsView({
           </div>
         )}
 
-        <div className="space-y-3 w-full max-w-[1600px] mx-auto relative z-10">
-          {leads.map((lead, index) => (
-            <div
-              key={lead.id}
-              style={{
-                animation: `fadeInUp 0.3s ease-out ${index * 0.05}s both`
-              }}
-            >
-              <LeadCard
-                lead={lead}
-                isSelected={selectedLeads.has(lead.id)}
-                onToggleSelect={() => onToggleSelectLead(lead.id)}
-                viewMode={viewMode}
-                isDarkMode={isDarkMode}
-              />
+        {/* Empty State */}
+        {leads.length === 0 ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center space-y-4 max-w-md">
+              <Users className={`w-16 h-16 mx-auto ${isDarkMode ? 'text-gray-700' : 'text-gray-300'}`} />
+              <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                No contacts found
+              </h3>
+              <p className={`text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                Try adjusting your search filters or broadening your criteria
+              </p>
             </div>
-          ))}
-        </div>
+          </div>
+        ) : (
+          <div className="space-y-3 w-full max-w-[1600px] mx-auto relative z-10">
+            {leads.map((lead, index) => (
+              <div
+                key={lead.id}
+                style={{
+                  animation: `fadeInUp 0.3s ease-out ${index * 0.05}s both`
+                }}
+              >
+                <LeadCard
+                  lead={lead}
+                  isSelected={selectedLeads.has(lead.id)}
+                  onToggleSelect={() => onToggleSelectLead(lead.id)}
+                  viewMode={viewMode}
+                  isDarkMode={isDarkMode}
+                />
+              </div>
+            ))}
+          </div>
+        )}
 
-        {/* Load More */}
-        <div className="flex justify-center py-8 relative z-10">
-          <button className="relative group px-8 py-3 border-2 border-purple-300 dark:border-purple-500/30 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 dark:hover:from-purple-500/20 dark:hover:to-indigo-500/20 dark:bg-white/5 dark:backdrop-blur-xl text-gray-700 dark:text-purple-300 rounded-xl font-medium transition-all hover:scale-105 active:scale-95 shadow-sm hover:shadow-md dark:hover:border-purple-500/50">
-            <span className="relative z-10">Load More (Page 1 of 10)</span>
-          </button>
-        </div>
+        {/* Load More - Only show if there are more pages */}
+        {leads.length > 0 && pagination && pagination.page < pagination.totalPages && (
+          <div className="flex justify-center py-8 relative z-10">
+            <button
+              onClick={onLoadMore}
+              disabled={isLoadingMore}
+              className="relative group px-8 py-3 border-2 border-purple-300 dark:border-purple-500/30 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 dark:hover:from-purple-500/20 dark:hover:to-indigo-500/20 dark:bg-white/5 dark:backdrop-blur-xl text-gray-700 dark:text-purple-300 rounded-xl font-medium transition-all hover:scale-105 active:scale-95 shadow-sm hover:shadow-md dark:hover:border-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span className="relative z-10">
+                {isLoadingMore ? 'Loading...' : `Load More (Page ${pagination.page} of ${pagination.totalPages})`}
+              </span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Floating Action Button */}

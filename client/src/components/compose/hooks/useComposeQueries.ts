@@ -15,8 +15,8 @@ export function useComposeQueries() {
     staleTime: 0,
   });
 
-  const isFetchingContacts = useIsFetching({ 
-    queryKey: ['/api/campaigns', activeDraftCampaign?.id, 'contacts'] 
+  const isFetchingContacts = useIsFetching({
+    queryKey: ['/api/campaigns', activeDraftCampaign?.id, 'contacts']
   }) > 0;
 
   const { data: personalizationData } = useQuery<{ exists: boolean; personalization: { variantDiversity?: number } }>({
@@ -26,13 +26,8 @@ export function useComposeQueries() {
   const { data: smsConfig } = useQuery<{ configured: boolean; userPhoneNumber: string | null }>({
     queryKey: ['/api/sms/configured'],
   });
-  
-  const { data: linkedinConfig } = useQuery<{ configured: boolean }>({
-    queryKey: ['/api/linkedin/configured'],
-  });
-  
+
   const smsEnabled = smsConfig?.configured ?? false;
-  const linkedinEnabled = linkedinConfig?.configured ?? false;
   const variantDiversity = personalizationData?.personalization?.variantDiversity ?? 5;
 
   return {
@@ -41,7 +36,6 @@ export function useComposeQueries() {
     campaignContactsData,
     isFetchingContacts,
     smsEnabled,
-    linkedinEnabled,
     variantDiversity,
   };
 }

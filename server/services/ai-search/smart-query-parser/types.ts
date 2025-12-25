@@ -8,12 +8,21 @@ export interface SmartParsedFilters {
   seniorities: string[];
   keywords: string[];
   companies: string[];
+  // P0: Technology stack filter
+  technologies: string[];
   // Advanced filters for precision targeting
   emailStatuses?: string[];
   managementLevels?: string[];
   previousCompanies?: string[];
   schools?: string[];
   recentJobChange?: boolean;
+  // P1: Revenue and intent filters
+  revenueRanges?: string[];
+  intentTopics?: string[];
+  // P2: Exclusion filters for negative filtering
+  excludeJobTitles?: string[];
+  excludeIndustries?: string[];
+  excludeCompanies?: string[];
 }
 
 export interface NormalizedLocation {

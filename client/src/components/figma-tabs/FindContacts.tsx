@@ -129,10 +129,17 @@ export function FindContacts({ isDarkMode = false, onContactsAdded }: { isDarkMo
       setHasSearched(true);
       setSelectedLeads(new Set());
       setFeedbackGiven(new Set());
-      if (data.needsClarification) {
+      // Only show warning toast if we actually got NO results AND clarification is needed
+      // If we got results, don't bother the user - show guidance inline via adaptiveGuidance instead
+      if (data.needsClarification && data.leads.length === 0) {
         toast({
-          title: "Your search could be more specific",
-          description: data.clarifyingQuestions?.[0] || "Try adding more details",
+          title: "Need more information",
+          description: data.clarifyingQuestions?.[0] || "Add a job title or location to find contacts",
+        });
+      } else if (data.leads.length === 0 && !data.needsClarification) {
+        toast({
+          title: "No matches found",
+          description: "Try broadening your search or adjusting filters",
         });
       }
     },
@@ -310,6 +317,16 @@ export function FindContacts({ isDarkMode = false, onContactsAdded }: { isDarkMo
     }));
   };
 
+  const handleLoadMore = () => {
+    if (!pagination || isLoadingMore) return;
+    setIsLoadingMore(true);
+    mutations.filterSearchMutation.mutate({
+      page: pagination.page + 1,
+      append: true,
+      filters: activeFilters
+    });
+  };
+
   // Loading state
   if (statusLoading) {
     return (
@@ -395,6 +412,10 @@ export function FindContacts({ isDarkMode = false, onContactsAdded }: { isDarkMo
             onAddSelectedToQueue={handleAddSelectedToQueue}
             isAddingToQueue={mutations.addToQueueMutation.isPending}
             quotaRemaining={quotaData?.quota?.remaining}
+            // Pagination props
+            pagination={pagination}
+            onLoadMore={handleLoadMore}
+            isLoadingMore={isLoadingMore}
           />
         )}
       </div>

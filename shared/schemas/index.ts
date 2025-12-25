@@ -66,11 +66,8 @@ export * from "./booking-schema";
 // 21. Spintax & Send Time Optimization (depends on users, contacts, campaigns)
 export * from "./spintax-schema";
 
-// 22. LinkedIn (depends on users, contacts, campaigns)
-export * from "./linkedin-schema";
-
-// 23. Workflows (depends on users, contacts, campaigns)
-export * from "./workflow-schema";
-
-// 24. Deep Dive (depends on users, contacts)
+// 22. Deep Dive (depends on users, contacts)
 export * from "./deep-dive-schema";
+
+// 23. Company Profiles (depends on users) - for onboarding
+export * from "./company-profile-schema";

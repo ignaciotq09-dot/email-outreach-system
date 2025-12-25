@@ -25,7 +25,21 @@ export async function aiSearch(userId: number, query: string, options: { page?: 
   const [sessionResult, icpProfile] = await Promise.all([db.insert(leadSearchSessions).values({ userId, originalQuery: query, parsedFilters: parseResult.filters as any, parseConfidence: parseResult.confidence, parseExplanation: parseResult.explanation, status: 'active' }).returning(), useIcp ? fetchIcpProfile(userId) : Promise.resolve(null)]);
   const session = sessionResult[0];
   timer.mark('Session + ICP fetch (parallel)');
-  if (parseResult.needsClarification) { const result: AISearchResult = { sessionId: session.id, query, parsedFilters: parseResult.filters, explanation: parseResult.explanation, confidence: parseResult.confidence, needsClarification: true, clarifyingQuestions: parseResult.clarifyingQuestions, leads: [], pagination: { page: 1, perPage: 25, totalPages: 0, totalResults: 0 }, suggestions: [], searchMetadata: { durationMs: timer.total(), filtersApplied: 0, icpScoringEnabled: false }, adaptiveGuidance: { searchCategory: parseResult.searchCategory, specificityScore: parseResult.specificityScore, tips: [], suggestedAdditions: [], hasRecommendations: false } }; timer.mark('Early return (clarification needed)'); timer.print('AISearch'); return result; }
+
+  // Extra safety: Override needsClarification if we have a minimum viable search
+  const hasMinimumViableSearch = (
+    (parseResult.filters.jobTitles?.length > 0 && parseResult.filters.locations?.length > 0) ||
+    (parseResult.filters.jobTitles?.length > 0 && parseResult.filters.industries?.length > 0) ||
+    (parseResult.filters.companies?.length > 0)
+  );
+
+  // Only return early for clarification if we truly need it AND don't have viable search context
+  if (parseResult.needsClarification && !hasMinimumViableSearch) {
+    const result: AISearchResult = { sessionId: session.id, query, parsedFilters: parseResult.filters, explanation: parseResult.explanation, confidence: parseResult.confidence, needsClarification: true, clarifyingQuestions: parseResult.clarifyingQuestions, leads: [], pagination: { page: 1, perPage: 25, totalPages: 0, totalResults: 0 }, suggestions: [], searchMetadata: { durationMs: timer.total(), filtersApplied: 0, icpScoringEnabled: false }, adaptiveGuidance: { searchCategory: parseResult.searchCategory, specificityScore: parseResult.specificityScore, tips: [], suggestedAdditions: [], hasRecommendations: false } };
+    timer.mark('Early return (clarification needed)');
+    timer.print('AISearch');
+    return result;
+  }
   // RESULT COUNT ESTIMATION - optimize pagination based on expected results
   const estimatedCount = estimateResultCount(parseResult.filters);
   console.log(`[AISearch] Estimated result count: ${estimatedCount}`);

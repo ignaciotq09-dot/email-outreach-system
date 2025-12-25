@@ -74,10 +74,25 @@ export async function smartParseQuery(query: string): Promise<SmartParseResult> 
 
   const { filters, confidence, explanation } = await parseQueryWithAI(cleanedQuery);
 
-  if (ambiguityCheck.isAmbiguous && !confidence.disambiguationNeeded) {
+  // Check for ambiguity ONLY if we don't already have sufficient context
+  const hasMinimumViableSearch = (
+    (filters.jobTitles.length > 0 && filters.locations.length > 0) ||  // who + where
+    (filters.jobTitles.length > 0 && filters.industries.length > 0) || // who + what industry
+    (filters.companies?.length > 0)  // specific companies = always sufficient
+  );
+
+  if (ambiguityCheck.isAmbiguous && !confidence.disambiguationNeeded && !hasMinimumViableSearch) {
+    // Only flag disambiguation if we DON'T have enough context to run a good search
     confidence.disambiguationNeeded = true;
     confidence.disambiguationReason = ambiguityCheck.reason;
     confidence.overall = Math.min(confidence.overall, 0.5);
+  } else if (hasMinimumViableSearch && confidence.disambiguationNeeded) {
+    // IMPORTANT: If we have job title + location (or similar), suppress the disambiguation request
+    // because we have enough context for a productive search
+    console.log(`[SmartQueryParser] Suppressing disambiguation - have viable search context`);
+    confidence.disambiguationNeeded = false;
+    confidence.disambiguationReason = undefined;
+    confidence.overall = Math.max(confidence.overall, 0.7); // Boost confidence since this is a valid search
   }
 
   if (filters.jobTitles.length > 0 && filters.industries.length > 0) {

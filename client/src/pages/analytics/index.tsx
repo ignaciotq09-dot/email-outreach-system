@@ -2,17 +2,17 @@ import { useState, useMemo } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, MessageSquare, Info, Linkedin } from "lucide-react";
+import { Mail, MessageSquare, Info } from "lucide-react";
 import type { ChannelFilter, SortField, SortOrder } from "./types";
 import { TIMEZONES } from "./constants";
-import { useEmailQueries, useSmsQueries, useLinkedinQueries, useEngagementFunnelQueries, useReplyQualityQueries, useAIPerformanceQueries } from "./hooks/useAnalyticsQueries";
+import { useEmailQueries, useSmsQueries, useEngagementFunnelQueries, useReplyQualityQueries, useAIPerformanceQueries } from "./hooks/useAnalyticsQueries";
 import { OverviewCards } from "./OverviewCards";
 import { TrendComparisonCards } from "./TrendComparisonCards";
 import { DeliverabilityCard } from "./DeliverabilityCard";
 import { CampaignLeaderboard } from "./CampaignLeaderboard";
 import { SmsCampaignLeaderboard } from "./SmsCampaignLeaderboard";
 import { EmailBestSendTimesCard, SmsBestSendTimesCard } from "./BestSendTimesCard";
-import { EmailTrendsChart, SmsResponseTrendsChart, LinkedInTrendsChart } from "./EngagementTrendsChart";
+import { EmailTrendsChart, SmsResponseTrendsChart } from "./EngagementTrendsChart";
 import { ContactEngagementCard } from "./ContactEngagementCard";
 import { EngagementFunnelCard } from "./EngagementFunnelCard";
 import { AIPerformanceCard } from "./AIPerformanceCard";
@@ -33,11 +33,10 @@ export default function AnalyticsPage() {
     return TIMEZONES.find(tz => tz.value === selectedTimezone)?.label || 'Unknown';
   }, [selectedTimezone]);
 
-  const emailQueries = useEmailQueries({ enabled: channelFilter !== 'sms' && channelFilter !== 'linkedin', timezoneOffset, leaderboardSortBy, leaderboardSortOrder });
-  const smsQueries = useSmsQueries({ enabled: channelFilter !== 'email' && channelFilter !== 'linkedin', timezoneOffset });
-  const linkedinQueries = useLinkedinQueries({ enabled: channelFilter === 'linkedin' || channelFilter === 'both', timezoneOffset });
+  const emailQueries = useEmailQueries({ enabled: channelFilter === 'email' || channelFilter === 'both', timezoneOffset, leaderboardSortBy, leaderboardSortOrder });
+  const smsQueries = useSmsQueries({ enabled: channelFilter === 'sms' || channelFilter === 'both', timezoneOffset });
 
-  // NEW: Advanced analytics queries
+  // Advanced analytics queries
   const funnelQueries = useEngagementFunnelQueries({ enabled: channelFilter === 'email' });
   const replyQualityQueries = useReplyQualityQueries({ enabled: channelFilter === 'email' });
   const aiPerformanceQueries = useAIPerformanceQueries({ enabled: channelFilter === 'email' });
@@ -55,7 +54,7 @@ export default function AnalyticsPage() {
         <div className="flex items-start justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-3xl font-bold" data-testid="text-analytics-title">Analytics Dashboard</h1>
-            <p className="text-muted-foreground mt-1">Track {channelFilter === 'email' ? 'email' : channelFilter === 'sms' ? 'SMS' : channelFilter === 'linkedin' ? 'LinkedIn' : 'all channel'} performance and engagement metrics</p>
+            <p className="text-muted-foreground mt-1">Track {channelFilter === 'email' ? 'email' : channelFilter === 'sms' ? 'SMS' : 'all channel'} performance and engagement metrics</p>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Channel:</span>
@@ -63,7 +62,6 @@ export default function AnalyticsPage() {
               <TabsList data-testid="tabs-channel-filter">
                 <TabsTrigger value="email" data-testid="tab-email" className="gap-1.5"><Mail className="h-4 w-4" />Email</TabsTrigger>
                 <TabsTrigger value="sms" data-testid="tab-sms" className="gap-1.5"><MessageSquare className="h-4 w-4" />SMS</TabsTrigger>
-                <TabsTrigger value="linkedin" data-testid="tab-linkedin" className="gap-1.5"><Linkedin className="h-4 w-4" />LinkedIn</TabsTrigger>
                 <TabsTrigger value="both" data-testid="tab-both" className="gap-1.5">All</TabsTrigger>
               </TabsList>
             </Tabs>
@@ -82,13 +80,13 @@ export default function AnalyticsPage() {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <OverviewCards channelFilter={channelFilter} overview={emailQueries.overview.data} smsOverview={smsQueries.smsOverview.data} linkedinOverview={linkedinQueries.linkedinOverview.data} isLoading={channelFilter === 'email' ? emailQueries.overview.isLoading : channelFilter === 'sms' ? smsQueries.smsOverview.isLoading : linkedinQueries.linkedinOverview.isLoading} formatPercent={formatPercent} />
+          <OverviewCards channelFilter={channelFilter} overview={emailQueries.overview.data} smsOverview={smsQueries.smsOverview.data} isLoading={channelFilter === 'email' ? emailQueries.overview.isLoading : smsQueries.smsOverview.isLoading} formatPercent={formatPercent} />
         </div>
 
         {channelFilter === 'email' && <TrendComparisonCards data7={emailQueries.trend7.data} data30={emailQueries.trend30.data} dailyMetrics7={emailQueries.dailyMetrics7.data} dailyMetrics30={emailQueries.dailyMetrics30.data} isLoading={emailQueries.trend7.isLoading || emailQueries.trend30.isLoading || emailQueries.dailyMetrics7.isLoading || emailQueries.dailyMetrics30.isLoading} />}
         {channelFilter === 'email' && <DeliverabilityCard data={emailQueries.deliverability.data} isLoading={emailQueries.deliverability.isLoading} />}
 
-        {/* NEW: Advanced Analytics Section */}
+        {/* Advanced Analytics Section */}
         {channelFilter === 'email' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <EngagementFunnelCard
@@ -116,7 +114,6 @@ export default function AnalyticsPage() {
         )}
 
         {(channelFilter === 'sms' || channelFilter === 'both') && <SmsResponseTrendsChart data={smsQueries.smsResponseTrends.data} isLoading={smsQueries.smsResponseTrends.isLoading} />}
-        {(channelFilter === 'linkedin' || channelFilter === 'both') && <LinkedInTrendsChart data={linkedinQueries.linkedinTrends.data} isLoading={linkedinQueries.linkedinTrends.isLoading} />}
 
         {channelFilter === 'sms' && <SmsBestSendTimesCard data={smsQueries.smsBestSendTimes.data} isLoading={smsQueries.smsBestSendTimes.isLoading} selectedTimezone={selectedTimezone} onTimezoneChange={setSelectedTimezone} currentTimezoneName={currentTimezoneName} />}
         {channelFilter === 'email' && <EmailBestSendTimesCard data={emailQueries.bestSendTimes.data} weeklyPattern={emailQueries.weeklyPattern.data} isLoading={emailQueries.bestSendTimes.isLoading} weeklyPatternLoading={emailQueries.weeklyPattern.isLoading} selectedTimezone={selectedTimezone} onTimezoneChange={setSelectedTimezone} heatmapMetric={heatmapMetric} onMetricChange={setHeatmapMetric} currentTimezoneName={currentTimezoneName} />}
@@ -134,4 +131,3 @@ export default function AnalyticsPage() {
     </div>
   );
 }
-

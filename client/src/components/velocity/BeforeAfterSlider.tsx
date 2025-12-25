@@ -12,7 +12,7 @@ export function BeforeAfterSlider() {
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!isDragging) return;
-    
+
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const percentage = (x / rect.width) * 100;
@@ -21,7 +21,7 @@ export function BeforeAfterSlider() {
 
   const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
     if (!isDragging) return;
-    
+
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.touches[0].clientX - rect.left;
     const percentage = (x / rect.width) * 100;
@@ -44,9 +44,9 @@ export function BeforeAfterSlider() {
           transition={{ duration: 0.5 }}
           className="text-center mb-12"
         >
-          <div 
+          <div
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4 bg-white/10 backdrop-blur-sm border border-white/20"
-            style={{ 
+            style={{
               color: 'var(--electric-teal)'
             }}
           >
@@ -67,7 +67,7 @@ export function BeforeAfterSlider() {
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
         >
-          <div 
+          <div
             className="relative rounded-2xl overflow-hidden select-none cursor-col-resize border-2"
             onMouseDown={handleMouseDown}
             onMouseUp={handleMouseUp}
@@ -76,7 +76,7 @@ export function BeforeAfterSlider() {
             onTouchStart={handleMouseDown}
             onTouchEnd={handleMouseUp}
             onTouchMove={handleTouchMove}
-            style={{ 
+            style={{
               height: '600px',
               borderColor: 'rgba(6, 182, 212, 0.3)',
               boxShadow: '0 0 60px rgba(6, 182, 212, 0.2)'
@@ -85,9 +85,9 @@ export function BeforeAfterSlider() {
             {/* BEFORE (Generic Email) - Full background */}
             <div className="absolute inset-0 p-8 flex flex-col" style={{ background: 'rgba(30, 41, 59, 0.5)' }}>
               <div className="flex items-center gap-2 mb-6">
-                <div 
+                <div
                   className="px-3 py-1 rounded text-sm"
-                  style={{ 
+                  style={{
                     backgroundColor: 'rgba(239, 68, 68, 0.2)',
                     color: 'rgba(239, 68, 68, 1)',
                     border: '1px solid rgba(239, 68, 68, 0.3)'
@@ -97,10 +97,10 @@ export function BeforeAfterSlider() {
                 </div>
                 <span className="text-sm text-slate-400">Generic Template</span>
               </div>
-              
-              <Card 
+
+              <Card
                 className="flex-1 p-6 shadow-lg border"
-                style={{ 
+                style={{
                   background: 'rgba(15, 23, 42, 0.8)',
                   borderColor: 'rgba(100, 116, 139, 0.3)'
                 }}
@@ -116,7 +116,7 @@ export function BeforeAfterSlider() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="space-y-4 text-sm text-slate-300">
                   <p>Hi there,</p>
                   <p className="opacity-75">
@@ -139,17 +139,17 @@ export function BeforeAfterSlider() {
             </div>
 
             {/* AFTER (AI Personalized) - Revealed by slider */}
-            <div 
+            <div
               className="absolute inset-0 p-8 flex flex-col"
-              style={{ 
+              style={{
                 clipPath: `inset(0 ${100 - sliderPosition}% 0 0)`,
                 background: 'rgba(15, 23, 42, 0.5)'
               }}
             >
               <div className="flex items-center gap-2 mb-6">
-                <div 
+                <div
                   className="px-3 py-1 rounded text-sm"
-                  style={{ 
+                  style={{
                     backgroundColor: 'rgba(16, 185, 129, 0.2)',
                     color: 'rgba(16, 185, 129, 1)',
                     border: '1px solid rgba(16, 185, 129, 0.3)'
@@ -159,10 +159,10 @@ export function BeforeAfterSlider() {
                 </div>
                 <span className="text-sm text-cyan-400">AI-Powered VELOCITY</span>
               </div>
-              
-              <Card 
+
+              <Card
                 className="flex-1 p-6 shadow-lg border-2"
-                style={{ 
+                style={{
                   background: 'rgba(15, 23, 42, 0.9)',
                   borderColor: 'rgba(6, 182, 212, 0.5)',
                   boxShadow: '0 0 30px rgba(6, 182, 212, 0.2)'
@@ -179,7 +179,7 @@ export function BeforeAfterSlider() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="space-y-4 text-sm text-slate-200">
                   <p>Hi Sarah,</p>
                   <p>
@@ -192,7 +192,7 @@ export function BeforeAfterSlider() {
                     I have a 2-minute video showing exactly how they did it. Would it be helpful if I sent it over?
                   </p>
                   <p>
-                    P.S. - Loved your recent post on LinkedIn about AI in sales. The point about maintaining human connection really resonated.
+                    P.S. - Loved your recent podcast episode about AI in sales. The point about maintaining human connection really resonated.
                   </p>
                   <p>Best,<br />Marcus Johnson</p>
                 </div>
@@ -207,28 +207,28 @@ export function BeforeAfterSlider() {
             </div>
 
             {/* Slider handle */}
-            <div 
+            <div
               className="absolute top-0 bottom-0 w-1 pointer-events-none z-20"
-              style={{ 
+              style={{
                 left: `${sliderPosition}%`,
                 backgroundColor: 'rgba(6, 182, 212, 1)',
                 boxShadow: '0 0 20px rgba(6, 182, 212, 0.8), 0 0 40px rgba(6, 182, 212, 0.4)'
               }}
             >
               {/* Glow effect */}
-              <div 
+              <div
                 className="absolute inset-0 blur-sm"
-                style={{ 
+                style={{
                   backgroundColor: 'rgba(6, 182, 212, 0.5)',
                   width: '3px',
                   left: '-1px'
                 }}
               />
-              
+
               {/* Handle */}
-              <div 
+              <div
                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full flex items-center justify-center pointer-events-auto cursor-col-resize shadow-xl border-4 border-white"
-                style={{ 
+                style={{
                   background: 'linear-gradient(135deg, rgba(6, 182, 212, 1), rgba(139, 92, 246, 1))',
                   boxShadow: '0 0 30px rgba(6, 182, 212, 0.6), 0 4px 20px rgba(0, 0, 0, 0.3)'
                 }}
@@ -237,9 +237,9 @@ export function BeforeAfterSlider() {
               </div>
 
               {/* Top arrow indicator */}
-              <div 
+              <div
                 className="absolute -top-8 left-1/2 -translate-x-1/2 text-xs px-3 py-1 rounded-full text-white whitespace-nowrap"
-                style={{ 
+                style={{
                   background: 'rgba(6, 182, 212, 0.9)',
                   boxShadow: '0 0 20px rgba(6, 182, 212, 0.4)'
                 }}

@@ -16,20 +16,17 @@ export interface EmailVariant {
   approach: string;
 }
 
-export type OutreachChannel = 'email' | 'sms' | 'linkedin' | 'email_sms' | 'email_linkedin' | 'all';
+export type OutreachChannel = 'email' | 'sms' | 'email_sms' | 'all';
 
 export interface ChannelValidation {
   total: number;
   emailSends: number;
   smsSends: number;
-  linkedinSends: number;
   skippedEmail: Contact[];
   skippedSms: Contact[];
-  skippedLinkedin: Contact[];
   hasWarnings: boolean;
   includesEmail: boolean;
   includesSms: boolean;
-  includesLinkedin: boolean;
 }
 
 export interface NewContactForm {
@@ -64,8 +61,6 @@ export interface ComposeState {
   showCampaignBuilder: boolean;
   outreachChannel: OutreachChannel;
   smsMessage: string;
-  linkedinMessage: string;
-  linkedinMessageType: 'connection_request' | 'direct_message';
   originalVariants: EmailVariant[];
   newContact: NewContactForm;
   hasInitialLoad: boolean;

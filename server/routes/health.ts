@@ -8,7 +8,6 @@ import { getPoolMetrics } from "../db";
 import { getCapacityMetrics } from "../services/capacity-monitor";
 import { cacheService } from "../services/cache-service";
 import { followUpEngine } from "../services/follow-up-engine";
-import { getSchedulerStatus } from "../services/workflow-scheduler";
 import { SequenceAutomationService } from "../sequence-automation";
 
 export const healthRouter = Router();
@@ -166,9 +165,6 @@ healthRouter.get("/agents", async (req: Request, res: Response) => {
             stats: followUpStats,
         };
 
-        // Workflow Scheduler status
-        const workflowStatus = await getSchedulerStatus();
-
         // Sequence Automation status
         const sequenceStatus = SequenceAutomationService.getStatus();
 
@@ -179,11 +175,6 @@ healthRouter.get("/agents", async (req: Request, res: Response) => {
                     name: "Follow-Up Engine",
                     description: "Processes follow-up email sequences",
                     ...followUpStatus,
-                },
-                workflowScheduler: {
-                    name: "Workflow Scheduler",
-                    description: "Executes scheduled workflows",
-                    ...workflowStatus,
                 },
                 sequenceAutomation: {
                     name: "Sequence Automation",

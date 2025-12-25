@@ -7,6 +7,18 @@ export interface ApolloSearchFilters {
   emailStatuses?: ("verified" | "unverified")[];
   page?: number;
   perPage?: number;
+  // P0: Missing filters that Apollo API supports
+  seniorities?: string[];           // VP, Director, Manager, etc.
+  keywords?: string[];              // Full-text search keywords
+  technologies?: string[];          // Tech stack to filter by
+  // P1: Additional high-value filters
+  requireEmail?: boolean;           // Only return contacts with emails
+  revenueMin?: number;              // Min company revenue
+  revenueMax?: number;              // Max company revenue
+  // P2: Negative filters (exclusions)
+  excludeJobTitles?: string[];      // Titles to exclude
+  excludeIndustries?: string[];     // Industries to exclude
+  excludeCompanies?: string[];      // Companies to exclude
 }
 
 // Email verification status - simplified two-tier system
