@@ -71,6 +71,70 @@ export async function searchPeople(filters: ApolloSearchFilters): Promise<Apollo
     }
   }
 
+  // P0: Apply seniority filter - maps our seniority labels to Apollo's values
+  if (filters.seniorities && filters.seniorities.length > 0) {
+    const seniorityMap: Record<string, string> = {
+      'Entry': 'entry',
+      'Junior': 'entry',
+      'Senior': 'senior',
+      'Manager': 'manager',
+      'Director': 'director',
+      'VP': 'vp',
+      'C-Level': 'c_suite',
+      'Owner': 'owner',
+      'Founder': 'founder',
+      'Partner': 'partner',
+      'Head': 'head',
+      'Intern': 'intern'
+    };
+    const mappedSeniorities = filters.seniorities
+      .map(s => seniorityMap[s] || s.toLowerCase())
+      .filter(Boolean);
+    if (mappedSeniorities.length > 0) {
+      requestBody.person_seniorities = Array.from(new Set(mappedSeniorities));
+      console.log('[Apollo] Applying seniority filter:', requestBody.person_seniorities);
+    }
+  }
+
+  // P0: Apply keywords filter for full-text search
+  if (filters.keywords && filters.keywords.length > 0) {
+    requestBody.q_keywords = filters.keywords.join(' ');
+    console.log('[Apollo] Applying keywords filter:', requestBody.q_keywords);
+  }
+
+  // P0: Apply technology filter
+  if (filters.technologies && filters.technologies.length > 0) {
+    requestBody.person_technologies = filters.technologies;
+    console.log('[Apollo] Applying technology filter:', requestBody.person_technologies);
+  }
+
+  // P1: Apply revenue range filter
+  if (filters.revenueMin !== undefined || filters.revenueMax !== undefined) {
+    if (filters.revenueMin !== undefined) {
+      requestBody.organization_revenue_min = filters.revenueMin;
+    }
+    if (filters.revenueMax !== undefined) {
+      requestBody.organization_revenue_max = filters.revenueMax;
+    }
+    console.log('[Apollo] Applying revenue filter:', { min: filters.revenueMin, max: filters.revenueMax });
+  }
+
+  // P2: Apply exclusion filters (negative filtering)
+  if (filters.excludeJobTitles && filters.excludeJobTitles.length > 0) {
+    requestBody.person_not_titles = filters.excludeJobTitles;
+    console.log('[Apollo] Excluding job titles:', filters.excludeJobTitles);
+  }
+
+  if (filters.excludeIndustries && filters.excludeIndustries.length > 0) {
+    requestBody.organization_not_industry_tag_ids = filters.excludeIndustries;
+    console.log('[Apollo] Excluding industries:', filters.excludeIndustries);
+  }
+
+  if (filters.excludeCompanies && filters.excludeCompanies.length > 0) {
+    requestBody.q_organization_not_names = filters.excludeCompanies;
+    console.log('[Apollo] Excluding companies:', filters.excludeCompanies);
+  }
+
   // Request email reveals in search (uses Apollo credits)
   requestBody.reveal_personal_emails = true;
 
@@ -108,7 +172,14 @@ export async function searchPeople(filters: ApolloSearchFilters): Promise<Apollo
       });
     }
 
-    const leads: ApolloLead[] = (data.people || []).map((person: any) => mapPersonToLead(person));
+    let leads: ApolloLead[] = (data.people || []).map((person: any) => mapPersonToLead(person));
+
+    // P1: Filter to only leads with emails if required
+    if (filters.requireEmail) {
+      const beforeCount = leads.length;
+      leads = leads.filter(l => l.email);
+      console.log(`[Apollo] requireEmail filter: ${beforeCount} -> ${leads.length} leads`);
+    }
 
     // Count leads with emails
     const leadsWithEmail = leads.filter(l => l.email).length;

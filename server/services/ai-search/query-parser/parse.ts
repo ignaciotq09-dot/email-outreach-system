@@ -8,10 +8,18 @@ export async function parseQuery(query: string): Promise<QueryParseResult> {
   const classification = await classifyQuery(query);
   const { filters, confidence, explanation } = await extractFilters(query);
   const clarifyingQuestions = await generateClarifyingQuestions(query, classification);
-  const needsClarification = classification.specificity === 'low' || confidence < 0.5;
+
+  // Fix: Only need clarification if we don't have a minimum viable search
+  const hasMinimumViableSearch = (
+    (filters.jobTitles.length > 0 && filters.locations.length > 0) ||  // who + where
+    (filters.jobTitles.length > 0 && filters.industries.length > 0) || // who + what industry
+    (filters.companies?.length > 0)  // specific companies = always sufficient
+  );
+
+  const needsClarification = !hasMinimumViableSearch && (classification.specificity === 'low' || confidence < 0.4);
   const queryType = classification.specificity === 'high' ? 'specific' : classification.specificity === 'medium' ? 'broad' : 'ambiguous';
   const expandedFromOriginal = filters.jobTitles.length > 1 || filters.seniorities.length > 0;
-  console.log(`[QueryParser] Result: ${filters.jobTitles.length} titles, ${filters.locations.length} locations, confidence=${confidence.toFixed(2)}`);
+  console.log(`[QueryParser] Result: ${filters.jobTitles.length} titles, ${filters.locations.length} locations, confidence=${confidence.toFixed(2)}, needsClarification=${needsClarification}`);
   return { filters, confidence, explanation, clarifyingQuestions, needsClarification, queryType, expandedFromOriginal };
 }
 

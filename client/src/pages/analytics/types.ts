@@ -1,6 +1,6 @@
 import type { Contact } from "@shared/schema";
 
-export type ChannelFilter = 'email' | 'sms' | 'linkedin' | 'both';
+export type ChannelFilter = 'email' | 'sms' | 'both';
 export type SortField = 'sent' | 'openRate' | 'replyRate' | 'date';
 export type SortOrder = 'asc' | 'desc';
 
@@ -145,64 +145,6 @@ export interface SmsBestSendTimesData {
   averages?: { deliveryRate: number };
 }
 
-export interface LinkedInOverviewMetrics {
-  totalSent: number;
-  connectionRequests: number;
-  directMessages: number;
-  accepted: number;
-  replied: number;
-  acceptanceRate: number;
-  replyRate: number;
-}
-
-export interface LinkedInTrendData {
-  date: string;
-  sent: number;
-  accepted: number;
-  replied: number;
-  acceptanceRate: number;
-  replyRate: number;
-}
-
-export interface LinkedInCampaignMetrics {
-  campaignId: number;
-  subject: string;
-  connectionsSent: number;
-  messagesSent: number;
-  totalAccepted: number;
-  totalReplies: number;
-  acceptanceRate: number;
-  responseRate: number;
-}
-
-export interface LinkedInHeatmapCell {
-  dayOfWeek: number;
-  hour: number;
-  totalSent: number;
-  totalAccepted: number;
-  totalReplied: number;
-  acceptanceRate: number;
-  responseRate: number;
-  hasEnoughData: boolean;
-}
-
-export interface LinkedInBestTime {
-  dayOfWeek: number;
-  hour: number;
-  acceptanceRate: number;
-  responseRate: number;
-  totalSent: number;
-}
-
-export interface LinkedInBestSendTimesData {
-  hasEnoughData: boolean;
-  totalMessages: number;
-  minimumRequired: number;
-  heatmapData: LinkedInHeatmapCell[];
-  bestTimes: LinkedInBestTime[];
-  canShowBestTimes: boolean;
-  averages?: { acceptanceRate: number; responseRate: number };
-}
 
 export interface TrendPeriod {
   startDate: string;

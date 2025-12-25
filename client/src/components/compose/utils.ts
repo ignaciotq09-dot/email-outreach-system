@@ -31,10 +31,9 @@ export const loadSelectedStyle = (activeStyles: WritingStyleId[]): WritingStyleI
 };
 
 export const getChannelFlags = (outreachChannel: string) => {
-  const isEmailEnabled = ['email', 'email_sms', 'email_linkedin', 'all'].includes(outreachChannel);
+  const isEmailEnabled = ['email', 'email_sms', 'all'].includes(outreachChannel);
   const isSmsEnabled = ['sms', 'email_sms', 'all'].includes(outreachChannel);
-  const isLinkedinEnabled = ['linkedin', 'email_linkedin', 'all'].includes(outreachChannel);
-  return { isEmailEnabled, isSmsEnabled, isLinkedinEnabled };
+  return { isEmailEnabled, isSmsEnabled };
 };
 
 export const DEFAULT_NEW_CONTACT = {

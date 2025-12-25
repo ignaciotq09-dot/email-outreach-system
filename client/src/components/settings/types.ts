@@ -50,28 +50,6 @@ export interface NotificationSettings {
   emailEnabled: boolean;
 }
 
-export interface PhantombusterStatus {
-  connected: boolean;
-  hasAutoConnectAgent: boolean;
-  hasMessageSenderAgent: boolean;
-}
-
-export interface ExtensionStatus {
-  connected: boolean;
-  lastVerified?: string | null;
-  cookiesUpdatedAt?: string | null;
-}
-
-export interface LinkedinStatus {
-  connected: boolean;
-  profileUrl?: string | null;
-  displayName?: string | null;
-  dailyConnectionLimit?: number;
-  dailyMessageLimit?: number;
-  connectionsSentToday?: number;
-  messagesSentToday?: number;
-}
-
 export interface SettingsState {
   checkInterval: string;
   senderName: string;
@@ -81,14 +59,4 @@ export interface SettingsState {
   bookingLink: string;
   customAutoReplyMessage: string;
   notificationPhone: string;
-  linkedinProfileUrl: string;
-  linkedinDisplayName: string;
-  linkedinDailyConnectionLimit: number;
-  linkedinDailyMessageLimit: number;
-  phantombusterApiKey: string;
-  phantombusterAutoConnectAgentId: string;
-  phantombusterMessageSenderAgentId: string;
-  isVerifyingPhantombuster: boolean;
-  extensionToken: string;
-  showExtensionToken: boolean;
 }

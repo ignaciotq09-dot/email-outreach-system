@@ -1,0 +1,8 @@
+// Sidebar - Re-export all components from split files
+// Refactored into microarchitecture
+
+export { useSidebar, SidebarProvider, Sidebar, SidebarTrigger, SidebarRail } from "./context"
+export {
+    SidebarInset, SidebarInput, SidebarHeader, SidebarFooter, SidebarSeparator, SidebarContent, SidebarGroup, SidebarGroupLabel, SidebarGroupAction, SidebarGroupContent,
+    SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarMenuAction, SidebarMenuBadge, SidebarMenuSkeleton, SidebarMenuSub, SidebarMenuSubItem, SidebarMenuSubButton,
+} from "./components"

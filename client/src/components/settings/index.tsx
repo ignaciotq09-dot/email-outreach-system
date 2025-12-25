@@ -4,7 +4,6 @@ import { useSettingsMutations } from "./hooks/useSettingsMutations";
 import { EmailProviderSettings } from "./components/EmailProviderSettings";
 import { SenderInfoSettings } from "./components/SenderInfoSettings";
 import { SmsSettings } from "./components/SmsSettings";
-import { LinkedInSettings } from "./components/LinkedInSettings";
 import { NotificationSettings } from "./components/NotificationSettings";
 import { AutoReplySettings } from "./components/AutoReplySettings";
 
@@ -17,28 +16,14 @@ export default function SettingsTab() {
   const [bookingLink, setBookingLink] = useState("");
   const [customAutoReplyMessage, setCustomAutoReplyMessage] = useState("");
   const [notificationPhone, setNotificationPhone] = useState("");
-  const [linkedinProfileUrl, setLinkedinProfileUrl] = useState("");
-  const [linkedinDisplayName, setLinkedinDisplayName] = useState("");
-  const [linkedinDailyConnectionLimit, setLinkedinDailyConnectionLimit] = useState(20);
-  const [linkedinDailyMessageLimit, setLinkedinDailyMessageLimit] = useState(50);
-  const [phantombusterApiKey, setPhantombusterApiKey] = useState("");
-  const [phantombusterAutoConnectAgentId, setPhantombusterAutoConnectAgentId] = useState("");
-  const [phantombusterMessageSenderAgentId, setPhantombusterMessageSenderAgentId] = useState("");
-  const [isVerifyingPhantombuster, setIsVerifyingPhantombuster] = useState(false);
-  const [extensionToken, setExtensionToken] = useState("");
-  const [showExtensionToken, setShowExtensionToken] = useState(false);
 
   const queries = useSettingsQueries();
-  const mutations = useSettingsMutations({
-    setIsVerifyingPhantombuster, setPhantombusterApiKey, setPhantombusterAutoConnectAgentId,
-    setPhantombusterMessageSenderAgentId, setExtensionToken, setShowExtensionToken,
-  });
+  const mutations = useSettingsMutations();
 
   useEffect(() => { if (queries.preferences) { setSenderName(queries.preferences.senderName || "Ignacio Torres"); setSenderPhone(queries.preferences.senderPhone || "786-572-4981"); } }, [queries.preferences]);
   useEffect(() => { if (queries.smsSettings?.twilioPhoneNumber) setTwilioPhoneNumber(queries.smsSettings.twilioPhoneNumber); }, [queries.smsSettings]);
   useEffect(() => { if (queries.autoReplySettings) { setAutoReplyEnabled(queries.autoReplySettings.enabled); setBookingLink(queries.autoReplySettings.bookingLink || ""); setCustomAutoReplyMessage(queries.autoReplySettings.customMessage || ""); } }, [queries.autoReplySettings]);
   useEffect(() => { if (queries.notificationSettings?.phone) setNotificationPhone(queries.notificationSettings.phone); }, [queries.notificationSettings]);
-  useEffect(() => { if (queries.linkedinStatus) { setLinkedinProfileUrl(queries.linkedinStatus.profileUrl || ""); setLinkedinDisplayName(queries.linkedinStatus.displayName || ""); setLinkedinDailyConnectionLimit(queries.linkedinStatus.dailyConnectionLimit ?? 20); setLinkedinDailyMessageLimit(queries.linkedinStatus.dailyMessageLimit ?? 50); } }, [queries.linkedinStatus]);
 
   return (
     <div className="h-full overflow-y-auto">
@@ -77,33 +62,6 @@ export default function SettingsTab() {
           isSaving={mutations.saveSmsSettingsMutation.isPending}
           onTwilioPhoneChange={setTwilioPhoneNumber}
           onSave={() => mutations.saveSmsSettingsMutation.mutate(twilioPhoneNumber)}
-        />
-
-        <LinkedInSettings
-          linkedinStatus={queries.linkedinStatus}
-          extensionStatus={queries.extensionStatus}
-          linkedinProfileUrl={linkedinProfileUrl}
-          linkedinDisplayName={linkedinDisplayName}
-          linkedinDailyConnectionLimit={linkedinDailyConnectionLimit}
-          linkedinDailyMessageLimit={linkedinDailyMessageLimit}
-          extensionToken={extensionToken}
-          showExtensionToken={showExtensionToken}
-          connectPending={mutations.connectLinkedinMutation.isPending}
-          disconnectPending={mutations.disconnectLinkedinMutation.isPending}
-          savePending={mutations.saveLinkedinSettingsMutation.isPending}
-          generateTokenPending={mutations.generateExtensionTokenMutation.isPending}
-          disconnectExtensionPending={mutations.disconnectExtensionMutation.isPending}
-          verifyExtensionPending={mutations.verifyExtensionMutation.isPending}
-          onProfileUrlChange={setLinkedinProfileUrl}
-          onDisplayNameChange={setLinkedinDisplayName}
-          onConnectionLimitChange={setLinkedinDailyConnectionLimit}
-          onMessageLimitChange={setLinkedinDailyMessageLimit}
-          onConnect={() => mutations.connectLinkedinMutation.mutate({ linkedinProfileUrl, displayName: linkedinDisplayName })}
-          onDisconnect={() => mutations.disconnectLinkedinMutation.mutate()}
-          onSaveSettings={() => mutations.saveLinkedinSettingsMutation.mutate({ dailyConnectionLimit: linkedinDailyConnectionLimit, dailyMessageLimit: linkedinDailyMessageLimit })}
-          onGenerateToken={() => mutations.generateExtensionTokenMutation.mutate()}
-          onDisconnectExtension={() => mutations.disconnectExtensionMutation.mutate()}
-          onVerifyExtension={() => mutations.verifyExtensionMutation.mutate()}
         />
 
         <NotificationSettings

@@ -16,7 +16,7 @@ const emails = [
   {
     id: 2,
     subject: 'Quick question about your Q4 goals',
-    preview: 'Hey Marcus, I noticed your LinkedIn...',
+    preview: 'Hey Marcus, your recent interview...',
     status: 'opened',
     icon: Clock,
     color: 'rgba(245, 158, 11, 1)',
@@ -78,7 +78,7 @@ export function Floating3DEmailCards() {
                 initial={{ opacity: 0, y: 100, rotateX: -20 }}
                 whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
                 viewport={{ once: true }}
-                whileHover={{ 
+                whileHover={{
                   z: 100,
                   rotateY: 0,
                   scale: 1.05,
@@ -110,7 +110,7 @@ export function Floating3DEmailCards() {
                 className="w-[340px] cursor-pointer group"
               >
                 {/* Card */}
-                <div 
+                <div
                   className="relative rounded-2xl p-6 border-2 backdrop-blur-xl shadow-2xl overflow-hidden"
                   style={{
                     background: 'rgba(15, 23, 42, 0.8)',
@@ -119,13 +119,13 @@ export function Floating3DEmailCards() {
                   }}
                 >
                   {/* Glow effect */}
-                  <div 
+                  <div
                     className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl -z-10"
                     style={{ backgroundColor: email.color + '40' }}
                   />
 
                   {/* Scanlines */}
-                  <div 
+                  <div
                     className="absolute inset-0 pointer-events-none opacity-20"
                     style={{
                       backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(6, 182, 212, 0.1) 2px, rgba(6, 182, 212, 0.1) 4px)'
@@ -134,9 +134,9 @@ export function Floating3DEmailCards() {
 
                   {/* Status badge */}
                   <div className="flex items-center justify-between mb-4">
-                    <div 
+                    <div
                       className="flex items-center gap-2 px-3 py-1 rounded-full text-xs"
-                      style={{ 
+                      style={{
                         backgroundColor: email.color + '20',
                         color: email.color,
                         border: `1px solid ${email.color}40`
@@ -148,11 +148,11 @@ export function Floating3DEmailCards() {
 
                     {/* Pulse */}
                     <div className="relative flex h-3 w-3">
-                      <span 
+                      <span
                         className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
                         style={{ backgroundColor: email.color }}
                       ></span>
-                      <span 
+                      <span
                         className="relative inline-flex rounded-full h-3 w-3"
                         style={{ backgroundColor: email.color }}
                       ></span>
@@ -162,9 +162,9 @@ export function Floating3DEmailCards() {
                   {/* Email content */}
                   <div className="space-y-3">
                     <div className="flex items-start gap-3">
-                      <div 
+                      <div
                         className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                        style={{ 
+                        style={{
                           background: email.color + '15',
                           border: `1px solid ${email.color}30`
                         }}
@@ -194,7 +194,7 @@ export function Floating3DEmailCards() {
                           viewport={{ once: true }}
                           transition={{ duration: 1.5, delay: email.delay + 0.5 }}
                           className="h-full rounded-full"
-                          style={{ 
+                          style={{
                             background: `linear-gradient(to right, ${email.color}, rgba(139, 92, 246, 0.8))`
                           }}
                         />
@@ -236,7 +236,7 @@ export function Floating3DEmailCards() {
                 </div>
 
                 {/* 3D depth shadow */}
-                <div 
+                <div
                   className="absolute inset-0 rounded-2xl -z-10 blur-2xl opacity-50"
                   style={{
                     transform: 'translateZ(-50px)',

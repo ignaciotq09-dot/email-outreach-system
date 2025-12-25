@@ -11,8 +11,6 @@ interface UseSendHandlersProps {
   selectedContactIds: Set<number>;
   channelValidation: ChannelValidation;
   smsMessage: string;
-  linkedinMessage: string;
-  linkedinMessageType: 'connection_request' | 'direct_message';
   writingStyle: string;
   setSelectedContactIds: (s: Set<number> | ((p: Set<number>) => Set<number>)) => void;
   setIsSending: (b: boolean) => void;
@@ -24,18 +22,14 @@ export function useSendHandlers(props: UseSendHandlersProps) {
   const { toast } = useToast();
 
   const handleSendToSelected = useCallback(async () => {
-    const { includesEmail, includesSms, includesLinkedin } = props.channelValidation;
-    
+    const { includesEmail, includesSms } = props.channelValidation;
+
     if (includesEmail && props.selectedVariantIndex === null) {
       toast({ title: "No Variant Selected", description: "Please select an email variant.", variant: "destructive" });
       return;
     }
     if (includesSms && !props.smsMessage.trim()) {
       toast({ title: "SMS Message Required", description: "Please enter an SMS message.", variant: "destructive" });
-      return;
-    }
-    if (includesLinkedin && !props.linkedinMessage.trim()) {
-      toast({ title: "LinkedIn Message Required", description: "Please enter a LinkedIn message.", variant: "destructive" });
       return;
     }
     if (props.selectedContactIds.size === 0) {
@@ -48,20 +42,17 @@ export function useSendHandlers(props: UseSendHandlersProps) {
       const selectedVariant = props.selectedVariantIndex !== null ? props.variants[props.selectedVariantIndex] : null;
       const contactIds = Array.from(props.selectedContactIds);
       const promises: Promise<{ results: Array<{ contactId: number; success: boolean; error?: string }> }>[] = [];
-      
+
       if (includesEmail && selectedVariant) {
         promises.push(apiRequest("POST", "/api/emails/send-to-selected", { selectedVariant, contactIds }));
       }
       if (includesSms) {
         promises.push(apiRequest("POST", "/api/sms/send-bulk", { message: props.smsMessage, contactIds, writingStyle: props.writingStyle }));
       }
-      if (includesLinkedin) {
-        promises.push(apiRequest("POST", "/api/linkedin/queue-send-bulk", { message: props.linkedinMessage, jobType: props.linkedinMessageType, contactIds }));
-      }
-      
+
       const results = await Promise.all(promises);
       let successCount = 0, failCount = 0;
-      
+
       if (results.length > 1) {
         const resultMaps = results.map(r => new Map(r.results.map(res => [res.contactId, res.success])));
         contactIds.forEach(id => {
@@ -72,28 +63,27 @@ export function useSendHandlers(props: UseSendHandlersProps) {
         successCount = results[0].results.filter(r => r.success).length;
         failCount = results[0].results.filter(r => !r.success).length;
       }
-      
+
       if (successCount > 0 && props.activeDraftCampaign?.id) {
         const resultMaps = results.map(r => new Map(r.results.map(res => [res.contactId, res.success])));
         const successfulContactIds = results.length > 1
           ? contactIds.filter(id => resultMaps.some(map => map.get(id) ?? false))
           : results[0].results.filter(r => r.success).map(r => r.contactId);
-        
+
         await Promise.all(successfulContactIds.map(contactId =>
-          apiRequest("DELETE", `/api/campaigns/${props.activeDraftCampaign!.id}/contacts/by-contact/${contactId}`).catch(() => {})
+          apiRequest("DELETE", `/api/campaigns/${props.activeDraftCampaign!.id}/contacts/by-contact/${contactId}`).catch(() => { })
         ));
-        
+
         props.setSelectedContactIds(prev => {
           const n = new Set(prev);
           successfulContactIds.forEach(id => n.delete(id));
           return n;
         });
-        
+
         queryClient.invalidateQueries({ queryKey: ['/api/emails/sent'] });
-        queryClient.invalidateQueries({ queryKey: ['/api/linkedin/messages'] });
         await props.forceFetchContacts(props.activeDraftCampaign.id);
       }
-      
+
       if (failCount === 0) {
         toast({ title: "Messages Sent", description: `${successCount} sent successfully!` });
         props.resetComposeState();

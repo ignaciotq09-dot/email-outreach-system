@@ -8,7 +8,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { FigmaTabBar } from "@/components/FigmaTabBar";
 import { FindContacts } from "@/components/figma-tabs/FindContacts";
 import { ComposeAndSend } from "@/components/figma-tabs/ComposeAndSend";
-import { Workflows } from "@/components/figma-tabs/Workflows";
 import { SentEmails } from "@/components/figma-tabs/SentEmails";
 import { Inbox } from "@/components/figma-tabs/Inbox";
 import { Meetings } from "@/components/figma-tabs/Meetings";
@@ -196,6 +195,19 @@ export default function FigmaHomePage() {
                                 {isDarkMode ? '☀️' : '🌙'}
                             </span>
                         </button>
+
+                        {/* Logout Button */}
+                        <button
+                            onClick={handleSignOut}
+                            className="relative w-10 h-10 rounded-xl bg-white/5 hover:bg-red-500/20 flex items-center justify-center text-white transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-sm hover:shadow-lg hover:shadow-red-500/20 overflow-hidden group"
+                            aria-label="Sign out"
+                            title="Sign out"
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-br from-red-400/0 to-red-400/0 group-hover:from-red-400/30 group-hover:to-red-400/10 transition-all duration-300 rounded-xl"></div>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 relative z-10 transition-transform group-hover:translate-x-0.5 duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                            </svg>
+                        </button>
                     </div>
 
                     {/* User Profile Avatar with status */}
@@ -233,7 +245,6 @@ export default function FigmaHomePage() {
                 >
                     {activeTab === 'compose' && <ComposeAndSend />}
                     {activeTab === 'find-contacts' && <FindContacts isDarkMode={isDarkMode} />}
-                    {activeTab === 'workflows' && <Workflows />}
                     {activeTab === 'sent' && <SentEmails />}
                     {activeTab === 'inbox' && <Inbox />}
                     {activeTab === 'meetings' && <Meetings />}

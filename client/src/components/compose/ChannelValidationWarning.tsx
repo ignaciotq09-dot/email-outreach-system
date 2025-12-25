@@ -5,9 +5,9 @@ interface ChannelValidationWarningProps {
   selectedCount: number;
 }
 
-export default function ChannelValidationWarning({ 
-  validation, 
-  selectedCount 
+export default function ChannelValidationWarning({
+  validation,
+  selectedCount
 }: ChannelValidationWarningProps) {
   if (selectedCount === 0 || !validation.hasWarnings) return null;
 
@@ -32,18 +32,11 @@ export default function ChannelValidationWarning({
                 <span className="font-medium">{validation.skippedSms.length}</span> contact{validation.skippedSms.length !== 1 ? 's' : ''} missing phone
               </p>
             )}
-            {validation.includesLinkedin && validation.skippedLinkedin.length > 0 && (
-              <p>
-                <span className="font-medium">{validation.skippedLinkedin.length}</span> contact{validation.skippedLinkedin.length !== 1 ? 's' : ''} missing LinkedIn URL
-              </p>
-            )}
-            {(validation.includesEmail || validation.includesSms || validation.includesLinkedin) && (
+            {(validation.includesEmail || validation.includesSms) && (
               <p className="mt-1 text-green-600 dark:text-green-500">
                 Will send: {validation.includesEmail && `${validation.emailSends} email${validation.emailSends !== 1 ? 's' : ''}`}
                 {validation.includesEmail && validation.includesSms && ', '}
                 {validation.includesSms && `${validation.smsSends} SMS`}
-                {(validation.includesEmail || validation.includesSms) && validation.includesLinkedin && ', '}
-                {validation.includesLinkedin && `${validation.linkedinSends} LinkedIn`}
               </p>
             )}
           </div>

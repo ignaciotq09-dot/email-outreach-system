@@ -16,8 +16,9 @@ const AnalyticsPage = lazy(() => import("@/pages/analytics"));
 const SignupPage = lazy(() => import("@/pages/signup"));
 const LoginPage = lazy(() => import("@/pages/login"));
 const BookingPage = lazy(() => import("@/pages/book"));
-const PrivacyPolicy = lazy(() => import("@/pages/privacy-policy"));
-const WorkflowCompose = lazy(() => import("@/pages/workflow-compose"));
+const OnboardingPage = lazy(() => import("@/pages/onboarding"));
+const PrivacyPolicy = lazy(() => import("@/pages/velocity"));  // Redirect privacy to landing
+
 
 // Loading fallback component
 function PageLoader() {
@@ -43,6 +44,9 @@ function Router() {
           <Route path="/login" component={LoginPage} />
           <Route path="/book/:slug" component={BookingPage} />
           <Route path="/privacy" component={PrivacyPolicy} />
+          <Route path="/onboarding">
+            <Redirect to="/login" />
+          </Route>
           <Route path="/" component={VelocityLanding} />
           <Route path="/app">
             <Redirect to="/login" />
@@ -64,18 +68,19 @@ function Router() {
         <Route path="/landing" component={VelocityLanding} />
         <Route path="/velocity" component={VelocityLanding} />
         <Route path="/signup">
-          <Redirect to="/app" />
+          <Redirect to="/onboarding" />
         </Route>
         <Route path="/login">
-          <Redirect to="/app" />
+          <Redirect to="/onboarding" />
         </Route>
         <Route path="/book/:slug" component={BookingPage} />
         <Route path="/privacy" component={PrivacyPolicy} />
+        <Route path="/onboarding" component={OnboardingPage} />
         <Route path="/app" component={HomePage} />
         <Route path="/analytics" component={AnalyticsPage} />
-        <Route path="/workflows/:id/compose" component={WorkflowCompose} />
+
         <Route path="/">
-          <Redirect to="/app" />
+          <Redirect to="/onboarding" />
         </Route>
       </Switch>
     </Suspense>
@@ -96,3 +101,4 @@ function App() {
 }
 
 export default App;
+

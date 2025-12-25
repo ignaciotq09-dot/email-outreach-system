@@ -13,7 +13,6 @@ import LeadFinderTab from "@/components/lead-finder";
 import AnalyticsPage from "@/pages/analytics";
 import PersonalizeTab from "@/components/personalize-tab";
 import MeetingsTab from "@/components/meetings-tab";
-import WorkflowsPage from "@/pages/workflows";
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState("compose");
@@ -144,13 +143,6 @@ export default function HomePage() {
             Find Contacts
           </TabsTrigger>
           <TabsTrigger
-            value="workflows"
-            className="data-[state=active]:border-b-2 data-[state=active]:border-purple-600 rounded-none text-gray-900 dark:text-gray-100 data-[state=inactive]:text-gray-600 dark:data-[state=inactive]:text-gray-400"
-            data-testid="tab-workflows"
-          >
-            Workflows
-          </TabsTrigger>
-          <TabsTrigger
             value="sent"
             className="data-[state=active]:border-b-2 data-[state=active]:border-purple-600 rounded-none text-gray-900 dark:text-gray-100 data-[state=inactive]:text-gray-600 dark:data-[state=inactive]:text-gray-400"
             data-testid="tab-sent"
@@ -205,10 +197,6 @@ export default function HomePage() {
 
           <TabsContent value="find-contacts" className="h-full m-0 p-0 data-[state=inactive]:hidden" forceMount>
             <LeadFinderTab onContactsAdded={handleContactsAdded} />
-          </TabsContent>
-
-          <TabsContent value="workflows" className="h-full m-0 p-0 data-[state=inactive]:hidden" forceMount>
-            <WorkflowsPage />
           </TabsContent>
 
           <TabsContent value="sent" className="h-full m-0 p-0">

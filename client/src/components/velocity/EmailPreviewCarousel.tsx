@@ -12,9 +12,9 @@ const emailExamples = [
     color: 'violet',
   },
   {
-    subject: 'Loved your recent post on AI in sales',
+    subject: 'Loved your recent keynote on AI in sales',
     preview:
-      'Hey Marcus,\n\nYour LinkedIn article on "Why Sales Teams Still Need Humans" really resonated with me—especially the part about empathy in discovery calls. That\'s exactly the balance we\'re trying to strike with our platform.\n\nI\'d love to get your take on how AI could support (not replace) your team at GrowthLabs. Coffee chat?\n\nCheers,\nAlex',
+      'Hey Marcus,\n\nYour keynote at the SaaS Summit on "Why Sales Teams Still Need Humans" really resonated with me—especially the part about empathy in discovery calls. That\'s exactly the balance we\'re trying to strike with our platform.\n\nI\'d love to get your take on how AI could support (not replace) your team at GrowthLabs. Coffee chat?\n\nCheers,\nAlex',
     color: 'fuchsia',
   },
   {
@@ -157,11 +157,10 @@ export function EmailPreviewCarousel() {
                   className="relative group"
                 >
                   <div
-                    className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                      index === currentIndex
+                    className={`w-3 h-3 rounded-full transition-all duration-300 ${index === currentIndex
                         ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 scale-110'
                         : 'bg-gray-300 hover:bg-gray-400'
-                    }`}
+                      }`}
                   />
                   {index === currentIndex && (
                     <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-full blur opacity-50"></div>

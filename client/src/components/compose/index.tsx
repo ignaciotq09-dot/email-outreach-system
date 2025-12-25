@@ -37,8 +37,6 @@ export default function ComposeTabNew({ onNavigateToLeadFinder, refreshContactsS
   const [showCampaignBuilder, setShowCampaignBuilder] = useState(false);
   const [outreachChannel, setOutreachChannel] = useState<OutreachChannel>('email');
   const [smsMessage, setSmsMessage] = useState("");
-  const [linkedinMessage, setLinkedinMessage] = useState("");
-  const [linkedinMessageType, setLinkedinMessageType] = useState<'connection_request' | 'direct_message'>('connection_request');
   const [originalVariants, setOriginalVariants] = useState<EmailVariant[]>([]);
   const [newContact, setNewContact] = useState<NewContactForm>(DEFAULT_NEW_CONTACT);
   const [hasInitialLoad, setHasInitialLoad] = useState(false);
@@ -48,40 +46,36 @@ export default function ComposeTabNew({ onNavigateToLeadFinder, refreshContactsS
   const lastExecutedCampaignIdRef = useRef<number | null>(null);
 
   const queries = useComposeQueries();
-  const { activeDraftCampaign, campaignContactsData, isFetchingContacts, smsEnabled, linkedinEnabled, variantDiversity } = queries;
+  const { activeDraftCampaign, campaignContactsData, isFetchingContacts, smsEnabled, variantDiversity } = queries;
 
   const queuedContacts = useMemo(() => {
     if (!campaignContactsData || !Array.isArray(campaignContactsData)) return [];
     return campaignContactsData.filter(cc => cc.contact !== null).map(cc => cc.contact as Contact);
   }, [campaignContactsData]);
 
-  const isEmailEnabled = ['email', 'email_sms', 'email_linkedin', 'all'].includes(outreachChannel);
+  const isEmailEnabled = ['email', 'email_sms', 'all'].includes(outreachChannel);
   const isSmsEnabled = ['sms', 'email_sms', 'all'].includes(outreachChannel);
-  const isLinkedinEnabled = ['linkedin', 'email_linkedin', 'all'].includes(outreachChannel);
 
   const channelValidation = useMemo((): ChannelValidation => {
     const selectedContacts = queuedContacts.filter(c => selectedContactIds.has(c.id));
     const withEmail = selectedContacts.filter(c => Boolean(c.email));
     const withPhone = selectedContacts.filter(c => Boolean(c.phone));
-    const withLinkedin = selectedContacts.filter(c => Boolean(c.linkedinUrl));
 
     return {
       total: selectedContacts.length,
       emailSends: isEmailEnabled ? withEmail.length : 0,
       smsSends: isSmsEnabled ? withPhone.length : 0,
-      linkedinSends: isLinkedinEnabled ? withLinkedin.length : 0,
       skippedEmail: isEmailEnabled ? selectedContacts.filter(c => !c.email) : [],
       skippedSms: isSmsEnabled ? selectedContacts.filter(c => !c.phone) : [],
-      skippedLinkedin: isLinkedinEnabled ? selectedContacts.filter(c => !c.linkedinUrl) : [],
-      hasWarnings: (isEmailEnabled && selectedContacts.some(c => !c.email)) || (isSmsEnabled && selectedContacts.some(c => !c.phone)) || (isLinkedinEnabled && selectedContacts.some(c => !c.linkedinUrl)),
-      includesEmail: isEmailEnabled, includesSms: isSmsEnabled, includesLinkedin: isLinkedinEnabled,
+      hasWarnings: (isEmailEnabled && selectedContacts.some(c => !c.email)) || (isSmsEnabled && selectedContacts.some(c => !c.phone)),
+      includesEmail: isEmailEnabled, includesSms: isSmsEnabled,
     };
-  }, [queuedContacts, selectedContactIds, isEmailEnabled, isSmsEnabled, isLinkedinEnabled]);
+  }, [queuedContacts, selectedContactIds, isEmailEnabled, isSmsEnabled]);
 
   const resetComposeState = useCallback(() => {
     setBaseMessage(""); setVariants([]); setOriginalVariants([]); setSelectedVariantIndex(null);
     setSelectedContactIds(new Set()); setFeedback(""); setShowCampaignBuilder(false); setActiveCampaign(null);
-    setSmsMessage(""); setLinkedinMessage(""); setLinkedinMessageType('connection_request'); setOutreachChannel('email');
+    setSmsMessage(""); setOutreachChannel('email');
   }, []);
 
   const handlers = useComposeHandlers({
@@ -90,31 +84,26 @@ export default function ComposeTabNew({ onNavigateToLeadFinder, refreshContactsS
     setIsGenerating, setIsRegenerating, setActiveCampaign, setShowCampaignBuilder, setNewContact, setFeedback,
     baseMessage, feedback, variantDiversity,
     onSmsOptimized: (result) => {
-      // Auto-fill SMS message with optimized version
       setSmsMessage(result.optimizedMessage);
     },
   });
 
   const sendHandlers = useSendHandlers({
     activeDraftCampaign, variants, selectedVariantIndex, selectedContactIds, channelValidation,
-    smsMessage, linkedinMessage, linkedinMessageType, writingStyle,
+    smsMessage, writingStyle,
     setSelectedContactIds, setIsSending, resetComposeState, forceFetchContacts: handlers.forceFetchContacts,
   });
 
-  const toggleChannel = useCallback((channel: 'email' | 'sms' | 'linkedin') => {
-    let newEmail = isEmailEnabled, newSms = isSmsEnabled, newLinkedin = isLinkedinEnabled;
+  const toggleChannel = useCallback((channel: 'email' | 'sms') => {
+    let newEmail = isEmailEnabled, newSms = isSmsEnabled;
     if (channel === 'email') newEmail = !isEmailEnabled;
     if (channel === 'sms') newSms = !isSmsEnabled;
-    if (channel === 'linkedin') newLinkedin = !isLinkedinEnabled;
 
-    if (newEmail && newSms && newLinkedin) setOutreachChannel('all');
-    else if (newEmail && newSms) setOutreachChannel('email_sms');
-    else if (newEmail && newLinkedin) setOutreachChannel('email_linkedin');
+    if (newEmail && newSms) setOutreachChannel('email_sms');
     else if (newEmail) setOutreachChannel('email');
     else if (newSms) setOutreachChannel('sms');
-    else if (newLinkedin) setOutreachChannel('linkedin');
     else setOutreachChannel('email');
-  }, [isEmailEnabled, isSmsEnabled, isLinkedinEnabled]);
+  }, [isEmailEnabled, isSmsEnabled]);
 
   useEffect(() => {
     const loadContacts = async () => {
@@ -160,7 +149,7 @@ export default function ComposeTabNew({ onNavigateToLeadFinder, refreshContactsS
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      <ChannelSelector outreachChannel={outreachChannel} smsEnabled={smsEnabled} linkedinEnabled={linkedinEnabled} onToggleChannel={toggleChannel} />
+      <ChannelSelector outreachChannel={outreachChannel} smsEnabled={smsEnabled} onToggleChannel={toggleChannel} />
       <MessageComposer baseMessage={baseMessage} onBaseMessageChange={setBaseMessage} writingStyle={writingStyle} onStyleChange={setWritingStyle} activeStyles={activeStyles} onActiveStylesChange={setActiveStyles} isGenerating={isGenerating} onGenerate={handlers.handleGenerateVariants} />
       <div className="flex-1 overflow-y-auto">
         <div className="p-6 space-y-6">
@@ -171,7 +160,7 @@ export default function ComposeTabNew({ onNavigateToLeadFinder, refreshContactsS
               {variants[selectedVariantIndex] && <SpamWarning subject={variants[selectedVariantIndex].subject} body={variants[selectedVariantIndex].body} enabled={true} />}
               <ContactForm contact={newContact} onChange={setNewContact} onSubmit={() => handlers.handleAddToQueue(newContact)} />
               <ContactList contacts={queuedContacts} selectedContactIds={selectedContactIds} outreachChannel={outreachChannel} isFetching={isFetchingContacts} onToggleContact={handlers.handleToggleContact} onRemoveContact={handlers.handleRemoveFromQueue} onRefresh={handlers.handleRefreshContacts} onDeleteAll={() => handlers.handleDeleteAllContacts(queuedContacts.length)} onNavigateToLeadFinder={onNavigateToLeadFinder} />
-              <SendPanel outreachChannel={outreachChannel} smsEnabled={smsEnabled} linkedinEnabled={linkedinEnabled} smsMessage={smsMessage} linkedinMessage={linkedinMessage} linkedinMessageType={linkedinMessageType} channelValidation={channelValidation} selectedContactCount={selectedContactIds.size} isSending={isSending} onChannelChange={setOutreachChannel} onSmsMessageChange={setSmsMessage} onLinkedinMessageChange={setLinkedinMessage} onLinkedinTypeChange={setLinkedinMessageType} onSend={sendHandlers.handleSendToSelected} />
+              <SendPanel outreachChannel={outreachChannel} smsEnabled={smsEnabled} smsMessage={smsMessage} channelValidation={channelValidation} selectedContactCount={selectedContactIds.size} isSending={isSending} onChannelChange={setOutreachChannel} onSmsMessageChange={setSmsMessage} onSend={sendHandlers.handleSendToSelected} />
               <ChannelValidationWarning validation={channelValidation} selectedCount={selectedContactIds.size} />
             </div>
           )}

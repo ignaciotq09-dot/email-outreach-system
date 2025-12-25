@@ -3,8 +3,7 @@ import type {
   OverviewMetrics, EngagementTrend, TopCampaign, ContactEngagement, BestSendTimesData,
   WeeklyPatternData, DeliverabilityMetrics, DailyMetricsData, TrendComparisonData,
   CampaignLeaderboardData, SmsOverviewMetrics, SmsResponseTrendData, SmsCampaignMetrics,
-  SmsBestSendTimesData, LinkedInOverviewMetrics, LinkedInTrendData, LinkedInCampaignMetrics,
-  LinkedInBestSendTimesData, ChannelFilter, SortField, SortOrder,
+  SmsBestSendTimesData, ChannelFilter, SortField, SortOrder,
   // New types for advanced analytics
   EngagementFunnelData, DropoffAnalysis, ReplyVelocityMetrics,
   ReplyQualityBreakdown, ReplyQualityTrend,
@@ -63,20 +62,6 @@ export function useSmsQueries({ enabled, timezoneOffset }: { enabled: boolean; t
   });
 
   return { smsOverview, smsResponseTrends, smsCampaignMetrics, smsBestSendTimes };
-}
-
-export function useLinkedinQueries({ enabled, timezoneOffset }: { enabled: boolean; timezoneOffset: number }) {
-  const linkedinOverview = useQuery<LinkedInOverviewMetrics>({ queryKey: ["/api/analytics/linkedin/overview"], staleTime: 60 * 60 * 1000, enabled });
-  const linkedinTrends = useQuery<LinkedInTrendData[]>({ queryKey: ["/api/analytics/linkedin/trends"], staleTime: 60 * 60 * 1000, enabled });
-  const linkedinCampaignMetrics = useQuery<LinkedInCampaignMetrics[]>({ queryKey: ["/api/analytics/linkedin/campaign-metrics"], staleTime: 60 * 60 * 1000, enabled });
-
-  const linkedinBestSendTimes = useQuery<LinkedInBestSendTimesData>({
-    queryKey: ["/api/analytics/linkedin/best-send-times", timezoneOffset],
-    queryFn: async () => { const res = await fetch(`/api/analytics/linkedin/best-send-times?timezoneOffset=${timezoneOffset}`); if (!res.ok) throw new Error('Failed'); return res.json(); },
-    staleTime: 60 * 60 * 1000, enabled,
-  });
-
-  return { linkedinOverview, linkedinTrends, linkedinCampaignMetrics, linkedinBestSendTimes };
 }
 
 // NEW: Engagement Funnel Queries

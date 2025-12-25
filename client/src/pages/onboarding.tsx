@@ -1,13 +1,17 @@
 // Reference: blueprint:javascript_log_in_with_replit
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Circle, Mail, Sparkles, ArrowRight } from "lucide-react";
+import { CheckCircle2, Circle, Mail, Sparkles, ArrowRight, Building2 } from "lucide-react";
+import { CompanyOnboarding } from "@/components/onboarding";
+
+type OnboardingPhase = 'integrations' | 'company' | 'complete';
 
 export default function OnboardingPage() {
   const [, setLocation] = useLocation();
+  const [phase, setPhase] = useState<OnboardingPhase>('integrations');
 
   // Check Gmail connection status
   const { data: gmailStatus } = useQuery<{ connected: boolean; email: string | null }>({
@@ -29,22 +33,47 @@ export default function OnboardingPage() {
     queryKey: ['/api/openai/status'],
   });
 
+  // Check company onboarding status
+  const { data: companyStatus } = useQuery<{ complete: boolean; currentStep: string; hasProfile: boolean }>({
+    queryKey: ['/api/onboarding/company/status'],
+  });
+
   const gmailConnected = gmailStatus?.connected ?? false;
   const outlookConnected = outlookStatus?.connected ?? false;
   const yahooConnected = yahooStatus?.connected ?? false;
   const emailConnected = gmailConnected || outlookConnected || yahooConnected;
   const openaiConnected = openaiStatus?.connected ?? false;
-  const allComplete = emailConnected && openaiConnected;
+  const integrationsComplete = emailConnected && openaiConnected;
+  const companyComplete = companyStatus?.complete ?? false;
+  const allComplete = integrationsComplete && companyComplete;
 
-  // Auto-redirect when both integrations are complete
+  // Navigate between phases
   useEffect(() => {
     if (allComplete) {
+      setPhase('complete');
       const timer = setTimeout(() => {
         setLocation('/app');
       }, 2000);
       return () => clearTimeout(timer);
+    } else if (integrationsComplete && !companyComplete) {
+      setPhase('company');
     }
-  }, [allComplete, setLocation]);
+  }, [allComplete, integrationsComplete, companyComplete, setLocation]);
+
+  const handleCompanyOnboardingComplete = () => {
+    setPhase('complete');
+    setLocation('/app');
+  };
+
+  // Skip integrations and go straight to company onboarding
+  const handleSkipToCompanyOnboarding = () => {
+    setPhase('company');
+  };
+
+  // Show company onboarding if in company phase
+  if (phase === 'company') {
+    return <CompanyOnboarding onComplete={handleCompanyOnboardingComplete} />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
@@ -78,8 +107,8 @@ export default function OnboardingPage() {
                         Connect Email Provider
                       </CardTitle>
                       <CardDescription>
-                        {emailConnected 
-                          ? "Email provider connected successfully!" 
+                        {emailConnected
+                          ? "Email provider connected successfully!"
                           : "Choose Gmail, Outlook, or Yahoo to send emails"}
                       </CardDescription>
                     </div>
@@ -100,7 +129,7 @@ export default function OnboardingPage() {
                       Connect your email account to send and track emails through the platform.
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <Button 
+                      <Button
                         className="w-full"
                         data-testid="button-connect-gmail"
                         onClick={() => window.location.href = '/api/connect/gmail'}
@@ -108,7 +137,7 @@ export default function OnboardingPage() {
                         <Mail className="w-4 h-4 mr-2" />
                         Connect Gmail
                       </Button>
-                      <Button 
+                      <Button
                         variant="outline"
                         className="w-full"
                         data-testid="button-connect-outlook"
@@ -117,7 +146,7 @@ export default function OnboardingPage() {
                         <Mail className="w-4 h-4 mr-2" />
                         Connect Outlook
                       </Button>
-                      <Button 
+                      <Button
                         variant="outline"
                         className="w-full"
                         data-testid="button-connect-yahoo"
@@ -148,8 +177,8 @@ export default function OnboardingPage() {
                         Connect OpenAI
                       </CardTitle>
                       <CardDescription>
-                        {openaiConnected 
-                          ? "OpenAI connected successfully!" 
+                        {openaiConnected
+                          ? "OpenAI connected successfully!"
                           : "Generate AI-powered personalized content"}
                       </CardDescription>
                     </div>
@@ -167,7 +196,7 @@ export default function OnboardingPage() {
                     <p className="text-sm text-muted-foreground">
                       Connect OpenAI to generate personalized email variants and content.
                     </p>
-                    <Button 
+                    <Button
                       className="w-full sm:w-auto"
                       data-testid="button-connect-openai"
                       onClick={() => window.location.href = '/api/connections/openai/setup'}
@@ -178,6 +207,43 @@ export default function OnboardingPage() {
                   </div>
                 )}
               </CardContent>
+            </Card>
+
+            {/* Company Profile Preview (shown but not active until integrations complete) */}
+            <Card className={companyComplete ? "border-status-green" : "opacity-60"}>
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    {companyComplete ? (
+                      <CheckCircle2 className="w-6 h-6 text-status-green" />
+                    ) : (
+                      <Circle className="w-6 h-6 text-muted-foreground" />
+                    )}
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <Building2 className="w-5 h-5" />
+                        Tell Us About Your Company
+                      </CardTitle>
+                      <CardDescription>
+                        {companyComplete
+                          ? "Company profile complete!"
+                          : integrationsComplete
+                            ? "Help us understand your business"
+                            : "Complete the steps above first"}
+                      </CardDescription>
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
+              {integrationsComplete && !companyComplete && (
+                <CardContent>
+                  <Button onClick={() => setPhase('company')}>
+                    <Building2 className="w-4 h-4 mr-2" />
+                    Start Company Profile
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </CardContent>
+              )}
             </Card>
           </div>
 
@@ -193,7 +259,7 @@ export default function OnboardingPage() {
                       <p className="text-sm text-muted-foreground">Redirecting to your dashboard...</p>
                     </div>
                   </div>
-                  <Button 
+                  <Button
                     onClick={() => setLocation('/app')}
                     data-testid="button-go-to-app"
                   >
@@ -207,17 +273,30 @@ export default function OnboardingPage() {
 
           {/* Skip Option */}
           {!allComplete && (
-            <div className="mt-8 text-center">
-              <Button 
-                variant="ghost" 
-                onClick={() => setLocation('/app')}
-                data-testid="button-skip-onboarding"
-              >
-                Skip for now
-              </Button>
-              <p className="text-xs text-muted-foreground mt-2">
-                You can connect integrations later in Settings
-              </p>
+            <div className="mt-8 text-center space-y-3">
+              {/* Skip integrations and go to company onboarding */}
+              {!companyComplete && (
+                <Button
+                  variant="outline"
+                  onClick={handleSkipToCompanyOnboarding}
+                  data-testid="button-skip-to-company"
+                >
+                  <Building2 className="w-4 h-4 mr-2" />
+                  Skip Integrations, Set Up Company Profile
+                </Button>
+              )}
+              <div>
+                <Button
+                  variant="ghost"
+                  onClick={() => setLocation('/app')}
+                  data-testid="button-skip-onboarding"
+                >
+                  Skip for now
+                </Button>
+                <p className="text-xs text-muted-foreground mt-2">
+                  You can complete onboarding later in Settings
+                </p>
+              </div>
             </div>
           )}
         </div>

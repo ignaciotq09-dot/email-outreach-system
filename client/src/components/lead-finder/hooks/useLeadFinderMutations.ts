@@ -67,6 +67,12 @@ export function useLeadFinderMutations(callbacks: MutationCallbacks) {
         });
       }
 
+      // Client-side guard: If we have job title + location, that's a valid search - don't require clarification
+      const hasMinimumViableSearch = (
+        (data.parseInfo.extractedFilters.jobTitles.length > 0 && data.parseInfo.extractedFilters.locations.length > 0) ||
+        (data.parseInfo.extractedFilters.jobTitles.length > 0 && data.parseInfo.extractedFilters.industries.length > 0)
+      );
+
       const transformedData: AISearchResponse = {
         leads: data.leads,
         pagination: data.pagination,
@@ -80,10 +86,19 @@ export function useLeadFinderMutations(callbacks: MutationCallbacks) {
           companySizes: data.parseInfo.extractedFilters.companySizes,
           companies: []
         },
-        needsClarification: data.disambiguationNeeded || false,
+        // Only flag needsClarification if server says so AND we don't have enough context AND no results
+        needsClarification: (data.disambiguationNeeded && !hasMinimumViableSearch && data.leads.length === 0) || false,
         clarifyingQuestions: data.disambiguationReason ? [data.disambiguationReason] : [],
         adaptiveGuidance: null
       };
+
+      console.log('[SmartSearch Client] DIAGNOSTIC - Received data:', {
+        leadsCount: data.leads.length,
+        paginationTotalResults: data.pagination?.totalResults,
+        disambiguationNeeded: data.disambiguationNeeded,
+        hasMinimumViableSearch,
+        finalNeedsClarification: transformedData.needsClarification
+      });
 
       callbacks.onSearchSuccess(transformedData);
 
