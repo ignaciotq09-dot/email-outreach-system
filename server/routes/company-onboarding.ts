@@ -158,9 +158,31 @@ export function registerCompanyOnboardingRoutes(app: Express) {
             }
 
             res.json(result);
-        } catch (error) {
+        } catch (error: any) {
             console.error('[CompanyOnboarding] Error extracting data:', error);
-            res.status(500).json({ error: 'Failed to extract company data' });
+
+            // Parse error to provide user-friendly message
+            let errorMessage = 'Failed to extract company data';
+
+            if (error?.message?.includes('API key') || error?.message?.includes('401') || error?.message?.includes('Incorrect API key')) {
+                errorMessage = 'AI service configuration error. Please contact support or try again later.';
+            } else if (error?.message?.includes('rate limit') || error?.message?.includes('429')) {
+                errorMessage = 'AI service is temporarily busy. Please try again in a few minutes.';
+            } else if (error?.message?.includes('timeout') || error?.message?.includes('ETIMEDOUT')) {
+                errorMessage = 'Request timed out. The website may be slow to respond - please try again.';
+            } else if (error?.message?.includes('ENOTFOUND') || error?.message?.includes('network')) {
+                errorMessage = 'Could not connect to the website. Please check the URL and try again.';
+            } else if (error?.code === 'ECONNREFUSED') {
+                errorMessage = 'Could not reach the website. Please verify the URL is correct.';
+            }
+
+            // Return structured error response
+            res.status(500).json({
+                success: false,
+                error: errorMessage,
+                data: {},
+                confidence: {}
+            });
         }
     });
 
@@ -205,12 +227,29 @@ export function registerCompanyOnboardingRoutes(app: Express) {
                 phrasesToAvoid: profile.phrasesToAvoid ?? undefined,
             };
 
-            // Use extraction confidence or default values
+            // Build confidence scores based on whether we have data for each field
+            // If a field has a value, give it 100% confidence (we already have it)
+            // If a field is missing/empty, give it 0% confidence (we need to ask)
             const confidenceScores: Record<keyof ExtractedCompanyData, number> = {} as any;
-            const baseConfidence = profile.extractionConfidence ?? 50;
+
             for (const key of Object.keys(extractedData) as (keyof ExtractedCompanyData)[]) {
-                confidenceScores[key] = extractedData[key] !== undefined ? baseConfidence : 0;
+                const value = extractedData[key];
+
+                // Check if field has meaningful data
+                const hasValue = value !== undefined &&
+                    value !== null &&
+                    value !== '' &&
+                    !(Array.isArray(value) && value.length === 0);
+
+                // If we have data, give it 100% confidence to prevent asking again
+                // If no data, give 0% so gap analyzer knows to ask
+                confidenceScores[key] = hasValue ? 100 : 0;
             }
+
+            console.log('[GapQuestions] Calculated confidence scores:',
+                Object.entries(confidenceScores)
+                    .filter(([_, score]) => score === 0)
+                    .map(([key]) => key));
 
             const gaps = getGapQuestions(extractedData, confidenceScores);
 

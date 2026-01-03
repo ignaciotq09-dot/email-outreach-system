@@ -6,7 +6,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Building2, Globe, Instagram, CheckCircle2, Loader2, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Building2, Globe, Instagram, CheckCircle2, Loader2, ArrowRight, ArrowLeft, AlertCircle } from 'lucide-react';
 import { OnlinePresenceInput } from './OnlinePresenceInput';
 import { ExtractionProgress } from './ExtractionProgress';
 import { ExtractedDataReview } from './ExtractedDataReview';
@@ -24,6 +24,7 @@ export function CompanyOnboarding({ onComplete }: CompanyOnboardingProps) {
     const [step, setStep] = useState<OnboardingStep>('presence_check');
     const [hasOnlinePresence, setHasOnlinePresence] = useState<boolean | null>(null);
     const [extractionResult, setExtractionResult] = useState<ExtractionResult | null>(null);
+    const [extractionError, setExtractionError] = useState<string | null>(null);
 
     // Fetch current onboarding status
     const { data: status } = useQuery<OnboardingStatus>({
@@ -79,6 +80,7 @@ export function CompanyOnboarding({ onComplete }: CompanyOnboardingProps) {
     const extractMutation = useMutation({
         mutationFn: async (data: { websiteUrl: string; instagramHandle?: string }) => {
             console.log('[CompanyOnboarding] Starting extraction for:', data.websiteUrl);
+            setExtractionError(null); // Clear previous errors
             return apiRequest<ExtractionResult>('POST', '/api/onboarding/company/extract', data);
         },
         onSuccess: (result) => {
@@ -87,13 +89,20 @@ export function CompanyOnboarding({ onComplete }: CompanyOnboardingProps) {
             console.log('[CompanyOnboarding] Success:', result.success);
             setExtractionResult(result);
             if (result.success) {
+                setExtractionError(null);
                 setStep('validation');
             } else {
+                // Extraction returned but failed - show error and go back to input
                 console.error('[CompanyOnboarding] Extraction failed:', result.error);
+                setExtractionError(result.error || 'Failed to analyze website. Please try again.');
+                setStep('url_input');
             }
         },
-        onError: (error) => {
+        onError: (error: Error) => {
+            // Network or server error
             console.error('[CompanyOnboarding] Mutation error:', error);
+            setExtractionError(error.message || 'Something went wrong. Please try again.');
+            setStep('url_input');
         },
     });
 
@@ -228,6 +237,7 @@ export function CompanyOnboarding({ onComplete }: CompanyOnboardingProps) {
                     <OnlinePresenceInput
                         onSubmit={handleStartExtraction}
                         onBack={() => setStep('presence_check')}
+                        error={extractionError}
                     />
                 )}
 

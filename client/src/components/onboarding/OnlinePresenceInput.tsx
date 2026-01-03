@@ -5,14 +5,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Globe, Instagram, ArrowLeft, ArrowRight, AlertCircle } from 'lucide-react';
+import { Globe, Instagram, ArrowLeft, ArrowRight, AlertCircle, XCircle } from 'lucide-react';
 
 interface OnlinePresenceInputProps {
     onSubmit: (websiteUrl: string, instagramHandle?: string) => void;
     onBack: () => void;
+    error?: string | null;
 }
 
-export function OnlinePresenceInput({ onSubmit, onBack }: OnlinePresenceInputProps) {
+export function OnlinePresenceInput({ onSubmit, onBack, error }: OnlinePresenceInputProps) {
     const [websiteUrl, setWebsiteUrl] = useState('');
     const [instagramHandle, setInstagramHandle] = useState('');
     const [errors, setErrors] = useState<{ website?: string; instagram?: string }>({});
@@ -66,6 +67,19 @@ export function OnlinePresenceInput({ onSubmit, onBack }: OnlinePresenceInputPro
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+                {/* Extraction Error Alert */}
+                {error && (
+                    <div className="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg text-red-800 dark:text-red-300">
+                        <XCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                        <div>
+                            <p className="font-medium">Analysis Failed</p>
+                            <p className="text-sm mt-1">{error}</p>
+                            <p className="text-sm mt-2 text-red-600 dark:text-red-400">
+                                Please check the URL and try again, or contact support if the issue persists.
+                            </p>
+                        </div>
+                    </div>
+                )}
                 {/* Website URL */}
                 <div className="space-y-2">
                     <Label htmlFor="website" className="flex items-center gap-2">

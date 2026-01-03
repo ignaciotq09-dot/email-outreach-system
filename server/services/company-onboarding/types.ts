@@ -6,83 +6,83 @@ export interface OnlinePresenceInput {
 }
 
 export interface ExtractedCompanyData {
-    // Company Identity
+    // 1. Company Identity
     companyName?: string;
-    legalName?: string;
-    businessType?: string;
-    industry?: string;
-    subIndustry?: string;
-    yearsInBusiness?: string;
+    foundedYear?: string;
+    headquarters?: string;
     employeeCount?: string;
     companyStage?: string;
-    tagline?: string;
-    missionStatement?: string;
-    headquarters?: string;
+    industry?: string;
+    subIndustry?: string;
 
-    // Business Model
-    businessModel?: string;
-    revenueModel?: string;
-    typicalDealSize?: string;
-    pricingTiers?: string;
-
-    // Products & Services (CRITICAL)
+    // 2. Product Catalog
     primaryOffering?: string;
-    productCatalog?: string[];  // Every specific product/service variant
-    productsServices?: string[];  // High-level category list
-    businessDescription?: string;
+    productCatalog?: string[];
     keyFeatures?: string[];
     useCases?: string[];
     integrations?: string[];
-    deliverables?: string;
-    pricingModel?: string[];
 
-    // Target Customers (CRITICAL for Lead Qualification)
+    // 3. Pricing
+    pricingModel?: string;
+    pricePerProduct?: string;
+    productTiers?: string[];
+    typicalDealSize?: string;
+    billingOptions?: string[];
+    trialOptions?: string;
+    discountPolicy?: string;
+
+    // 4. Target Customers
     idealCustomerDescription?: string;
-    targetIndustries?: string[];
     targetCompanySizes?: string[];
+    targetIndustries?: string[];
     targetJobTitles?: string[];
     targetGeographies?: string[];
-    buyerPersonas?: string[];
-    disqualificationCriteria?: string;
+    secondaryTargets?: string;
+    buyingTriggers?: string[];
 
-    // Value Proposition
+    // 5. Value Proposition
     problemSolved?: string;
     uniqueDifferentiator?: string;
     keyBenefits?: string[];
     proofPoints?: string;
-    competitiveAdvantages?: string;
-    whatTheyDontDo?: string;
-    typicalResults?: string;
+    guarantees?: string;
+
+    // 6. Social Proof
     notableClients?: string;
-    awards?: string;
-
-    // Sales Process
-    salesCycleLength?: string;
-    decisionMakers?: string[];
-    buyingTriggers?: string[];
-    commonObjections?: string[];
-    competitorsList?: string[];
-    dealBreakers?: string[];
-    reasonsCustomersSwitch?: string;
-    successCriteria?: string;
-    currentChallenges?: string;
-
-    // Brand Voice
-    brandPersonality?: string[];
-    formalityLevel?: string;
-    toneDescriptors?: string[];
-    keyMessages?: string[];
-    phrasesToUse?: string;
-    phrasesToAvoid?: string;
-    communicationStyle?: string;
-    valueWords?: string;
-
-    // Social Proof
+    customerCount?: string;
     caseStudies?: string[];
     testimonialThemes?: string[];
+    awards?: string;
     certifications?: string[];
-    partnerRelationships?: string[];
-    mediaPress?: string;
+
+    // 7. Competitive Landscape
+    directCompetitors?: string[];
+    competitorWeaknesses?: string;
+    ourAdvantages?: string;
+    replacementNarrative?: string;
+
+    // 8. Sales Process
+    salesCycleLength?: string;
+    typicalBuyingProcess?: string;
+    decisionMakers?: string[];
+    implementationTimeline?: string;
+    onboardingProcess?: string;
+    supportChannels?: string;
+
+    // 9. Brand Voice
+    brandPersonality?: string[];
+    formalityLevel?: string;
+
+    // Legacy fields for backwards compatibility
+    businessDescription?: string;
+    productsServices?: string[];
+    tagline?: string;
+    missionStatement?: string;
+    businessType?: string;
+    typicalResults?: string;
+    phrasesToUse?: string;
+    phrasesToAvoid?: string;
+    currentChallenges?: string;
 }
 
 export interface ExtractionResult {

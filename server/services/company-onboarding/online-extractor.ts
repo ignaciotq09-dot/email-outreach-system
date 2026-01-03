@@ -31,113 +31,105 @@ function getOpenAI(): OpenAI {
 
 // COMPREHENSIVE extraction prompt - get maximum information in one pass
 // Covers ALL Rule Book categories for complete company knowledge
-const COMPREHENSIVE_EXTRACTION_PROMPT = `You are an expert business analyst preparing to represent this company as a lead qualifier.
-Extract EVERY piece of information you can find. The more thorough, the better we can qualify leads.
+const COMPREHENSIVE_EXTRACTION_PROMPT = `You are an expert business analyst preparing to represent this company as a salesperson.
+Extract ONLY information that is EXPLICITLY stated on the website. NEVER invent or guess.
 
 Extract these EXACT fields (use these exact field names as JSON keys):
 
-=== COMPANY IDENTITY ===
+=== 1. COMPANY IDENTITY ===
 - companyName: Official company name
-- legalName: Legal/registered name if different
-- businessType: B2B, B2C, Both, or Nonprofit  
-- industry: Primary industry/sector (be SPECIFIC, e.g. "Commercial Real Estate" not just "Real Estate")
-- subIndustry: Sub-sector or niche (if applicable)
-- yearsInBusiness: How long in business (if mentioned)
+- foundedYear: Year established (if mentioned)
+- headquarters: Main location
 - employeeCount: Team size (can be range like "50-100")
 - companyStage: Startup, Growth, Established, or Enterprise
-- tagline: Company tagline or slogan
-- missionStatement: Mission or vision statement
-- headquarters: City/State/Country location
+- industry: Primary sector (be SPECIFIC)
+- subIndustry: Specific niche
 
-=== BUSINESS MODEL ===
-- businessModel: SaaS, Services, Product, Marketplace, Agency, Consulting, etc.
-- revenueModel: Subscription, One-time, Usage-based, Project-based, Retainer, etc.
-- typicalDealSize: Average contract value or price range
-- pricingTiers: Entry, Mid, Enterprise pricing info (if visible)
+=== 2. PRODUCT CATALOG ===
+- primaryOffering: Main product/service
+- productCatalog: Array of EVERY specific product/variant found on the site
+- keyFeatures: Main capabilities per product
+- useCases: Common applications
+- integrations: What it connects with
 
-=== COMPLETE PRODUCT CATALOG (CRITICAL) ===
-- primaryOffering: Their main product or service
-- productCatalog: Array of EVERY specific product/service with ALL variants. Examples:
-  * Real Estate: ["Multi-family apartments", "Single-family homes", "Commercial properties", "Industrial", "Land", "Luxury homes"]
-  * Coffee Company: ["Roasted whole beans", "Ground coffee", "Espresso blends", "Single-origin", "Cold brew", "K-cups", "Subscriptions"]
-  * Monitor Company: ["24-inch Gaming monitor", "27-inch Professional", "32-inch 4K", "42-inch Curved", "Ultrawide"]
-  * SaaS: ["Starter plan", "Professional plan", "Enterprise plan", "Add-ons", "API access"]
-  Extract EVERY product variant you can find!
-- productsServices: High-level category list of offerings
-- keyFeatures: Top features/capabilities for each major product
-- useCases: Common use cases/applications
-- integrations: What they integrate with (if applicable)
-- deliverables: What the customer actually receives
+=== 3. PRICING ===
+- pricingModel: How they charge (SaaS, per-seat, project-based, etc.)
+- pricePerProduct: Price for each specific product (if visible)
+- productTiers: Tier levels (Basic, Pro, Enterprise) with prices
+- typicalDealSize: Average contract value (if mentioned)
+- billingOptions: Monthly/Annual options
+- trialOptions: Free trial details
+- discountPolicy: When discounts apply (if mentioned)
 
-=== TARGET CUSTOMERS (CRITICAL for Lead Qualification) ===
-- idealCustomerDescription: Detailed description of ideal customer
-- targetIndustries: Array of ALL industries they serve
-- targetCompanySizes: Array of company sizes (startup, SMB, mid-market, enterprise)
-- targetJobTitles: Array of job titles they target (e.g. ["CEO", "VP Sales", "CTO", "Director of Operations"])
-- targetGeographies: Regions/countries served
-- buyerPersonas: Key buyer persona descriptions
-- disqualificationCriteria: Who is NOT a good fit for them
+=== 4. TARGET CUSTOMERS ===
+- idealCustomerDescription: Detailed ICP narrative
+- targetCompanySizes: Company size fit (startup, SMB, mid-market, enterprise)
+- targetIndustries: Best-fit industries
+- targetJobTitles: Decision makers they target
+- targetGeographies: Regions served
+- secondaryTargets: Alternative customer segments that also work
+- buyingTriggers: Events that spark purchase
 
-=== VALUE PROPOSITION ===
-- problemSolved: The core pain point they address
-- uniqueDifferentiator: What makes them different (be specific, 3-5 points)
-- keyBenefits: Main benefits for customers
-- proofPoints: Stats, ROI, outcomes achieved (with numbers)
-- competitiveAdvantages: Why choose them over alternatives
-- whatTheyDontDo: Scope limitations, what they won't do
-- typicalResults: Results customers achieve
-- notableClients: Recognized client names
-- awards: Industry recognition, certifications
+=== 5. VALUE PROPOSITION ===
+- problemSolved: Core pain point they address
+- uniqueDifferentiator: What makes them different (be specific)
+- keyBenefits: Top outcomes for customers
+- proofPoints: Stats, ROI with numbers (if mentioned)
+- guarantees: Promises they make (if any)
 
-=== SALES PROCESS ===
-- salesCycleLength: Typical time to close
-- decisionMakers: Who's involved in buying decisions
-- buyingTriggers: Events that trigger purchase
-- commonObjections: Top objections customers raise
-- competitorsList: Known competitors
-- dealBreakers: What kills deals
-- reasonsCustomersSwitch: Why people switch to them
+=== 6. SOCIAL PROOF ===
+- notableClients: Recognizable customer names
+- customerCount: Total customer base (if mentioned)
+- caseStudies: Success story summaries
+- testimonialThemes: What customers say
+- awards: Industry recognition
+- certifications: Relevant certs (SOC2, ISO, etc.)
 
-=== BRAND VOICE ===
-- brandPersonality: Array of personality traits (e.g. ["Professional", "Bold", "Innovative", "Reliable"])
+=== 7. COMPETITIVE LANDSCAPE ===
+- directCompetitors: Main alternatives mentioned
+- competitorWeaknesses: Where competitors fall short (if stated)
+- ourAdvantages: Why they're better vs alternatives
+- replacementNarrative: What solutions customers typically switch FROM (if mentioned)
+
+=== 8. SALES PROCESS ===
+- salesCycleLength: Typical time to close (if mentioned)
+- typicalBuyingProcess: How customers buy
+- decisionMakers: Who signs off
+- implementationTimeline: Time to go live
+- onboardingProcess: How they get started
+- supportChannels: How customers get help
+
+=== 9. BRAND VOICE ===
+- brandPersonality: Traits (Professional, Bold, Innovative, etc.)
 - formalityLevel: Very formal, Professional, Friendly, or Casual
-- toneDescriptors: How they want to sound
-- keyMessages: Core messages they convey
-- phrasesToUse: Specific terminology they use
-- phrasesToAvoid: Words/phrases they never use
-- communicationStyle: Direct, Consultative, Educational
-- valueWords: Words that represent their values
 
-=== SOCIAL PROOF ===
-- caseStudies: Brief success story summaries
-- testimonialThemes: What customers say about them
-- certifications: Relevant certifications
-- partnerRelationships: Strategic partnerships
-
-EXTRACTION RULES:
-1. Be THOROUGH - extract EVERYTHING you can find
-2. For arrays, include ALL items (10+ when available)
-3. Be SPECIFIC, not generic (e.g. "Enterprise SaaS companies with 500+ employees" not "businesses")
-4. If you can't find info for a field, omit it - don't guess
-5. For productCatalog, list EVERY product variant you can find
-6. Include exact quotes that reveal brand voice
+CRITICAL EXTRACTION RULES - NEVER INVENT INFORMATION:
+1. ONLY extract information that is EXPLICITLY stated on the website
+2. If you cannot find information for a field, OMIT IT ENTIRELY - do not guess or infer
+3. NEVER fabricate, invent, or assume information that isn't clearly present
+4. Be SPECIFIC - use exact words/phrases from the website
+5. For arrays, only include items actually found (don't pad with guesses)
+6. Confidence score should be 0-30 if you're inferring, 70-100 only if explicitly stated
+7. When in doubt, LEAVE IT OUT - missing data is better than wrong data
+8. Use direct quotes where possible for brand voice fields
 
 Return a FLAT JSON structure:
 {
   "data": {
     "companyName": "...",
     "businessType": "...",
-    "productCatalog": ["specific product 1", "specific product 2", "variant A", "variant B"],
-    ...all other fields as direct keys...
+    "productCatalog": ["specific product 1", "specific product 2"],
+    ...only fields you found on the website...
   },
   "confidence": {
     "companyName": 95,
     "businessType": 80,
-    ...0-100 confidence score for each field...
+    ...0-100 score based on how explicitly the info was stated...
   }
 }
 
-DO NOT nest fields inside category objects. Use EXACT field names as top-level keys.`;
+DO NOT nest fields inside category objects. Use EXACT field names as top-level keys.
+NEVER INVENT OR GUESS. Only return what you can prove from the website content.`;
 
 export async function extractFromOnlinePresence(
     input: OnlinePresenceInput

@@ -13,7 +13,7 @@ export default function LoginPage() {
       {/* Decorative blur orbs */}
       <div className="fixed top-20 left-20 w-72 h-72 bg-violet-400/30 rounded-full blur-3xl" />
       <div className="fixed bottom-20 right-20 w-96 h-96 bg-fuchsia-400/30 rounded-full blur-3xl" />
-      
+
       <div className="w-full max-w-md relative">
         {/* Logo/Brand */}
         <div className="flex items-center justify-center gap-3 mb-8">
@@ -75,6 +75,29 @@ export default function LoginPage() {
               </div>
               <span className="text-gray-900 dark:text-white font-medium">Continue with Yahoo</span>
             </Button>
+
+            {/* Dev Login - for development testing */}
+            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+              <Button
+                onClick={() => {
+                  fetch('/api/auth/dev-login', {
+                    method: 'POST',
+                    credentials: 'include'
+                  }).then(res => {
+                    if (res.ok) {
+                      window.location.href = '/onboarding';
+                    }
+                  });
+                }}
+                variant="secondary"
+                className="w-full h-12 justify-center gap-2"
+                data-testid="button-dev-login"
+              >
+                <Sparkles className="h-4 w-4" />
+                <span className="font-medium">Dev Login (Testing)</span>
+              </Button>
+              <p className="mt-2 text-xs text-center text-gray-400">For development only</p>
+            </div>
           </div>
 
           <p className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
