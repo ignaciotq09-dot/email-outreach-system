@@ -17,6 +17,7 @@ import {
     saveGapAnswers,
     isOnboardingComplete,
 } from '../services/company-onboarding';
+import { generateSmartQuestions, applyAnswersToData } from '../services/company-onboarding/smart-questions';
 import type { ExtractedCompanyData, ExtractionGap } from '../services/company-onboarding/types';
 
 interface AuthenticatedRequest extends Request {
@@ -270,6 +271,113 @@ export function registerCompanyOnboardingRoutes(app: Express) {
         } catch (error) {
             console.error('[CompanyOnboarding] Error getting gap questions:', error);
             res.status(500).json({ error: 'Failed to get gap questions' });
+        }
+    });
+
+    // NEW: Get SMART context-aware questions based on extraction gaps
+    // Uses AI to generate unique, relevant questions for each company
+    app.get('/api/onboarding/company/smart-questions', async (req: AuthenticatedRequest, res: Response) => {
+        try {
+            const userId = req.session.userId;
+            if (!userId) {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+
+            const profile = await getCompanyProfile(userId);
+            if (!profile) {
+                return res.status(404).json({ error: 'No company profile found' });
+            }
+
+            // Build extracted data from profile
+            const extractedData: ExtractedCompanyData = {
+                companyName: profile.companyName ?? undefined,
+                businessType: profile.businessType ?? undefined,
+                industry: profile.industry ?? undefined,
+                yearsInBusiness: profile.yearsInBusiness ?? undefined,
+                employeeCount: profile.employeeCount ?? undefined,
+                tagline: profile.tagline ?? undefined,
+                missionStatement: profile.missionStatement ?? undefined,
+                businessDescription: profile.businessDescription ?? undefined,
+                productsServices: profile.productsServices as string[] | undefined,
+                primaryOffering: (profile.productsServices as string[])?.[0] ?? undefined,
+                idealCustomerDescription: profile.idealCustomerDescription ?? undefined,
+                targetJobTitles: profile.targetJobTitles as string[] | undefined,
+                targetIndustries: profile.targetIndustries as string[] | undefined,
+                targetCompanySizes: profile.targetCompanySizes as string[] | undefined,
+                targetGeographies: profile.targetGeographies as string[] | undefined,
+                problemSolved: profile.problemSolved ?? undefined,
+                uniqueDifferentiator: profile.uniqueDifferentiator ?? undefined,
+                typicalResults: profile.typicalResults ?? undefined,
+                notableClients: profile.notableClients ?? undefined,
+                brandPersonality: profile.brandPersonality as string[] | undefined,
+                formalityLevel: profile.formalityLevel ?? undefined,
+                typicalDealSize: profile.typicalDealSize ?? undefined,
+            };
+
+            // Get extraction gaps from profile
+            const extractionGaps = (profile.extractionGaps as ExtractionGap[]) || [];
+
+            console.log('[SmartQuestions] Generating for gaps:', extractionGaps.map(g => g.field).join(', '));
+
+            // Generate smart, context-aware questions using AI
+            const smartQuestions = await generateSmartQuestions(extractionGaps, extractedData);
+
+            console.log(`[SmartQuestions] Generated ${smartQuestions.questions.length} context-aware questions`);
+
+            res.json(smartQuestions);
+        } catch (error) {
+            console.error('[CompanyOnboarding] Error generating smart questions:', error);
+            res.status(500).json({ error: 'Failed to generate smart questions' });
+        }
+    });
+
+    // NEW: Save smart question answers and update profile
+    app.post('/api/onboarding/company/smart-answers', async (req: AuthenticatedRequest, res: Response) => {
+        try {
+            const userId = req.session.userId;
+            if (!userId) {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+
+            const { answers } = req.body as { answers: Record<string, string | string[]> };
+
+            // Get current profile
+            const profile = await getCompanyProfile(userId);
+            if (!profile) {
+                return res.status(404).json({ error: 'No company profile found' });
+            }
+
+            // Apply each answer to the appropriate field
+            const updates: Partial<ExtractedCompanyData> = {};
+            for (const [field, value] of Object.entries(answers)) {
+                if (value && (typeof value === 'string' ? value.trim() : value.length > 0)) {
+                    (updates as any)[field] = value;
+                }
+            }
+
+            console.log('[SmartAnswers] Saving answers for fields:', Object.keys(updates).join(', '));
+
+            // Save to profile
+            const updatedProfile = await saveCompanyProfile(userId, updates);
+
+            // Clear the gaps that were answered
+            const remainingGaps = ((profile.extractionGaps as ExtractionGap[]) || [])
+                .filter(gap => !answers[gap.field]);
+
+            // Update gaps in profile
+            if (remainingGaps.length !== ((profile.extractionGaps as ExtractionGap[]) || []).length) {
+                await saveCompanyProfile(userId, { extractionGaps: remainingGaps } as any);
+            }
+
+            res.json({
+                success: true,
+                profile: updatedProfile,
+                answeredFields: Object.keys(updates),
+                remainingGaps: remainingGaps.length,
+            });
+        } catch (error) {
+            console.error('[CompanyOnboarding] Error saving smart answers:', error);
+            res.status(500).json({ error: 'Failed to save answers' });
         }
     });
 
