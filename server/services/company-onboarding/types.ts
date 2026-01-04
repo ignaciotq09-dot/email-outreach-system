@@ -6,80 +6,88 @@ export interface OnlinePresenceInput {
 }
 
 export interface ExtractedCompanyData {
-    // 1. Company Identity
+    // === TIER 1: CRITICAL (Must Extract) ===
+    // 1. Company Identity (4 fields)
     companyName?: string;
-    foundedYear?: string;
-    headquarters?: string;
-    employeeCount?: string;
-    companyStage?: string;
     industry?: string;
-    subIndustry?: string;
+    businessDescription?: string;
+    employeeCount?: string;
 
-    // 2. Product Catalog
+    // 2. Products & Services (3 fields)
     primaryOffering?: string;
-    productCatalog?: string[];
-    keyFeatures?: string[];
-    useCases?: string[];
-    integrations?: string[];
-
-    // 3. Pricing
+    productsServices?: string[]; // Legacy name for productCatalog
     pricingModel?: string;
-    pricePerProduct?: string;
-    productTiers?: string[];
-    typicalDealSize?: string;
-    billingOptions?: string[];
-    trialOptions?: string;
-    discountPolicy?: string;
 
-    // 4. Target Customers
+    // 3. Target Customers - ICP (5 fields) - CRITICAL
     idealCustomerDescription?: string;
+    targetJobTitles?: string[];
     targetCompanySizes?: string[];
     targetIndustries?: string[];
-    targetJobTitles?: string[];
-    targetGeographies?: string[];
-    secondaryTargets?: string;
-    buyingTriggers?: string[];
+    notableClients?: string;
 
-    // 5. Value Proposition
+    // === TIER 2: HIGH VALUE (ICP & Brand) ===
+    // 4. Pricing (3 fields)
+    typicalDealSize?: string;
+    productTiers?: string[];
+    typicalResults?: string;
+
+    // 5. Value Proposition (4 fields)
     problemSolved?: string;
     uniqueDifferentiator?: string;
     keyBenefits?: string[];
     proofPoints?: string;
-    guarantees?: string;
 
-    // 6. Social Proof
-    notableClients?: string;
+    // 6. Sales Context (3 fields)
+    salesCycleLength?: string;
+    targetGeographies?: string[];
+    buyingTriggers?: string[];
+
+    // 7. Brand Voice (2 fields)
+    brandPersonality?: string[];
+    formalityLevel?: string;
+
+    // === TIER 3: NICE TO HAVE ===
+    // 8. Social Proof (2 fields)
     customerCount?: string;
     caseStudies?: string[];
-    testimonialThemes?: string[];
+
+    // 9. Product Details (3 fields)
+    keyFeatures?: string[];
+    useCases?: string[];
+    headquarters?: string;
+
+    // 10. Competitive (3 fields)
+    directCompetitors?: string[];
     awards?: string;
     certifications?: string[];
 
-    // 7. Competitive Landscape
-    directCompetitors?: string[];
+    // === NEW: Brand Summary ===
+    brandSummary?: string; // 2-3 sentence synthesized brand identity
+
+    // === DEPRECATED (kept for backward compatibility, not extracted) ===
+    foundedYear?: string;
+    companyStage?: string;
+    subIndustry?: string;
+    productCatalog?: string[];
+    integrations?: string[];
+    pricePerProduct?: string;
+    billingOptions?: string[];
+    trialOptions?: string;
+    discountPolicy?: string;
+    secondaryTargets?: string;
+    guarantees?: string;
+    testimonialThemes?: string[];
     competitorWeaknesses?: string;
     ourAdvantages?: string;
     replacementNarrative?: string;
-
-    // 8. Sales Process
-    salesCycleLength?: string;
     typicalBuyingProcess?: string;
     decisionMakers?: string[];
     implementationTimeline?: string;
     onboardingProcess?: string;
     supportChannels?: string;
-
-    // 9. Brand Voice
-    brandPersonality?: string[];
-    formalityLevel?: string;
-
-    // Legacy fields for backwards compatibility
-    businessDescription?: string;
-    productsServices?: string[];
     tagline?: string;
     missionStatement?: string;
     businessType?: string;
-    typicalResults?: string;
     phrasesToUse?: string;
     phrasesToAvoid?: string;
     currentChallenges?: string;

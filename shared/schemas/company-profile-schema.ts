@@ -53,6 +53,7 @@ export const companyProfiles = pgTable("company_profiles", {
     formalityLevel: varchar("formality_level", { length: 50 }),
     phrasesToUse: text("phrases_to_use"),
     phrasesToAvoid: text("phrases_to_avoid"),
+    brandSummary: text("brand_summary"), // NEW: AI-generated 2-3 sentence brand identity summary
 
     // === CALL TO ACTION ===
     desiredLeadAction: jsonb("desired_lead_action").$type<string[]>(),

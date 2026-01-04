@@ -1,5 +1,5 @@
-// AI-powered extraction from website and Instagram
-// Optimized with parallel fetching, tiered AI, and fallback sources
+// HYBRID AI-powered extraction from website
+// Option C: Single comprehensive extraction + conditional ICP gap-filling + brand summary
 
 import OpenAI from 'openai';
 import type { OnlinePresenceInput, ExtractionResult, ExtractedCompanyData, ExtractionGap } from './types';
@@ -29,73 +29,107 @@ function getOpenAI(): OpenAI {
     return new OpenAI({ apiKey });
 }
 
-// STRICT extraction prompt - anti-hallucination focused
-const COMPREHENSIVE_EXTRACTION_PROMPT = `You are extracting business information from a website. Your job is to find ONLY what is explicitly written.
+// HYBRID EXTRACTION PROMPT - 32 Essential Fields with ICP Priority
+const COMPREHENSIVE_EXTRACTION_PROMPT = `You are extracting company information for B2B sales outreach. Focus on TARGET CUSTOMER (ICP) data above all else.
 
-ABSOLUTE RULES - VIOLATION IS FAILURE:
-1. Extract ONLY what is EXPLICITLY written on the page - never use your general knowledge
-2. If you cannot find a field, set it to null - NEVER guess or make something up
-3. For every value you extract, you must be able to point to the exact text on the page
-4. Your training knowledge is IRRELEVANT - only the website content matters
-5. A null/missing value is CORRECT. A fabricated value is WRONG.
+EXTRACTION PRIORITY:
+🔴 TIER 1 (CRITICAL): Must extract if available
+🟡 TIER 2 (HIGH VALUE): Important for personalization  
+🟢 TIER 3 (NICE TO HAVE): Extract if easily found
 
-CONFIDENCE SCORING (be strict):
-- 90-100: Exact text match, explicitly stated on the page
-- 70-89: Clearly implied with strong context from the page
-- 50-69: Weakly inferred - ONLY if you can cite supporting text
-- Below 50: DO NOT include - return null instead
+=== 🔴 TIER 1: CRITICAL FIELDS (12 fields) ===
 
-Extract these fields (return null if not found):
+1. COMPANY IDENTITY (4 fields)
+   - companyName: Official name (from logo, header, footer)
+   - industry: Primary industry (use THEIR words, not generic labels)
+   - businessDescription: What they do in 1-2 sentences (their exact wording)
+   - employeeCount: Team size if mentioned (1-10, 11-50, 51-200, 201-500, 500+)
 
-=== COMPANY IDENTITY ===
-- companyName: Official company name (usually in logo, header, or footer)
-- industry: Their primary industry (use THEIR words, not yours)
-- businessDescription: What they do (use their exact wording)
-- employeeCount: Team size if mentioned
-- headquarters: Location if mentioned
+2. PRODUCTS & SERVICES (3 fields)
+   - primaryOffering: Main product/service they sell
+   - productsServices: Array of ALL specific offerings/tiers/packages
+   - pricingModel: How they charge (subscription, per-seat, usage-based, project-based, etc.)
 
-=== PRODUCTS & SERVICES ===
-- primaryOffering: Main product/service they sell
-- productsServices: Array of ALL specific products/services listed
-- pricingModel: How they charge (if stated)
-- typicalDealSize: Contract value (if mentioned)
+3. TARGET CUSTOMERS - ICP ⭐⭐⭐ THIS IS MOST IMPORTANT ⭐⭐⭐ (5 fields)
+   LOOK FOR THESE ICP SIGNALS:
+   a) Explicit statements: "Built for", "Who we serve", "Our ideal customer"
+   b) Customer logos: Extract company NAMES you can read
+   c) Case studies: Note industries and company sizes
+   d) Testimonials: Extract job titles of quoted people
+   e) Pricing tiers: "Best for teams of 50+", "Enterprise plan", etc.
+   
+   - idealCustomerDescription: Their explicit ICP statement (1-2 sentences)
+   - targetJobTitles: Job titles from testimonials/quotes/case studies
+   - targetCompanySizes: [Startups, Small Business (1-50), Mid-Market (51-500), Enterprise (500+)]
+   - targetIndustries: Industries explicitly mentioned as served
+   - notableClients: Company names from logos or case studies (only names you can read)
 
-=== TARGET CUSTOMERS (ICP) - CRITICAL ===
-Look for "Who we serve", customer logos, case studies, testimonials.
-- idealCustomerDescription: Their explicit description of ideal customer
-- targetIndustries: Industries they explicitly mention serving
-- targetCompanySizes: Company sizes they target (startup, SMB, enterprise, etc.)
-- targetJobTitles: Job titles mentioned in testimonials or "who it's for" sections
-- targetGeographies: Regions/countries they serve
-- notableClients: Company names from customer logos or case studies
+=== 🟡 TIER 2: HIGH VALUE (12 fields) ===
 
-=== VALUE PROPOSITION ===
-- problemSolved: The problem they claim to solve (use their words)
-- uniqueDifferentiator: What they say makes them different (ONLY if explicitly stated)
-- keyBenefits: Benefits they list
-- typicalResults: Specific results/stats they claim (with numbers)
+4. PRICING (3 fields)
+   - typicalDealSize: Price range or tier (Under $500, $500-2K, $2K-10K, $10K+)
+   - productTiers: Names of pricing tiers/plans
+   - typicalResults: ONLY if specific numbers/stats shown (e.g., "Clients save average of $50K")
 
-=== BRAND VOICE ===
-- brandPersonality: Traits evident from their writing style
-- formalityLevel: Very formal, Professional, Friendly, or Casual
+5. VALUE PROPOSITION (4 fields)
+   - problemSolved: What pain/problem they address (use their words)
+   - uniqueDifferentiator: What makes them different (ONLY if explicitly stated)
+   - keyBenefits: Top 3-5 benefits they claim
+   - proofPoints: Metrics, stats, awards, certifications mentioned
 
-Return JSON structure:
+6. SALES CONTEXT (3 fields)
+   - salesCycleLength: How long typical sale takes (if mentioned)
+   - targetGeographies: Regions/countries they serve
+   - buyingTriggers: Events that trigger purchase (ONLY if explicitly mentioned)
+
+7. BRAND VOICE (2 fields)
+   - brandPersonality: Up to 3 traits from: Professional, Friendly, Expert, Innovative, Bold, Warm, Practical, Premium
+   - formalityLevel: Very Formal | Professional | Friendly | Casual
+
+=== 🟢 TIER 3: NICE TO HAVE (8 fields) ===
+
+8. SOCIAL PROOF (2 fields)
+   - customerCount: Total customers/users if mentioned
+   - caseStudies: Titles/names of case studies (not full content)
+
+9. PRODUCT DETAILS (3 fields)
+   - keyFeatures: Top 5 features/capabilities
+   - useCases: Specific use cases described
+   - headquarters: Company location
+
+10. COMPETITIVE (3 fields)
+    - directCompetitors: Competitors mentioned by name
+    - awards: Industry awards won
+    - certifications: Compliance/security certifications
+
+=== EXTRACTION RULES ===
+✅ Extract ONLY what is explicitly written
+✅ Return null if field not found - DO NOT GUESS
+✅ For ICP fields, provide citations (where you found it)
+✅ Confidence scores: 90-100 = exact quote, 70-89 = clear statement, <70 = weak/should be null
+
+Return JSON:
 {
   "data": {
     "companyName": "Acme Corp",
-    "industry": "Construction",
-    "uniqueDifferentiator": null,  // NOT FOUND - don't invent!
+    "industry": "B2B SaaS",
+    "idealCustomerDescription": "Mid-market sales teams with 50-200 employees",
+    "targetJobTitles": ["VP Sales", "Sales Director", "Head of Revenue"],
     ...
   },
   "confidence": {
     "companyName": 98,
-    "industry": 85,
+    "idealCustomerDescription": 85,
+    ...
+  },
+  "citations": {
+    "idealCustomerDescription": "About page: 'Built for mid-market sales teams looking to scale outreach'",
+    "targetJobTitles": "Testimonials section shows quotes from VP Sales at 3 companies",
     ...
   }
 }
 
-REMEMBER: null values are CORRECT when information is not on the page.
-NEVER use phrases like "based on my knowledge" or "typically" - only use the page content.`;
+REMEMBER: ICP data (Tier 1 #3) is THE MOST IMPORTANT. Spend extra effort finding target customer information.`;
 
 // ICP-focused extraction prompt for second pass
 const ICP_EXTRACTION_PROMPT = `You are extracting TARGET CUSTOMER (ICP) information from a website.
@@ -147,7 +181,7 @@ const CRITICAL_ICP_FIELDS: (keyof ExtractedCompanyData)[] = [
 export async function extractFromOnlinePresence(
     input: OnlinePresenceInput
 ): Promise<ExtractionResult> {
-    console.log('[Extraction] Starting optimized extraction for:', input.websiteUrl);
+    console.log('[Extraction] Starting HYBRID extraction for:', input.websiteUrl);
     const startTime = Date.now();
     const gaps: ExtractionGap[] = [];
 
@@ -167,34 +201,51 @@ export async function extractFromOnlinePresence(
             };
         }
 
-        // Step 2: Deep AI extraction (comprehensive analysis with GPT-4o)
-        console.log('[Extraction] Step 2: Deep AI analysis with GPT-4o...');
+        // Step 2: MAIN EXTRACTION - Comprehensive analysis (32 fields) with GPT-4o
+        console.log('[Extraction] Step 2: HYBRID Main extraction (32 essential fields)...');
         const extractionResult = await deepAIExtraction(websiteContent);
 
-        // Step 3: ICP-focused extraction pass
-        console.log('[Extraction] Step 3: ICP-focused extraction...');
-        const icpResult = await icpExtraction(websiteContent);
+        // Step 3: ICP QUALITY ASSESSMENT - Check if we got good ICP data
+        console.log('[Extraction] Step 3: Assessing ICP quality...');
+        const icpQuality = assessICPQuality(extractionResult.data, extractionResult.confidence);
 
-        // Merge ICP data into main extraction (ICP pass takes priority for ICP fields)
-        const mergedData = { ...extractionResult.data };
-        const mergedConfidence = { ...extractionResult.confidence };
+        let finalData = extractionResult.data;
+        let finalConfidence = extractionResult.confidence;
 
-        for (const [key, value] of Object.entries(icpResult.data)) {
-            if (value !== null && value !== undefined) {
-                (mergedData as any)[key] = value;
-                (mergedConfidence as any)[key] = (icpResult.confidence as any)[key] || 70;
+        // Step 4: CONDITIONAL ICP GAP-FILLING - Only if ICP quality is low
+        if (icpQuality < 0.7) {
+            console.log(`[Extraction] ICP quality low (${(icpQuality * 100).toFixed(0)}%), triggering gap-filling...`);
+            const icpGapResult = await icpGapFillingExtraction(websiteContent, extractionResult.data);
+
+            // Merge ICP gap-filling data (takes priority for ICP fields)
+            finalData = mergeICPData(extractionResult.data, icpGapResult.data);
+
+            // Merge confidence scores
+            for (const [key, value] of Object.entries(icpGapResult.confidence)) {
+                if (value && value > (finalConfidence[key] || 0)) {
+                    (finalConfidence as any)[key] = value;
+                }
             }
+        } else {
+            console.log(`[Extraction] ICP quality good (${(icpQuality * 100).toFixed(0)}%), skipping gap-filling`);
         }
 
-        // Step 4: Optional Apollo enrichment for missing company data
-        console.log('[Extraction] Step 4: Checking for enrichment needs...');
-        const enrichedData = await enrichWithApollo(mergedData, input.websiteUrl);
+        // Step 5: BRAND SUMMARY GENERATION
+        console.log('[Extraction] Step 5: Generating brand summary...');
+        const brandSummary = await generateBrandSummary(finalData);
+        if (brandSummary) {
+            finalData.brandSummary = brandSummary;
+        }
 
-        // Step 5: Identify gaps - fields we couldn't find (NO FABRICATION!)
-        console.log('[Extraction] Step 5: Identifying extraction gaps...');
+        // Step 6: Optional Apollo enrichment for missing company metadata
+        console.log('[Extraction] Step 6: Checking for Apollo enrichment needs...');
+        const enrichedData = await enrichWithApollo(finalData, input.websiteUrl);
+
+        // Step 7: Identify gaps - fields we couldn't find
+        console.log('[Extraction] Step 7: Identifying extraction gaps...');
         for (const field of CRITICAL_ICP_FIELDS) {
             const value = (enrichedData as any)[field];
-            const confidence = (mergedConfidence as any)[field] || 0;
+            const confidence = (finalConfidence as any)[field] || 0;
 
             const isEmpty = value === null || value === undefined || value === '' ||
                 (Array.isArray(value) && value.length === 0);
@@ -209,12 +260,16 @@ export async function extractFromOnlinePresence(
         }
 
         const elapsed = Date.now() - startTime;
-        console.log(`[Extraction] Complete in ${elapsed}ms. Fields found: ${Object.keys(enrichedData).length}, Gaps: ${gaps.length}`);
+        console.log(`[Extraction] HYBRID COMPLETE in ${elapsed}ms`);
+        console.log(`[Extraction] - Fields found: ${Object.keys(enrichedData).filter(k => (enrichedData as any)[k]).length}/32`);
+        console.log(`[Extraction] - ICP Quality: ${(icpQuality * 100).toFixed(0)}%`);
+        console.log(`[Extraction] - Brand Summary: ${brandSummary ? 'Generated' : 'Skipped'}`);
+        console.log(`[Extraction] - Gaps: ${gaps.length}`);
 
         return {
             success: true,
             data: enrichedData,
-            confidence: mergedConfidence,
+            confidence: finalConfidence as Record<keyof ExtractedCompanyData, number>,
             gaps, // Return gaps so they can be used for follow-up questions
             sources: {
                 website: {
@@ -302,7 +357,7 @@ async function deepAIExtraction(content: string): Promise<{ data: ExtractedCompa
             { role: 'user', content: `Analyze this website content and extract ALL available business information:\n\n${content}` },
         ],
         response_format: { type: 'json_object' },
-        temperature: 0.3,
+        temperature: 0.1,  // Lower = more deterministic, less creative/hallucination
         max_tokens: 4000, // Allow comprehensive response
     });
 
@@ -311,47 +366,54 @@ async function deepAIExtraction(content: string): Promise<{ data: ExtractedCompa
     const parsed = JSON.parse(result.choices[0]?.message?.content || '{}');
     const data = parsed.data || {};
     const confidence = parsed.confidence || {};
+    const citations = parsed.citations || {};
 
     console.log('[Extraction] Fields extracted:', Object.keys(data).length);
     console.log('[Extraction] Fields:', Object.keys(data).join(', '));
+
+    // ANTI-HALLUCINATION: Quick validation for high-risk fields
+    const HIGH_RISK_FIELDS = [
+        'uniqueDifferentiator', 'typicalResults', 'competitorWeaknesses',
+        'ourAdvantages', 'buyingTriggers', 'guarantees', 'replacementNarrative'
+    ];
+
+    let rejectedCount = 0;
+    for (const field of HIGH_RISK_FIELDS) {
+        const fieldValue = (data as any)[field];
+        const fieldConfidence = confidence[field] || 0;
+        const fieldCitation = citations[field];
+
+        // Reject if: no citation OR confidence too low OR value contains hallucination indicators
+        if (fieldValue !== null && fieldValue !== undefined) {
+            const shouldReject =
+                !fieldCitation ||
+                fieldCitation.length < 20 ||
+                fieldConfidence < 70 ||
+                (typeof fieldValue === 'string' && (
+                    fieldValue.toLowerCase().includes('typically') ||
+                    fieldValue.toLowerCase().includes('likely') ||
+                    fieldValue.toLowerCase().includes('improve efficiency') ||
+                    fieldValue.toLowerCase().includes('save time') ||
+                    fieldValue.toLowerCase().includes('reduce costs')
+                ));
+
+            if (shouldReject) {
+                console.warn(`[AntiHallucination] Rejecting "${field}": conf=${fieldConfidence}, citation=${!!fieldCitation}`);
+                (data as any)[field] = null;
+                confidence[field] = 0;
+                rejectedCount++;
+            }
+        }
+    }
+
+    if (rejectedCount > 0) {
+        console.log(`[AntiHallucination] Rejected ${rejectedCount} high-risk fields to prevent fabrication`);
+    }
 
     return { data, confidence };
 }
 
 // ICP-focused extraction: Second pass specifically for target customer information
-async function icpExtraction(content: string): Promise<{ data: Partial<ExtractedCompanyData>; confidence: Record<string, number> }> {
-    const openai = getOpenAI();
-    const startTime = Date.now();
-
-    console.log('[Extraction] ICP extraction: Analyzing for target customer info...');
-
-    try {
-        const result = await openai.chat.completions.create({
-            model: 'gpt-4o',
-            messages: [
-                { role: 'system', content: ICP_EXTRACTION_PROMPT },
-                { role: 'user', content: `Extract ICP/target customer information from this website content:\n\n${content}` },
-            ],
-            response_format: { type: 'json_object' },
-            temperature: 0.2, // Lower temperature for more precise extraction
-            max_tokens: 2000,
-        });
-
-        console.log(`[Extraction] ICP extraction complete in ${Date.now() - startTime}ms`);
-
-        const parsed = JSON.parse(result.choices[0]?.message?.content || '{}');
-        const data = parsed.data || {};
-        const confidence = parsed.confidence || {};
-
-        console.log('[Extraction] ICP fields extracted:', Object.keys(data).filter(k => data[k] !== null).join(', '));
-
-        return { data, confidence };
-    } catch (error) {
-        console.error('[Extraction] ICP extraction failed:', error);
-        return { data: {}, confidence: {} };
-    }
-}
-
 // Apollo enrichment for company data
 async function enrichWithApollo(data: ExtractedCompanyData, websiteUrl: string): Promise<ExtractedCompanyData> {
     const needsEnrichment = !data.employeeCount || !data.industry;
@@ -434,4 +496,198 @@ export function isValidUrl(url: string): boolean {
 export function isValidInstagramHandle(handle: string): boolean {
     const cleanHandle = handle.replace('@', '').trim();
     return /^[a-zA-Z0-9._]{1,30}$/.test(cleanHandle);
+}
+
+// ========== HYBRID EXTRACTION HELPERS ==========
+
+/**
+ * Assess ICP data quality to determine if conditional gap-filling is needed
+ * Returns score 0-1, where 1 = all ICP fields well-populated
+ */
+function assessICPQuality(
+    data: ExtractedCompanyData,
+    confidence: Record<string, number>
+): number {
+    const ICP_CRITICAL_FIELDS = [
+        'idealCustomerDescription',
+        'targetJobTitles',
+        'targetCompanySizes',
+        'targetIndustries',
+    ];
+
+    let score = 0;
+    const maxScore = ICP_CRITICAL_FIELDS.length;
+
+    for (const field of ICP_CRITICAL_FIELDS) {
+        const value = (data as any)[field];
+        const conf = confidence[field] || 0;
+
+        // Full point if value exists with good confidence
+        if (value && conf >= 70) {
+            score += 1;
+        }
+        // Half point if value exists but low confidence
+        else if (value && conf >= 50) {
+            score += 0.5;
+        }
+        // Zero points if missing or very low confidence
+    }
+
+    const qualityScore = score / maxScore;
+    console.log(`[ICP Quality] Score: ${(qualityScore * 100).toFixed(0)}% (${score}/${maxScore} fields)`);
+
+    return qualityScore;
+}
+
+/**
+ * Conditional ICP gap-filling using GPT-4o-mini
+ * Only called if main extraction missed ICP data
+ */
+async function icpGapFillingExtraction(
+    content: string,
+    existingData: ExtractedCompanyData
+): Promise<{ data: Partial<ExtractedCompanyData>; confidence: Record<string, number> }> {
+    const openai = getOpenAI();
+    const startTime = Date.now();
+
+    console.log('[ICP Gap-Filling] Triggering focused ICP extraction with GPT-4o-mini...');
+
+    const ICP_GAP_FILLING_PROMPT = `You are extracting TARGET CUSTOMER (ICP) data that was missed in initial extraction.
+
+CONTEXT: We already found:
+${JSON.stringify({
+        companyName: existingData.companyName,
+        industry: existingData.industry,
+        primaryOffering: existingData.primaryOffering,
+    }, null, 2)}
+
+Your ONLY job: Find ICP/target customer information.
+
+LOOK FOR THESE SIGNALS (in order of reliability):
+1. ⭐ EXPLICIT ICP STATEMENTS: "Built for", "Who we serve", "Ideal for"
+2. ⭐ CUSTOMER LOGOS: Extract company names you can clearly read
+3. ⭐ CASE STUDIES: Note industries and company sizes mentioned
+4. ⭐ TESTIMONIALS: Job titles of quoted people
+5. PRICING TIERS: "Best for teams of...", "Enterprise plan", etc.
+6. USE CASES: What types of companies are described in examples
+
+Extract ONLY these ICP fields:
+- idealCustomerDescription: 1-2 sentence ICP summary
+- targetJobTitles: Array of job titles
+- targetCompanySizes: Array from [Startups, Small Business, Mid-Market, Enterprise]
+- targetIndustries: Array of industries served
+- notableClients: Company names from logos/studies
+
+Return JSON with data and confidence for each field.`;
+
+    try {
+        const result = await openai.chat.completions.create({
+            model: 'gpt-4o-mini', // Cheaper for targeted extraction
+            messages: [
+                { role: 'system', content: ICP_GAP_FILLING_PROMPT },
+                { role: 'user', content: `Find ICP data:\n\n${content.slice(0, 15000)}` },
+            ],
+            response_format: { type: 'json_object' },
+            temperature: 0.2,
+            max_tokens: 1000,
+        });
+
+        console.log(`[ICP Gap-Filling] Complete in ${Date.now() - startTime}ms`);
+
+        const parsed = JSON.parse(result.choices[0]?.message?.content || '{}');
+        const data = parsed.data || {};
+        const confidence = parsed.confidence || {};
+
+        console.log('[ICP Gap-Filling] Found fields:', Object.keys(data).filter(k => data[k]).join(', '));
+
+        return { data, confidence };
+    } catch (error) {
+        console.error('[ICP Gap-Filling] Error:', error);
+        return { data: {}, confidence: {} };
+    }
+}
+
+/**
+ * Generate brand summary from extracted data
+ * Creates 2-3 sentence synthesized brand identity
+ */
+async function generateBrandSummary(
+    data: ExtractedCompanyData
+): Promise<string> {
+    const openai = getOpenAI();
+
+    // Skip if missing critical data
+    if (!data.companyName || !data.primaryOffering) {
+        console.log('[Brand Summary] Skipping - missing critical data');
+        return '';
+    }
+
+    const prompt = `Write a concise 2-3 sentence brand summary for this company:
+
+Company: ${data.companyName}
+Industry: ${data.industry || 'Unknown'}
+What they do: ${data.primaryOffering || data.businessDescription || 'Unknown'}
+Target customers: ${data.idealCustomerDescription || 'Unknown'}
+Differentiator: ${data.uniqueDifferentiator || 'Not specified'}
+Brand personality: ${data.brandPersonality?.join(', ') || 'Professional'}
+Formality: ${data.formalityLevel || 'Professional'}
+
+Write in ${data.formalityLevel || 'professional'} tone.
+
+Format:
+"[Company] is a [industry] company [what they do]. [Who they serve and what makes them special]. [Additional context about brand/market position]."
+
+Example:
+"Acme SaaS is professional B2B platform helping mid-market sales teams automate cold outreach. Known for their data-driven approach and friendly customer service, they primarily serve tech companies with 50-500 employees. Their focus on personalization and deliverability sets them apart in the sales engagement space."
+
+Be specific and concrete. Use information provided, not generic statements.`;
+
+    try {
+        const result = await openai.chat.completions.create({
+            model: 'gpt-4o-mini', // Cheap for synthesis
+            messages: [{ role: 'user', content: prompt }],
+            max_tokens: 200,
+            temperature: 0.4,
+        });
+
+        const summary = result.choices[0]?.message?.content?.trim() || '';
+        console.log(`[Brand Summary] Generated (${summary.length} chars)`);
+
+        return summary;
+    } catch (error) {
+        console.error('[Brand Summary] Error:', error);
+        return '';
+    }
+}
+
+/**
+ * Merge ICP gap-filling data into main extraction results
+ * Gap-filling data takes priority for ICP fields
+ */
+function mergeICPData(
+    mainData: ExtractedCompanyData,
+    icpData: Partial<ExtractedCompanyData>
+): ExtractedCompanyData {
+    const merged = { ...mainData };
+
+    const ICP_FIELDS = [
+        'idealCustomerDescription',
+        'targetJobTitles',
+        'targetCompanySizes',
+        'targetIndustries',
+        'notableClients',
+    ];
+
+    for (const field of ICP_FIELDS) {
+        const icpValue = (icpData as any)[field];
+        const mainValue = (mainData as any)[field];
+
+        // ICP gap-filling takes priority if it found something and main didn't
+        if (icpValue && !mainValue) {
+            (merged as any)[field] = icpValue;
+            console.log(`[Merge] ICP gap-filling provided: ${field}`);
+        }
+    }
+
+    return merged;
 }
