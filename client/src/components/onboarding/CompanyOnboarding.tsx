@@ -10,7 +10,7 @@ import { Building2, Globe, Instagram, CheckCircle2, Loader2, ArrowRight, ArrowLe
 import { OnlinePresenceInput } from './OnlinePresenceInput';
 import { ExtractionProgress } from './ExtractionProgress';
 import { ExtractedDataReview } from './ExtractedDataReview';
-import { GapQuestions } from './GapQuestions';
+import { SmartQuestions } from './SmartQuestions';
 import { ManualQuestionnaire } from './ManualQuestionnaire';
 import { ProfileSummary } from './ProfileSummary';
 import type { OnboardingStep, OnboardingStatus, ExtractionResult, GapQuestion, QuestionnaireSection } from './types';
@@ -257,9 +257,8 @@ export function CompanyOnboarding({ onComplete }: CompanyOnboardingProps) {
                     />
                 )}
 
-                {step === 'gap_questions' && gapData?.gaps && (
-                    <GapQuestions
-                        questions={gapData.gaps}
+                {step === 'gap_questions' && (
+                    <SmartQuestions
                         onComplete={handleGapAnswersComplete}
                         onBack={() => setStep('validation')}
                     />

@@ -4,6 +4,8 @@ export { OnlinePresenceInput } from './OnlinePresenceInput';
 export { ExtractionProgress } from './ExtractionProgress';
 export { ExtractedDataReview } from './ExtractedDataReview';
 export { GapQuestions } from './GapQuestions';
+export { SmartQuestions } from './SmartQuestions';
 export { ManualQuestionnaire } from './ManualQuestionnaire';
 export { ProfileSummary } from './ProfileSummary';
 export * from './types';
+
