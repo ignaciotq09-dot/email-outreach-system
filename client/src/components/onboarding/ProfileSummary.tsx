@@ -40,11 +40,20 @@ export function ProfileSummary({ onComplete, isSubmitting, onBack }: ProfileSumm
         );
     }
 
-    const renderArrayField = (value?: string[]) => {
-        if (!value || value.length === 0) return <span className="text-muted-foreground">Not specified</span>;
+    const renderArrayField = (value?: string[] | string) => {
+        if (!value || (Array.isArray(value) && value.length === 0)) {
+            return <span className="text-muted-foreground">Not specified</span>;
+        }
+        // Handle string values that should be arrays (defensive check for legacy data)
+        const items = Array.isArray(value)
+            ? value
+            : typeof value === 'string'
+                ? value.split(',').map(s => s.trim()).filter(Boolean)
+                : [];
+        if (items.length === 0) return <span className="text-muted-foreground">Not specified</span>;
         return (
             <div className="flex flex-wrap gap-1">
-                {value.map((item, i) => (
+                {items.map((item, i) => (
                     <Badge key={i} variant="secondary">{item}</Badge>
                 ))}
             </div>

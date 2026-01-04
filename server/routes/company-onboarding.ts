@@ -17,7 +17,7 @@ import {
     saveGapAnswers,
     isOnboardingComplete,
 } from '../services/company-onboarding';
-import type { ExtractedCompanyData } from '../services/company-onboarding/types';
+import type { ExtractedCompanyData, ExtractionGap } from '../services/company-onboarding/types';
 
 interface AuthenticatedRequest extends Request {
     session: {
@@ -151,13 +151,22 @@ export function registerCompanyOnboardingRoutes(app: Express) {
                     : 0;
 
                 console.log('[API] Overall confidence:', overallConfidence);
+                console.log('[API] Extraction gaps:', result.gaps?.length || 0);
 
-                // Save extracted data
-                await saveExtractedData(userId, result.data, overallConfidence);
+                // Save extracted data with gaps
+                await saveExtractedData(userId, result.data, overallConfidence, result.gaps || []);
                 console.log('[API] Data saved to database');
             }
 
-            res.json(result);
+            // Return result including gaps so UI can show what wasn't found
+            res.json({
+                success: result.success,
+                data: result.data,
+                confidence: result.confidence,
+                gaps: result.gaps || [], // Explicit gaps for UI awareness
+                sources: result.sources,
+                error: result.error,
+            });
         } catch (error: any) {
             console.error('[CompanyOnboarding] Error extracting data:', error);
 
@@ -251,7 +260,11 @@ export function registerCompanyOnboardingRoutes(app: Express) {
                     .filter(([_, score]) => score === 0)
                     .map(([key]) => key));
 
-            const gaps = getGapQuestions(extractedData, confidenceScores);
+            // Get extraction gaps from profile (these were identified during extraction)
+            const extractionGaps = (profile.extractionGaps as ExtractionGap[]) || [];
+            console.log('[GapQuestions] Extraction gaps from profile:', extractionGaps.length);
+
+            const gaps = getGapQuestions(extractedData, confidenceScores, extractionGaps);
 
             res.json({ gaps });
         } catch (error) {

@@ -2,7 +2,7 @@
 // Optimized with parallel fetching, tiered AI, and fallback sources
 
 import OpenAI from 'openai';
-import type { OnlinePresenceInput, ExtractionResult, ExtractedCompanyData } from './types';
+import type { OnlinePresenceInput, ExtractionResult, ExtractedCompanyData, ExtractionGap } from './types';
 
 // Strategic paths to fetch for maximum info
 const STRATEGIC_PATHS = [
@@ -29,113 +29,127 @@ function getOpenAI(): OpenAI {
     return new OpenAI({ apiKey });
 }
 
-// COMPREHENSIVE extraction prompt - get maximum information in one pass
-// Covers ALL Rule Book categories for complete company knowledge
-const COMPREHENSIVE_EXTRACTION_PROMPT = `You are an expert business analyst preparing to represent this company as a salesperson.
-Extract ONLY information that is EXPLICITLY stated on the website. NEVER invent or guess.
+// STRICT extraction prompt - anti-hallucination focused
+const COMPREHENSIVE_EXTRACTION_PROMPT = `You are extracting business information from a website. Your job is to find ONLY what is explicitly written.
 
-Extract these EXACT fields (use these exact field names as JSON keys):
+ABSOLUTE RULES - VIOLATION IS FAILURE:
+1. Extract ONLY what is EXPLICITLY written on the page - never use your general knowledge
+2. If you cannot find a field, set it to null - NEVER guess or make something up
+3. For every value you extract, you must be able to point to the exact text on the page
+4. Your training knowledge is IRRELEVANT - only the website content matters
+5. A null/missing value is CORRECT. A fabricated value is WRONG.
 
-=== 1. COMPANY IDENTITY ===
-- companyName: Official company name
-- foundedYear: Year established (if mentioned)
-- headquarters: Main location
-- employeeCount: Team size (can be range like "50-100")
-- companyStage: Startup, Growth, Established, or Enterprise
-- industry: Primary sector (be SPECIFIC)
-- subIndustry: Specific niche
+CONFIDENCE SCORING (be strict):
+- 90-100: Exact text match, explicitly stated on the page
+- 70-89: Clearly implied with strong context from the page
+- 50-69: Weakly inferred - ONLY if you can cite supporting text
+- Below 50: DO NOT include - return null instead
 
-=== 2. PRODUCT CATALOG ===
-- primaryOffering: Main product/service
-- productCatalog: Array of EVERY specific product/variant found on the site
-- keyFeatures: Main capabilities per product
-- useCases: Common applications
-- integrations: What it connects with
+Extract these fields (return null if not found):
 
-=== 3. PRICING ===
-- pricingModel: How they charge (SaaS, per-seat, project-based, etc.)
-- pricePerProduct: Price for each specific product (if visible)
-- productTiers: Tier levels (Basic, Pro, Enterprise) with prices
-- typicalDealSize: Average contract value (if mentioned)
-- billingOptions: Monthly/Annual options
-- trialOptions: Free trial details
-- discountPolicy: When discounts apply (if mentioned)
+=== COMPANY IDENTITY ===
+- companyName: Official company name (usually in logo, header, or footer)
+- industry: Their primary industry (use THEIR words, not yours)
+- businessDescription: What they do (use their exact wording)
+- employeeCount: Team size if mentioned
+- headquarters: Location if mentioned
 
-=== 4. TARGET CUSTOMERS ===
-- idealCustomerDescription: Detailed ICP narrative
-- targetCompanySizes: Company size fit (startup, SMB, mid-market, enterprise)
-- targetIndustries: Best-fit industries
-- targetJobTitles: Decision makers they target
-- targetGeographies: Regions served
-- secondaryTargets: Alternative customer segments that also work
-- buyingTriggers: Events that spark purchase
+=== PRODUCTS & SERVICES ===
+- primaryOffering: Main product/service they sell
+- productsServices: Array of ALL specific products/services listed
+- pricingModel: How they charge (if stated)
+- typicalDealSize: Contract value (if mentioned)
 
-=== 5. VALUE PROPOSITION ===
-- problemSolved: Core pain point they address
-- uniqueDifferentiator: What makes them different (be specific)
-- keyBenefits: Top outcomes for customers
-- proofPoints: Stats, ROI with numbers (if mentioned)
-- guarantees: Promises they make (if any)
+=== TARGET CUSTOMERS (ICP) - CRITICAL ===
+Look for "Who we serve", customer logos, case studies, testimonials.
+- idealCustomerDescription: Their explicit description of ideal customer
+- targetIndustries: Industries they explicitly mention serving
+- targetCompanySizes: Company sizes they target (startup, SMB, enterprise, etc.)
+- targetJobTitles: Job titles mentioned in testimonials or "who it's for" sections
+- targetGeographies: Regions/countries they serve
+- notableClients: Company names from customer logos or case studies
 
-=== 6. SOCIAL PROOF ===
-- notableClients: Recognizable customer names
-- customerCount: Total customer base (if mentioned)
-- caseStudies: Success story summaries
-- testimonialThemes: What customers say
-- awards: Industry recognition
-- certifications: Relevant certs (SOC2, ISO, etc.)
+=== VALUE PROPOSITION ===
+- problemSolved: The problem they claim to solve (use their words)
+- uniqueDifferentiator: What they say makes them different (ONLY if explicitly stated)
+- keyBenefits: Benefits they list
+- typicalResults: Specific results/stats they claim (with numbers)
 
-=== 7. COMPETITIVE LANDSCAPE ===
-- directCompetitors: Main alternatives mentioned
-- competitorWeaknesses: Where competitors fall short (if stated)
-- ourAdvantages: Why they're better vs alternatives
-- replacementNarrative: What solutions customers typically switch FROM (if mentioned)
-
-=== 8. SALES PROCESS ===
-- salesCycleLength: Typical time to close (if mentioned)
-- typicalBuyingProcess: How customers buy
-- decisionMakers: Who signs off
-- implementationTimeline: Time to go live
-- onboardingProcess: How they get started
-- supportChannels: How customers get help
-
-=== 9. BRAND VOICE ===
-- brandPersonality: Traits (Professional, Bold, Innovative, etc.)
+=== BRAND VOICE ===
+- brandPersonality: Traits evident from their writing style
 - formalityLevel: Very formal, Professional, Friendly, or Casual
 
-CRITICAL EXTRACTION RULES - NEVER INVENT INFORMATION:
-1. ONLY extract information that is EXPLICITLY stated on the website
-2. If you cannot find information for a field, OMIT IT ENTIRELY - do not guess or infer
-3. NEVER fabricate, invent, or assume information that isn't clearly present
-4. Be SPECIFIC - use exact words/phrases from the website
-5. For arrays, only include items actually found (don't pad with guesses)
-6. Confidence score should be 0-30 if you're inferring, 70-100 only if explicitly stated
-7. When in doubt, LEAVE IT OUT - missing data is better than wrong data
-8. Use direct quotes where possible for brand voice fields
-
-Return a FLAT JSON structure:
+Return JSON structure:
 {
   "data": {
-    "companyName": "...",
-    "businessType": "...",
-    "productCatalog": ["specific product 1", "specific product 2"],
-    ...only fields you found on the website...
+    "companyName": "Acme Corp",
+    "industry": "Construction",
+    "uniqueDifferentiator": null,  // NOT FOUND - don't invent!
+    ...
   },
   "confidence": {
-    "companyName": 95,
-    "businessType": 80,
-    ...0-100 score based on how explicitly the info was stated...
+    "companyName": 98,
+    "industry": 85,
+    ...
   }
 }
 
-DO NOT nest fields inside category objects. Use EXACT field names as top-level keys.
-NEVER INVENT OR GUESS. Only return what you can prove from the website content.`;
+REMEMBER: null values are CORRECT when information is not on the page.
+NEVER use phrases like "based on my knowledge" or "typically" - only use the page content.`;
+
+// ICP-focused extraction prompt for second pass
+const ICP_EXTRACTION_PROMPT = `You are extracting TARGET CUSTOMER (ICP) information from a website.
+
+Look for these specific ICP signals on the page:
+1. "Who we serve" / "Our customers" / "Built for" sections
+2. Customer logos - extract the company NAMES you can identify
+3. Case studies - note the INDUSTRY and COMPANY SIZE of featured customers
+4. Testimonials - extract the JOB TITLES of people quoted
+5. Pricing tiers - descriptions often reveal target customer ("Best for teams of 50+")
+6. Industry-specific language or terminology
+
+STRICT RULES:
+- ONLY extract what is explicitly stated on the page
+- For customer logos, only list companies whose names you can clearly read
+- If you cannot find ICP information, return null - do NOT guess
+
+Extract:
+- targetIndustries: Array of industries explicitly mentioned as served
+- targetCompanySizes: Array of company sizes (startup, SMB, mid-market, enterprise)
+- targetJobTitles: Job titles from testimonials or "who it's for" text
+- notableClients: Company names from logos or case studies (only names you can read)
+- idealCustomerDescription: Their explicit ICP statement if they have one
+- buyingTriggers: Events that trigger purchase (if mentioned)
+
+Return JSON:
+{
+  "data": {
+    "targetIndustries": ["Healthcare", "Finance"],
+    "targetJobTitles": ["CTO", "VP Engineering"],
+    "notableClients": "Acme Corp, Beta Inc",
+    ...
+  },
+  "confidence": {
+    "targetIndustries": 90,
+    "targetJobTitles": 75,
+    ...
+  }
+}
+
+If a field is not found, return null for that field. Do NOT invent customer information.`;
+
+// Critical fields that trigger gap questions if missing
+const CRITICAL_ICP_FIELDS: (keyof ExtractedCompanyData)[] = [
+    'idealCustomerDescription', 'targetIndustries', 'targetJobTitles',
+    'targetCompanySizes', 'problemSolved', 'uniqueDifferentiator'
+];
 
 export async function extractFromOnlinePresence(
     input: OnlinePresenceInput
 ): Promise<ExtractionResult> {
     console.log('[Extraction] Starting optimized extraction for:', input.websiteUrl);
     const startTime = Date.now();
+    const gaps: ExtractionGap[] = [];
 
     try {
         // Step 1: Parallel multi-page fetching
@@ -147,6 +161,7 @@ export async function extractFromOnlinePresence(
                 success: false,
                 data: {},
                 confidence: {} as any,
+                gaps: [],
                 sources: {},
                 error: 'Could not retrieve any content from website',
             };
@@ -156,29 +171,51 @@ export async function extractFromOnlinePresence(
         console.log('[Extraction] Step 2: Deep AI analysis with GPT-4o...');
         const extractionResult = await deepAIExtraction(websiteContent);
 
-        // Step 3: Optional Apollo enrichment for missing company data
-        console.log('[Extraction] Step 3: Checking for enrichment needs...');
-        const enrichedData = await enrichWithApollo(extractionResult.data, input.websiteUrl);
+        // Step 3: ICP-focused extraction pass
+        console.log('[Extraction] Step 3: ICP-focused extraction...');
+        const icpResult = await icpExtraction(websiteContent);
 
-        // Step 4: Web search for value proposition if missing
-        if (!enrichedData.uniqueDifferentiator && enrichedData.companyName) {
-            console.log('[Extraction] Step 4: Web search for insights...');
-            const webInsights = await searchForCompanyInsights(
-                enrichedData.companyName as string,
-                extractDomain(input.websiteUrl)
-            );
-            if (webInsights.differentiators) {
-                enrichedData.uniqueDifferentiator = webInsights.differentiators;
+        // Merge ICP data into main extraction (ICP pass takes priority for ICP fields)
+        const mergedData = { ...extractionResult.data };
+        const mergedConfidence = { ...extractionResult.confidence };
+
+        for (const [key, value] of Object.entries(icpResult.data)) {
+            if (value !== null && value !== undefined) {
+                (mergedData as any)[key] = value;
+                (mergedConfidence as any)[key] = (icpResult.confidence as any)[key] || 70;
+            }
+        }
+
+        // Step 4: Optional Apollo enrichment for missing company data
+        console.log('[Extraction] Step 4: Checking for enrichment needs...');
+        const enrichedData = await enrichWithApollo(mergedData, input.websiteUrl);
+
+        // Step 5: Identify gaps - fields we couldn't find (NO FABRICATION!)
+        console.log('[Extraction] Step 5: Identifying extraction gaps...');
+        for (const field of CRITICAL_ICP_FIELDS) {
+            const value = (enrichedData as any)[field];
+            const confidence = (mergedConfidence as any)[field] || 0;
+
+            const isEmpty = value === null || value === undefined || value === '' ||
+                (Array.isArray(value) && value.length === 0);
+
+            if (isEmpty || confidence < 50) {
+                gaps.push({
+                    field,
+                    reason: isEmpty ? 'not_found' : 'low_confidence',
+                    searchedPages: STRATEGIC_PATHS.map(p => `${input.websiteUrl}${p}`),
+                });
             }
         }
 
         const elapsed = Date.now() - startTime;
-        console.log(`[Extraction] Complete in ${elapsed}ms. Fields found: ${Object.keys(enrichedData).length}`);
+        console.log(`[Extraction] Complete in ${elapsed}ms. Fields found: ${Object.keys(enrichedData).length}, Gaps: ${gaps.length}`);
 
         return {
             success: true,
             data: enrichedData,
-            confidence: extractionResult.confidence,
+            confidence: mergedConfidence,
+            gaps, // Return gaps so they can be used for follow-up questions
             sources: {
                 website: {
                     url: input.websiteUrl,
@@ -192,6 +229,7 @@ export async function extractFromOnlinePresence(
             success: false,
             data: {},
             confidence: {} as any,
+            gaps: [],
             sources: {},
             error: error instanceof Error ? error.message : 'Unknown extraction error',
         };
@@ -280,6 +318,40 @@ async function deepAIExtraction(content: string): Promise<{ data: ExtractedCompa
     return { data, confidence };
 }
 
+// ICP-focused extraction: Second pass specifically for target customer information
+async function icpExtraction(content: string): Promise<{ data: Partial<ExtractedCompanyData>; confidence: Record<string, number> }> {
+    const openai = getOpenAI();
+    const startTime = Date.now();
+
+    console.log('[Extraction] ICP extraction: Analyzing for target customer info...');
+
+    try {
+        const result = await openai.chat.completions.create({
+            model: 'gpt-4o',
+            messages: [
+                { role: 'system', content: ICP_EXTRACTION_PROMPT },
+                { role: 'user', content: `Extract ICP/target customer information from this website content:\n\n${content}` },
+            ],
+            response_format: { type: 'json_object' },
+            temperature: 0.2, // Lower temperature for more precise extraction
+            max_tokens: 2000,
+        });
+
+        console.log(`[Extraction] ICP extraction complete in ${Date.now() - startTime}ms`);
+
+        const parsed = JSON.parse(result.choices[0]?.message?.content || '{}');
+        const data = parsed.data || {};
+        const confidence = parsed.confidence || {};
+
+        console.log('[Extraction] ICP fields extracted:', Object.keys(data).filter(k => data[k] !== null).join(', '));
+
+        return { data, confidence };
+    } catch (error) {
+        console.error('[Extraction] ICP extraction failed:', error);
+        return { data: {}, confidence: {} };
+    }
+}
+
 // Apollo enrichment for company data
 async function enrichWithApollo(data: ExtractedCompanyData, websiteUrl: string): Promise<ExtractedCompanyData> {
     const needsEnrichment = !data.employeeCount || !data.industry;
@@ -313,36 +385,8 @@ async function enrichWithApollo(data: ExtractedCompanyData, websiteUrl: string):
     return data;
 }
 
-// Web search for company insights
-async function searchForCompanyInsights(
-    companyName: string,
-    domain: string
-): Promise<{ news?: string; differentiators?: string }> {
-    console.log('[Extraction] Web search for:', companyName);
-
-    try {
-        const openai = getOpenAI();
-        const result = await openai.chat.completions.create({
-            model: 'gpt-4o',
-            messages: [
-                {
-                    role: 'system',
-                    content: 'Based on your knowledge, provide brief insights about this company. What makes them unique? Any notable achievements?'
-                },
-                {
-                    role: 'user',
-                    content: `Company: ${companyName}\nWebsite: ${domain}\n\nReturn JSON: { "differentiators": "what makes them unique", "news": "any notable news" }`
-                },
-            ],
-            response_format: { type: 'json_object' },
-            temperature: 0.5,
-        });
-
-        return JSON.parse(result.choices[0]?.message?.content || '{}');
-    } catch {
-        return {};
-    }
-}
+// NOTE: searchForCompanyInsights was REMOVED - it was fabricating content
+// If we can't find info on the website, we track it as a gap for user input
 
 // Helper: Normalize URL
 function normalizeUrl(url: string): string {

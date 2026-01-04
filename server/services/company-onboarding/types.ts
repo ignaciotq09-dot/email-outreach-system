@@ -85,10 +85,18 @@ export interface ExtractedCompanyData {
     currentChallenges?: string;
 }
 
+// Tracks fields that couldn't be extracted from the website
+export interface ExtractionGap {
+    field: keyof ExtractedCompanyData;
+    reason: 'not_found' | 'low_confidence' | 'ambiguous';
+    searchedPages?: string[];
+}
+
 export interface ExtractionResult {
     success: boolean;
     data: ExtractedCompanyData;
     confidence: Record<keyof ExtractedCompanyData, number>; // 0-100 for each field
+    gaps: ExtractionGap[]; // Fields that couldn't be extracted
     sources: {
         website?: {
             url: string;

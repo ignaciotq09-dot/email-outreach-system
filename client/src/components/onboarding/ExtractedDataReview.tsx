@@ -231,7 +231,12 @@ export function ExtractedDataReview({ data, confidence, onComplete, onBack }: Ex
                                             </div>
                                         ) : field.isArray ? (
                                             <div className="flex flex-wrap gap-1">
-                                                {(value as string[]).map((item: string, i: number) => (
+                                                {(Array.isArray(value)
+                                                    ? value
+                                                    : typeof value === 'string'
+                                                        ? value.split(',').map(s => s.trim()).filter(Boolean)
+                                                        : []
+                                                ).map((item: string, i: number) => (
                                                     <Badge key={i} variant="secondary">{item}</Badge>
                                                 ))}
                                             </div>

@@ -62,6 +62,13 @@ export const companyProfiles = pgTable("company_profiles", {
     dataSource: varchar("data_source", { length: 50 }).default('manual'), // 'ai_extracted', 'manual', 'hybrid'
     extractionConfidence: integer("extraction_confidence"), // 0-100 overall confidence
 
+    // Extraction gaps - fields that couldn't be found on the website
+    extractionGaps: jsonb("extraction_gaps").$type<Array<{
+        field: string;
+        reason: 'not_found' | 'low_confidence' | 'ambiguous';
+        searchedPages?: string[];
+    }>>(),
+
     // Field-level validation status (tracks which fields user validated with thumbs up/down)
     validatedFields: jsonb("validated_fields").$type<Record<string, {
         validated: boolean;

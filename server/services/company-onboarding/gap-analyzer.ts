@@ -1,6 +1,6 @@
 // Gap analyzer - identifies missing fields and generates targeted questions
 
-import type { ExtractedCompanyData, GapQuestion } from './types';
+import type { ExtractedCompanyData, GapQuestion, ExtractionGap } from './types';
 
 // Required fields with their priority and minimum confidence threshold
 // Only ask for CRITICAL sales info - don't burden user with unnecessary questions
@@ -176,11 +176,38 @@ const fieldRequirements: Partial<Record<keyof ExtractedCompanyData, {
 
 export function analyzeGaps(
     extractedData: ExtractedCompanyData,
-    confidenceScores: Record<keyof ExtractedCompanyData, number>
+    confidenceScores: Record<keyof ExtractedCompanyData, number>,
+    extractionGaps: ExtractionGap[] = [] // Gaps explicitly identified during extraction
 ): GapQuestion[] {
     const gaps: GapQuestion[] = [];
+    const processedFields = new Set<string>();
 
+    // FIRST: Add gaps from extraction (these are definitive - not found on website)
+    // These take priority because we KNOW they weren't found
+    for (const extractionGap of extractionGaps) {
+        const requirements = fieldRequirements[extractionGap.field];
+        if (requirements && requirements.priority !== 'low') {
+            gaps.push({
+                id: `gap_${extractionGap.field}`,
+                field: extractionGap.field,
+                question: requirements.question,
+                type: requirements.type,
+                options: requirements.options,
+                helpText: extractionGap.reason === 'not_found'
+                    ? 'This information was not found on your website.'
+                    : requirements.helpText,
+                required: requirements.priority === 'critical',
+                priority: requirements.priority,
+            });
+            processedFields.add(extractionGap.field);
+        }
+    }
+
+    // THEN: Add confidence-based gaps (existing logic)
+    // Skip fields already added from extractionGaps
     for (const [field, requirements] of Object.entries(fieldRequirements)) {
+        if (processedFields.has(field)) continue; // Skip already processed
+
         const key = field as keyof ExtractedCompanyData;
         const value = extractedData[key];
         const confidence = confidenceScores[key] || 0;
@@ -210,6 +237,7 @@ export function analyzeGaps(
     // If we have too few questions, add some medium priority ones
     if (gaps.length < 5) {
         for (const [field, requirements] of Object.entries(fieldRequirements)) {
+            if (processedFields.has(field)) continue; // Skip already processed
             if (requirements.priority === 'medium') {
                 const key = field as keyof ExtractedCompanyData;
                 const value = extractedData[key];
@@ -244,9 +272,10 @@ export function analyzeGaps(
 
 export function getGapQuestions(
     extractedData: ExtractedCompanyData,
-    confidenceScores: Record<keyof ExtractedCompanyData, number>
+    confidenceScores: Record<keyof ExtractedCompanyData, number>,
+    extractionGaps: ExtractionGap[] = []
 ): GapQuestion[] {
-    return analyzeGaps(extractedData, confidenceScores);
+    return analyzeGaps(extractedData, confidenceScores, extractionGaps);
 }
 
 export function hasRequiredGaps(gaps: GapQuestion[]): boolean {

@@ -4,7 +4,7 @@ import { db } from '../../db';
 import { companyProfiles } from '@shared/schemas/company-profile-schema';
 import { eq } from 'drizzle-orm';
 import type { CompanyProfile, InsertCompanyProfile, UpdateCompanyProfile } from '@shared/schemas/company-profile-schema';
-import type { ExtractedCompanyData, ValidatedFields } from './types';
+import type { ExtractedCompanyData, ValidatedFields, ExtractionGap } from './types';
 
 export async function saveCompanyProfile(
     userId: number,
@@ -69,12 +69,14 @@ export async function markOnboardingComplete(userId: number): Promise<CompanyPro
 export async function saveExtractedData(
     userId: number,
     extractedData: ExtractedCompanyData,
-    overallConfidence: number
+    overallConfidence: number,
+    extractionGaps: ExtractionGap[] = [] // Gaps identified during extraction
 ): Promise<CompanyProfile> {
     return saveCompanyProfile(userId, {
         dataSource: 'ai_extracted',
         extractionConfidence: overallConfidence,
         onboardingStep: 'validation',
+        extractionGaps, // Store gaps for later use in gap questions
 
         // Map extracted data to profile fields
         companyName: extractedData.companyName,
@@ -188,15 +190,38 @@ export async function saveGapAnswers(
         throw new Error('No existing profile to update with gap answers');
     }
 
+    // Parse array fields from comma-separated strings
+    const parseArray = (value: any): string[] | undefined => {
+        if (Array.isArray(value)) return value;
+        if (typeof value === 'string' && value.trim()) {
+            return value.split(',').map(s => s.trim()).filter(Boolean);
+        }
+        return undefined;
+    };
+
+    // Fields that should be arrays
+    const arrayFields = new Set([
+        'productCatalog', 'keyFeatures', 'useCases', 'integrations',
+        'productTiers', 'billingOptions', 'targetCompanySizes', 'targetIndustries',
+        'targetJobTitles', 'targetGeographies', 'buyingTriggers', 'keyBenefits',
+        'caseStudies', 'testimonialThemes', 'certifications', 'directCompetitors',
+        'decisionMakers', 'brandPersonality', 'productsServices', 'pricingModel',
+        'commonObjections', 'desiredLeadAction'
+    ]);
+
     const updates: Partial<InsertCompanyProfile> = {
         dataSource: existing.dataSource === 'ai_extracted' ? 'hybrid' : existing.dataSource,
         onboardingStep: 'review',
     };
 
-    // Map answers to profile fields
+    // Map answers to profile fields, parsing arrays as needed
     for (const [key, value] of Object.entries(answers)) {
         if (value !== undefined && value !== null && value !== '') {
-            (updates as any)[key] = value;
+            if (arrayFields.has(key)) {
+                (updates as any)[key] = parseArray(value);
+            } else {
+                (updates as any)[key] = value;
+            }
         }
     }
 
