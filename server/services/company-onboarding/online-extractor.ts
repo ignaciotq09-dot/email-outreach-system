@@ -29,107 +29,174 @@ function getOpenAI(): OpenAI {
     return new OpenAI({ apiKey });
 }
 
-// HYBRID EXTRACTION PROMPT - 32 Essential Fields with ICP Priority
-const COMPREHENSIVE_EXTRACTION_PROMPT = `You are extracting company information for B2B sales outreach. Focus on TARGET CUSTOMER (ICP) data above all else.
+// QUALITY-FOCUSED EXTRACTION PROMPT - Universal for All Industries
+const COMPREHENSIVE_EXTRACTION_PROMPT = `You are extracting ACTIONABLE company information for B2B sales outreach.
 
-EXTRACTION PRIORITY:
-🔴 TIER 1 (CRITICAL): Must extract if available
-🟡 TIER 2 (HIGH VALUE): Important for personalization  
-🟢 TIER 3 (NICE TO HAVE): Extract if easily found
+🎯 CORE PRINCIPLE: Extract what the company DOES/BUILDS/SELLS, not internal programs or corporate values.
 
-=== 🔴 TIER 1: CRITICAL FIELDS (12 fields) ===
+=== CONTENT SOURCE PRIORITY ===
+The website has different sections with different value:
+
+🔴 HIGH-VALUE SECTIONS (Extract from these FIRST):
+- Homepage hero section (first thing visitors see)
+- "What We Do" / "Services" / "Solutions" pages
+- "Products" page
+- "Portfolio" / "Projects" page
+- Main value proposition statements
+
+🟡 MEDIUM-VALUE SECTIONS (Use for context):
+- "About Us" page (first paragraphs only)
+- "Industries" / "Who We Serve" pages
+- Case studies / testimonials
+
+🔴 LOW-VALUE SECTIONS (Usually NOT core business):
+- Safety programs / compliance sections
+- Company culture / values pages
+- Careers / recruiting sections
+- Team bios / leadership pages
+- News / blog / press releases
+
+⚠️ CRITICAL EXTRACTION RULES ⚠️
+
+For businessDescription:
+❌ DO NOT extract from: safety programs, culture statements, values, mission statements
+✅ MUST describe: What they BUILD / CREATE / SELL / DELIVER to clients
+✅ MUST include: Specific nouns (products, services, project types, solutions)
+✅ MUST use: Action verbs (build, create, provide, manufacture, develop, design)
+
+WRONG Examples (Generic Corporate Speak):
+❌ "We are committed to excellence and innovation"
+❌ "Focused on creating a culture of safety and integrity"
+❌ "Passionate about delivering value to stakeholders"
+❌ "Dedicated to our employees and communities"
+
+RIGHT Examples (Specific Business Descriptions):
+✅ "Full-service general contractor building commercial offices, healthcare facilities, and high-rise residential projects"
+✅ "Cloud-based HR software platform for mid-market companies with 50-500 employees"
+✅ "Industrial automation equipment manufacturer specializing in robotic assembly systems"
+✅ "Management consulting firm providing strategy and operations consulting to Fortune 500 companies"
+
+For problemSolved / valueProp:
+❌ DO NOT focus on: Employee safety, workplace culture, internal processes
+✅ MUST focus on: CLIENT PROBLEMS and CLIENT BENEFITS
+✅ MUST describe: What customers GET from working with this company
+
+WRONG Examples (Internal/Employee-Focused):
+❌ "Protecting the wellbeing of our employees and subcontractors"
+❌ "Creating a safe and inclusive workplace"
+❌ "Supporting our team's professional development"
+
+RIGHT Examples (Client-Facing Value):
+✅ "Delivering construction projects on-time and on-budget with minimal client disruption"
+✅ "Reducing HR admin time by 10 hours per week through automated onboarding"
+✅ "Increasing manufacturing output by 30% with custom automation solutions"
+
+=== EXTRACTION GUIDELINES ===
+
+🔴 TIER 1: CRITICAL (12 fields)
 
 1. COMPANY IDENTITY (4 fields)
-   - companyName: Official name (from logo, header, footer)
-   - industry: Primary industry (use THEIR words, not generic labels)
-   - businessDescription: What they do in 1-2 sentences (their exact wording)
-   - employeeCount: Team size if mentioned (1-10, 11-50, 51-200, 201-500, 500+)
+   - companyName: Official name from logo/header
+   - industry: Primary industry (use THEIR terminology)
+   - businessDescription: 1-2 sentences describing what they DO/BUILD/SELL
+     * MUST include action verbs
+     * MUST include specific offerings
+     * MUST NOT be culture/values statement
+   - employeeCount: Team size if mentioned
 
 2. PRODUCTS & SERVICES (3 fields)
-   - primaryOffering: Main product/service they sell
-   - productsServices: Array of ALL specific offerings/tiers/packages
-   - pricingModel: How they charge (subscription, per-seat, usage-based, project-based, etc.)
+   - primaryOffering: Main thing they sell/do
+   - productsServices: Array of specific offerings
+   - pricingModel: How they charge (subscription, project-based, per-unit, etc.)
 
-3. TARGET CUSTOMERS - ICP ⭐⭐⭐ THIS IS MOST IMPORTANT ⭐⭐⭐ (5 fields)
-   LOOK FOR THESE ICP SIGNALS:
-   a) Explicit statements: "Built for", "Who we serve", "Our ideal customer"
-   b) Customer logos: Extract company NAMES you can read
-   c) Case studies: Note industries and company sizes
-   d) Testimonials: Extract job titles of quoted people
-   e) Pricing tiers: "Best for teams of 50+", "Enterprise plan", etc.
+3. TARGET CUSTOMERS - ICP ⭐ (5 fields)
+   Look for: "Who we serve", customer logos, case studies, testimonials, pricing tier descriptions
    
-   - idealCustomerDescription: Their explicit ICP statement (1-2 sentences)
-   - targetJobTitles: Job titles from testimonials/quotes/case studies
-   - targetCompanySizes: [Startups, Small Business (1-50), Mid-Market (51-500), Enterprise (500+)]
-   - targetIndustries: Industries explicitly mentioned as served
-   - notableClients: Company names from logos or case studies (only names you can read)
+   - idealCustomerDescription: Their explicit ICP statement
+   - targetJobTitles: Job titles from testimonials/quotes
+   - targetCompanySizes: [Startups, Small Business, Mid-Market, Enterprise]
+   - targetIndustries: Industries they serve
+   - notableClients: Company names from logos/case studies
 
-=== 🟡 TIER 2: HIGH VALUE (12 fields) ===
+🟡 TIER 2: HIGH VALUE (12 fields)
 
 4. PRICING (3 fields)
-   - typicalDealSize: Price range or tier (Under $500, $500-2K, $2K-10K, $10K+)
-   - productTiers: Names of pricing tiers/plans
-   - typicalResults: ONLY if specific numbers/stats shown (e.g., "Clients save average of $50K")
+   - typicalDealSize: Price range if mentioned
+   - productTiers: Names of plans/tiers
+   - typicalResults: ONLY if specific numbers/stats shown
 
 5. VALUE PROPOSITION (4 fields)
-   - problemSolved: What pain/problem they address (use their words)
-   - uniqueDifferentiator: What makes them different (ONLY if explicitly stated)
-   - keyBenefits: Top 3-5 benefits they claim
-   - proofPoints: Metrics, stats, awards, certifications mentioned
+   - problemSolved: What CLIENT PROBLEM they address
+   - uniqueDifferentiator: What makes them different (only if explicitly stated)
+   - keyBenefits: Top 3-5 CLIENT BENEFITS they claim
+   - proofPoints: Metrics, awards, certifications
 
 6. SALES CONTEXT (3 fields)
-   - salesCycleLength: How long typical sale takes (if mentioned)
-   - targetGeographies: Regions/countries they serve
-   - buyingTriggers: Events that trigger purchase (ONLY if explicitly mentioned)
+   - salesCycleLength: Purchase timeline if mentioned
+   - targetGeographies: Regions/countries served
+   - buyingTriggers: Events triggering purchase (rarely stated)
 
 7. BRAND VOICE (2 fields)
-   - brandPersonality: Up to 3 traits from: Professional, Friendly, Expert, Innovative, Bold, Warm, Practical, Premium
+   - brandPersonality: Up to 3 traits (Professional, Friendly, Expert, Bold, etc.)
    - formalityLevel: Very Formal | Professional | Friendly | Casual
 
-=== 🟢 TIER 3: NICE TO HAVE (8 fields) ===
+🟢 TIER 3: NICE TO HAVE (8 fields)
 
 8. SOCIAL PROOF (2 fields)
-   - customerCount: Total customers/users if mentioned
-   - caseStudies: Titles/names of case studies (not full content)
+   - customerCount: Total customers if mentioned
+   - caseStudies: Titles of case studies
 
 9. PRODUCT DETAILS (3 fields)
-   - keyFeatures: Top 5 features/capabilities
-   - useCases: Specific use cases described
+   - keyFeatures: Top 5 features
+   - useCases: Specific use cases
    - headquarters: Company location
 
 10. COMPETITIVE (3 fields)
-    - directCompetitors: Competitors mentioned by name
-    - awards: Industry awards won
-    - certifications: Compliance/security certifications
+    - directCompetitors: Competitors mentioned
+    - awards: Industry awards
+    - certifications: Compliance certifications
 
-=== EXTRACTION RULES ===
-✅ Extract ONLY what is explicitly written
-✅ Return null if field not found - DO NOT GUESS
-✅ For ICP fields, provide citations (where you found it)
-✅ Confidence scores: 90-100 = exact quote, 70-89 = clear statement, <70 = weak/should be null
+=== QUALITY SELF-CHECK ===
+
+Before finalizing, ask yourself:
+
+1. businessDescription:
+   ✓ Does it describe what they BUILD/CREATE/SELL?
+   ✓ Would I know their offering after reading this?
+   ✓ Does it have ACTION VERBS and SPECIFIC NOUNS?
+   ✗ Is it just corporate values or culture statements?
+
+2. problemSolved:
+   ✓ Does it describe a CLIENT PROBLEM?
+   ✓ Is it something prospects would care about?
+   ✗ Is it about employee safety or internal culture?
+
+3. Overall:
+   ✓ Is this information useful for sales outreach?
+   ✓ Could I customize an email based on this data?
+
+If you answered NO to any check, RE-READ the website and extract better information.
 
 Return JSON:
 {
   "data": {
-    "companyName": "Acme Corp",
-    "industry": "B2B SaaS",
-    "idealCustomerDescription": "Mid-market sales teams with 50-200 employees",
-    "targetJobTitles": ["VP Sales", "Sales Director", "Head of Revenue"],
+    "companyName": "...",
+    "industry": "...",
+    "businessDescription": "...",
     ...
   },
   "confidence": {
-    "companyName": 98,
-    "idealCustomerDescription": 85,
+    "companyName": 95,
+    "businessDescription": 85,
     ...
   },
   "citations": {
-    "idealCustomerDescription": "About page: 'Built for mid-market sales teams looking to scale outreach'",
-    "targetJobTitles": "Testimonials section shows quotes from VP Sales at 3 companies",
+    "businessDescription": "From homepage hero: '...'",
     ...
   }
 }
 
-REMEMBER: ICP data (Tier 1 #3) is THE MOST IMPORTANT. Spend extra effort finding target customer information.`;
+REMEMBER: Prioritize hero/services sections. Avoid extracting from culture/safety/values pages for core business info.`;
 
 // ICP-focused extraction prompt for second pass
 const ICP_EXTRACTION_PROMPT = `You are extracting TARGET CUSTOMER (ICP) information from a website.
