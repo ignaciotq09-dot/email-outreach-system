@@ -116,6 +116,9 @@ export interface ExtractionResult {
         };
     };
     error?: string;
+    // Quality metadata
+    qualityScore?: number;  // 0-100 extraction quality score
+    needsReview?: boolean;  // Flag for human review
 }
 
 export interface ValidationSection {

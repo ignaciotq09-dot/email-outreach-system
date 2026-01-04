@@ -1,8 +1,10 @@
-// HYBRID AI-powered extraction from website
-// Option C: Single comprehensive extraction + conditional ICP gap-filling + brand summary
+// PRODUCTION-QUALITY AI-powered extraction from website
+// Full quality stack: HTML parsing -> Extraction -> Validation -> Self-Review -> Fallback
 
 import OpenAI from 'openai';
 import type { OnlinePresenceInput, ExtractionResult, ExtractedCompanyData, ExtractionGap } from './types';
+import { validateExtraction, calculateQualityScore, getQualityAssessment } from './extraction-validator';
+import { selfReviewExtraction, applyImprovements } from './self-review';
 
 // Strategic paths to fetch for maximum info
 const STRATEGIC_PATHS = [
@@ -308,10 +310,56 @@ export async function extractFromOnlinePresence(
         console.log('[Extraction] Step 6: Checking for Apollo enrichment needs...');
         const enrichedData = await enrichWithApollo(finalData, input.websiteUrl);
 
-        // Step 7: Identify gaps - fields we couldn't find
-        console.log('[Extraction] Step 7: Identifying extraction gaps...');
+        // Step 7: QUALITY VALIDATION - Check for generic phrases, action verbs, etc.
+        console.log('[Extraction] Step 7: Validating extraction quality...');
+        let validation = validateExtraction(enrichedData);
+        console.log(`[Extraction] Quality Score: ${validation.score}/100 - ${getQualityAssessment(validation.score)}`);
+
+        if (validation.issues.length > 0) {
+            console.log('[Extraction] Quality issues detected:');
+            validation.issues.forEach(issue => {
+                console.log(`  - [${issue.severity.toUpperCase()}] ${issue.field}: ${issue.message}`);
+            });
+        }
+
+        // Step 8: AI SELF-REVIEW - If quality is low, have AI improve its extraction
+        let reviewedData = enrichedData;
+        let selfReviewPerformed = false;
+
+        if (validation.score < 70 && validation.issues.length > 0) {
+            console.log('[Extraction] Step 8: Triggering AI self-review to improve quality...');
+            try {
+                const reviewResult = await selfReviewExtraction(enrichedData, websiteContent, validation);
+
+                if (reviewResult.fieldsImproved.length > 0) {
+                    reviewedData = applyImprovements(enrichedData, reviewResult.improved);
+                    selfReviewPerformed = true;
+                    console.log(`[Extraction] Self-review improved ${reviewResult.fieldsImproved.length} fields:`);
+                    reviewResult.fieldsImproved.forEach(field => console.log(`  - ${field}`));
+                    console.log(`[Extraction] Quality improved: ${reviewResult.originalScore} -> ${reviewResult.newScore}`);
+
+                    // Re-validate after improvements
+                    validation = validateExtraction(reviewedData);
+                }
+            } catch (error) {
+                console.error('[Extraction] Self-review failed:', error);
+                // Continue with original data
+            }
+        } else {
+            console.log('[Extraction] Step 8: Quality is good - skipping self-review');
+        }
+
+        // Step 9: FALLBACK FLAG - Flag for human review if still problematic
+        const needsHumanReview = validation.needsReview || validation.score < 50;
+        if (needsHumanReview) {
+            console.log('[Extraction] ⚠️  FLAGGED FOR HUMAN REVIEW - Quality still below threshold');
+            console.log(`[Extraction] Suggestions: ${validation.suggestions.join('; ')}`);
+        }
+
+        // Step 10: Identify gaps - fields we couldn't find
+        console.log('[Extraction] Step 10: Identifying extraction gaps...');
         for (const field of CRITICAL_ICP_FIELDS) {
-            const value = (enrichedData as any)[field];
+            const value = (reviewedData as any)[field];
             const confidence = (finalConfidence as any)[field] || 0;
 
             const isEmpty = value === null || value === undefined || value === '' ||
@@ -327,23 +375,27 @@ export async function extractFromOnlinePresence(
         }
 
         const elapsed = Date.now() - startTime;
-        console.log(`[Extraction] HYBRID COMPLETE in ${elapsed}ms`);
-        console.log(`[Extraction] - Fields found: ${Object.keys(enrichedData).filter(k => (enrichedData as any)[k]).length}/32`);
-        console.log(`[Extraction] - ICP Quality: ${(icpQuality * 100).toFixed(0)}%`);
-        console.log(`[Extraction] - Brand Summary: ${brandSummary ? 'Generated' : 'Skipped'}`);
+        console.log(`[Extraction] ✅ PRODUCTION EXTRACTION COMPLETE in ${elapsed}ms`);
+        console.log(`[Extraction] - Fields found: ${Object.keys(reviewedData).filter(k => (reviewedData as any)[k]).length}/32`);
+        console.log(`[Extraction] - Quality Score: ${validation.score}/100`);
+        console.log(`[Extraction] - Self-Review: ${selfReviewPerformed ? 'Performed' : 'Not needed'}`);
+        console.log(`[Extraction] - Human Review: ${needsHumanReview ? 'NEEDED' : 'Not needed'}`);
         console.log(`[Extraction] - Gaps: ${gaps.length}`);
 
         return {
             success: true,
-            data: enrichedData,
+            data: reviewedData,
             confidence: finalConfidence as Record<keyof ExtractedCompanyData, number>,
-            gaps, // Return gaps so they can be used for follow-up questions
+            gaps,
             sources: {
                 website: {
                     url: input.websiteUrl,
                     pagesAnalyzed: STRATEGIC_PATHS.slice(0, 5),
                 },
             },
+            // Add quality metadata
+            qualityScore: validation.score,
+            needsReview: needsHumanReview,
         };
     } catch (error) {
         console.error('[Extraction] Error:', error);
