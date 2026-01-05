@@ -191,7 +191,9 @@ Return JSON:
   },
   "confidence": {
     "companyName": 95,
+    "industry": 80,
     "businessDescription": 85,
+    // MUST provide confidence (0-100) for EVERY field in "data"
     ...
   },
   "citations": {

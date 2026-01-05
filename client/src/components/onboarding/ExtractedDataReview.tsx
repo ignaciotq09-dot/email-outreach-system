@@ -179,7 +179,12 @@ export function ExtractedDataReview({ data, confidence, onComplete, onBack }: Ex
                                 const value = getValue(field.key);
                                 if (!value) return null;
 
-                                const fieldConfidence = confidence[field.key] || 0;
+                                const rawConfidence = confidence[field.key] || 0;
+                                // FAILSAFE: If we have a value but confidence is 0/undefined, treat as "Estimated" (70%)
+                                // This prevents showing "0% confident" for populated fields
+                                const safeConfidence = rawConfidence === 0 ? 70 : rawConfidence;
+                                const isEstimated = rawConfidence === 0;
+
                                 const isEditing = editingField === field.key;
 
                                 return (
@@ -187,8 +192,8 @@ export function ExtractedDataReview({ data, confidence, onComplete, onBack }: Ex
                                         <div className="flex items-start justify-between gap-2 mb-1">
                                             <span className="text-sm font-medium text-muted-foreground">{field.label}</span>
                                             <div className="flex items-center gap-2">
-                                                <Badge variant="secondary" className={getConfidenceColor(fieldConfidence)}>
-                                                    {fieldConfidence}% confident
+                                                <Badge variant="secondary" className={getConfidenceColor(safeConfidence)}>
+                                                    {safeConfidence}% {isEstimated ? '(Estimated)' : 'confident'}
                                                 </Badge>
                                                 {!validatedSections[section.id] && !isEditing && (
                                                     <Button
