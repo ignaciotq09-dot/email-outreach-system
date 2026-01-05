@@ -499,6 +499,20 @@ async function deepAIExtraction(content: string): Promise<{ data: ExtractedCompa
     console.log('[Extraction] Fields extracted:', Object.keys(data).length);
     console.log('[Extraction] Fields:', Object.keys(data).join(', '));
 
+    // FIX: Set default confidence (75%) for fields that have data but no confidence score
+    // This prevents showing 0% when AI simply didn't include confidence for a field
+    for (const key of Object.keys(data)) {
+        const value = data[key];
+        const hasValue = value !== null && value !== undefined &&
+            (typeof value !== 'string' || value.length > 0) &&
+            (!Array.isArray(value) || value.length > 0);
+
+        if (hasValue && (confidence[key] === undefined || confidence[key] === null)) {
+            confidence[key] = 75; // Default confidence for extracted data
+            console.log(`[Extraction] Set default confidence 75% for: ${key}`);
+        }
+    }
+
     // ANTI-HALLUCINATION: Quick validation for high-risk fields
     const HIGH_RISK_FIELDS = [
         'uniqueDifferentiator', 'typicalResults', 'competitorWeaknesses',
