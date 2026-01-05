@@ -70,13 +70,15 @@ export async function saveExtractedData(
     userId: number,
     extractedData: ExtractedCompanyData,
     overallConfidence: number,
-    extractionGaps: ExtractionGap[] = [] // Gaps identified during extraction
+    extractionGaps: ExtractionGap[] = [],
+    fieldConfidence: Record<string, number> = {} // Per-field confidence scores
 ): Promise<CompanyProfile> {
     return saveCompanyProfile(userId, {
         dataSource: 'ai_extracted',
         extractionConfidence: overallConfidence,
+        fieldConfidence, // Save per-field confidence
         onboardingStep: 'validation',
-        extractionGaps, // Store gaps for later use in gap questions
+        extractionGaps,
 
         // Map extracted data to profile fields
         companyName: extractedData.companyName,

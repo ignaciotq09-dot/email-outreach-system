@@ -154,9 +154,9 @@ export function registerCompanyOnboardingRoutes(app: Express) {
                 console.log('[API] Overall confidence:', overallConfidence);
                 console.log('[API] Extraction gaps:', result.gaps?.length || 0);
 
-                // Save extracted data with gaps
-                await saveExtractedData(userId, result.data, overallConfidence, result.gaps || []);
-                console.log('[API] Data saved to database');
+                // Save extracted data with gaps AND per-field confidence
+                await saveExtractedData(userId, result.data, overallConfidence, result.gaps || [], result.confidence || {});
+                console.log('[API] Data saved to database with per-field confidence');
             }
 
             // Return result including gaps so UI can show what wasn't found

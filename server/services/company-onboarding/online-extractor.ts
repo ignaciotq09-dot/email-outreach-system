@@ -761,6 +761,19 @@ Return JSON with data and confidence for each field.`;
         const data = parsed.data || {};
         const confidence = parsed.confidence || {};
 
+        // FIX: Set default confidence (75%) for ICP fields with data but no confidence
+        for (const key of Object.keys(data)) {
+            const value = data[key];
+            const hasValue = value !== null && value !== undefined &&
+                (typeof value !== 'string' || value.length > 0) &&
+                (!Array.isArray(value) || value.length > 0);
+
+            if (hasValue && (confidence[key] === undefined || confidence[key] === null)) {
+                confidence[key] = 75; // Default confidence for ICP data
+                console.log(`[ICP Gap-Filling] Set default confidence 75% for: ${key}`);
+            }
+        }
+
         console.log('[ICP Gap-Filling] Found fields:', Object.keys(data).filter(k => data[k]).join(', '));
 
         return { data, confidence };

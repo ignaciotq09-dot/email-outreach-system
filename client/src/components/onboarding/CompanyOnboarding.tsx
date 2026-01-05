@@ -26,34 +26,82 @@ export function CompanyOnboarding({ onComplete }: CompanyOnboardingProps) {
     const [extractionResult, setExtractionResult] = useState<ExtractionResult | null>(null);
     const [extractionError, setExtractionError] = useState<string | null>(null);
 
-    // Fetch current onboarding status
+    // Fetch current onboarding status and profile
     const { data: status } = useQuery<OnboardingStatus>({
         queryKey: ['/api/onboarding/company/status'],
     });
 
-    // Update step based on saved status
-    // Reset intermediate steps that require prior extraction data when starting fresh
+    const { data: profileResponse } = useQuery<{ profile: any }>({
+        queryKey: ['/api/onboarding/company/profile'],
+        enabled: !!status?.hasProfile
+    });
+
+    // Update step based on saved status and restore data
     useEffect(() => {
         if (status?.currentStep && status.currentStep !== 'not_started') {
-            // These steps require data from a previous extraction that may not exist in current state
-            // Reset to presence_check to start fresh
-            // NOTE: 'validation' step needs extractionResult state which is lost on reload
+            // Restore state from profile if available
+            if (profileResponse?.profile) {
+                const profile = profileResponse.profile;
+
+                // If we're in validation step or later, restore extraction result
+                if (['validation', 'gap_questions', 'manual_questionnaire', 'review'].includes(status.currentStep)) {
+                    // Reconstruct extraction result from profile
+                    // This fixes the issue where data is lost on refresh
+                    const restoredData = {
+                        // Business Identity
+                        companyName: profile.companyName,
+                        businessType: profile.businessType,
+                        industry: profile.industry,
+                        tagline: profile.tagline,
+                        businessDescription: profile.businessDescription,
+
+                        // Products & Services
+                        productsServices: profile.productsServices,
+                        typicalDealSize: profile.typicalDealSize,
+
+                        // Target Customers
+                        idealCustomerDescription: profile.idealCustomerDescription,
+                        targetJobTitles: profile.targetJobTitles,
+                        targetIndustries: profile.targetIndustries,
+
+                        // Value Prop
+                        problemSolved: profile.problemSolved,
+                        uniqueDifferentiator: profile.uniqueDifferentiator,
+                        typicalResults: profile.typicalResults,
+
+                        // Brand Voice
+                        brandPersonality: profile.brandPersonality,
+                        formalityLevel: profile.formalityLevel,
+                    };
+
+                    setExtractionResult({
+                        success: true,
+                        data: restoredData as any,
+                        confidence: profile.fieldConfidence || {}, // Restore per-field confidence
+                        gaps: profile.extractionGaps || [],
+                        sources: []
+                    });
+
+                    setStep(status.currentStep as OnboardingStep);
+                    setHasOnlinePresence(true);
+                    return;
+                }
+            }
+
+            // Normal flow fallback
             const intermediateSteps = ['ai_extraction', 'validation', 'gap_questions'];
 
-            if (intermediateSteps.includes(status.currentStep)) {
-                // Start fresh - user needs to go through the flow again
+            if (intermediateSteps.includes(status.currentStep) && !extractionResult) {
+                // Only reset if we couldn't restore data
                 setStep('presence_check');
                 setHasOnlinePresence(null);
             } else if (status.currentStep === 'manual_questionnaire') {
-                // Manual flow - start at questionnaire but set flag
                 setStep('manual_questionnaire');
                 setHasOnlinePresence(false);
             } else if (status.currentStep === 'url_input') {
-                // Was at URL input - continue from there
                 setStep('url_input');
                 setHasOnlinePresence(true);
             } else if (status.currentStep === 'review') {
-                // Review step - should have data for this
                 setStep('review');
             } else {
                 setStep(status.currentStep as OnboardingStep);
@@ -62,7 +110,7 @@ export function CompanyOnboarding({ onComplete }: CompanyOnboardingProps) {
         if (status?.complete) {
             setStep('complete');
         }
-    }, [status]);
+    }, [status, profileResponse]);
 
     // Get gap questions
     const { data: gapData } = useQuery<{ gaps: GapQuestion[] }>({
