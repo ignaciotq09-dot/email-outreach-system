@@ -1,10 +1,12 @@
 // PRODUCTION-QUALITY AI-powered extraction from website
-// Full quality stack: HTML parsing -> Extraction -> Validation -> Self-Review -> Fallback
+// Full quality stack: Enhanced Fetching -> HTML parsing -> Extraction -> Validation -> Self-Review -> Fallback
 
 import OpenAI from 'openai';
 import type { OnlinePresenceInput, ExtractionResult, ExtractedCompanyData, ExtractionGap } from './types';
 import { validateExtraction, calculateQualityScore, getQualityAssessment } from './extraction-validator';
+import { validateExtractionEnhanced, calculateICPScore, getEnhancedAssessment } from './enhanced-validator';
 import { selfReviewExtraction, applyImprovements } from './self-review';
+import { fetchEnhancedWebContent, structuredDataToFields, extractJobTitlesFromTestimonials } from './enhanced-fetcher';
 
 // Strategic paths to fetch for maximum info
 const STRATEGIC_PATHS = [
