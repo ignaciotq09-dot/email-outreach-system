@@ -256,7 +256,23 @@ export function ExtractedDataReview({ data, confidence, onComplete, onBack }: Ex
                     <ArrowLeft className="w-4 h-4 mr-2" />
                     Back
                 </Button>
-                <Button onClick={onComplete} disabled={!allValidated}>
+                <Button
+                    onClick={() => {
+                        if (allValidated) {
+                            onComplete();
+                        } else {
+                            // Validate all remaining sections
+                            sections.forEach(section => {
+                                if (!validatedSections[section.id]) {
+                                    section.fields.forEach(field => {
+                                        validateMutation.mutate({ field: field.key, isCorrect: true });
+                                    });
+                                    setValidatedSections(prev => ({ ...prev, [section.id]: true }));
+                                }
+                            });
+                        }
+                    }}
+                >
                     {allValidated ? 'Continue' : 'Validate All Sections'}
                     <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
