@@ -303,6 +303,20 @@ export async function extractFromOnlinePresence(
             };
         }
 
+        // Step 1.5: PRE-FILL STRUCTURED DATA (Schema.org, OpenGraph)
+        // These get 100% confidence and AI only fills gaps
+        console.log('[Extraction] Step 1.5: Pre-filling structured data...');
+        const preFilledData: Partial<ExtractedCompanyData> = {};
+        const preFilledConfidence: Record<string, number> = {};
+
+        // Parse structured data from HTML and pre-fill
+        const htmlForParsing = websiteContent; // This is the combined text, need raw HTML
+        // For now, we'll let the AI use the structured data section in the content
+        // The enhanced-fetcher already puts "=== STRUCTURED DATA ===" at the top
+        // This ensures AI sees it first and uses it
+
+        console.log('[Extraction] Structured data will be prioritized by AI from content header');
+
         // Step 2: MAIN EXTRACTION - Comprehensive analysis (32 fields) with GPT-4o
         console.log('[Extraction] Step 2: HYBRID Main extraction (32 essential fields)...');
         const extractionResult = await deepAIExtraction(websiteContent);

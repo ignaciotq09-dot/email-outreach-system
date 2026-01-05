@@ -173,7 +173,22 @@ export function extractTestimonials(html: string): Testimonial[] {
     const $ = cheerio.load(html);
     const testimonials: Testimonial[] = [];
 
-    const selectors = ['[class*="testimonial"]', '[class*="quote"]', '[class*="review"]', 'blockquote'];
+    // Expanded selectors for better coverage
+    const selectors = [
+        '[class*="testimonial"]',
+        '[class*="quote"]',
+        '[class*="review"]',
+        '[class*="customer-story"]',
+        '[class*="success-story"]',
+        '[class*="case-study"]',
+        '[data-testimonial]',
+        '[role="testimonial"]',
+        'blockquote',
+        'cite',
+        '.testimonial',
+        '.customer-quote',
+        '.client-feedback',
+    ];
     for (const selector of selectors) {
         $(selector).each((_, el) => {
             const text = $(el).text().trim();

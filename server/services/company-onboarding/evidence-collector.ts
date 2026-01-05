@@ -412,7 +412,7 @@ export function validateCitations(
         const quoteLower = citation.quote.toLowerCase().trim();
 
         // Skip very short quotes (too easy to match accidentally)
-        if (quoteLower.length < 10) continue;
+        if (quoteLower.length < 30) continue;
 
         // Check if quote exists in HTML (fuzzy match - allow for whitespace differences)
         const normalizedQuote = quoteLower.replace(/\s+/g, ' ').slice(0, 100); // First 100 chars
