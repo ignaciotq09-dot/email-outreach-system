@@ -119,6 +119,12 @@ export interface ExtractionResult {
     // Quality metadata
     qualityScore?: number;  // 0-100 extraction quality score
     needsReview?: boolean;  // Flag for human review
+    // Evidence-based confidence tiers
+    evidenceTiers?: {
+        verified: (keyof ExtractedCompanyData)[];
+        needsReview: (keyof ExtractedCompanyData)[];
+        askQuestion: (keyof ExtractedCompanyData)[];
+    };
 }
 
 export interface ValidationSection {

@@ -180,10 +180,20 @@ export function ExtractedDataReview({ data, confidence, onComplete, onBack }: Ex
                                 if (!value) return null;
 
                                 const rawConfidence = confidence[field.key] || 0;
-                                // FAILSAFE: If we have a value but confidence is 0/undefined, treat as "Estimated" (70%)
-                                // This prevents showing "0% confident" for populated fields
-                                const safeConfidence = rawConfidence === 0 ? 70 : rawConfidence;
-                                const isEstimated = rawConfidence === 0;
+
+                                // Calculate tier based on confidence score
+                                // 90 = Verified, 70 = Needs Review, 0 = Ask Question (hidden)
+                                const tier = rawConfidence >= 90 ? 'verified'
+                                    : rawConfidence >= 70 ? 'needs_review'
+                                        : 'ask_question';
+
+                                const tierConfig = {
+                                    verified: { label: '✓ Verified', className: 'bg-green-100 text-green-800 border-green-300' },
+                                    needs_review: { label: '⚠ Needs Review', className: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
+                                    ask_question: { label: '? Please Confirm', className: 'bg-gray-100 text-gray-600 border-gray-300' },
+                                };
+
+                                const { label: tierLabel, className: tierClassName } = tierConfig[tier];
 
                                 const isEditing = editingField === field.key;
 
@@ -192,8 +202,8 @@ export function ExtractedDataReview({ data, confidence, onComplete, onBack }: Ex
                                         <div className="flex items-start justify-between gap-2 mb-1">
                                             <span className="text-sm font-medium text-muted-foreground">{field.label}</span>
                                             <div className="flex items-center gap-2">
-                                                <Badge variant="secondary" className={getConfidenceColor(safeConfidence)}>
-                                                    {safeConfidence}% {isEstimated ? '(Estimated)' : 'confident'}
+                                                <Badge variant="outline" className={tierClassName}>
+                                                    {tierLabel}
                                                 </Badge>
                                                 {!validatedSections[section.id] && !isEditing && (
                                                     <Button
