@@ -179,18 +179,19 @@ export function ExtractedDataReview({ data, confidence, onComplete, onBack }: Ex
                                 const value = getValue(field.key);
                                 if (!value) return null;
 
-                                const rawConfidence = confidence[field.key] || 0;
+                                const rawConfidence = confidence[field.key];
 
-                                // Calculate tier based on confidence score
-                                // 90 = Verified, 70 = Needs Review, 0 = Ask Question (hidden)
-                                const tier = rawConfidence >= 90 ? 'verified'
-                                    : rawConfidence >= 70 ? 'needs_review'
-                                        : 'ask_question';
+                                // Tier logic:
+                                // - 90+ = Verified (green) - high evidence backing
+                                // - 0-89 OR undefined = Needs Review (yellow) - user should check
+                                // NO "Please Confirm" tier - fields with truly no evidence go to SmartQuestions
+                                const tier = rawConfidence !== undefined && rawConfidence >= 90
+                                    ? 'verified'
+                                    : 'needs_review';
 
                                 const tierConfig = {
                                     verified: { label: '✓ Verified', className: 'bg-green-100 text-green-800 border-green-300' },
                                     needs_review: { label: '⚠ Needs Review', className: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
-                                    ask_question: { label: '? Please Confirm', className: 'bg-gray-100 text-gray-600 border-gray-300' },
                                 };
 
                                 const { label: tierLabel, className: tierClassName } = tierConfig[tier];
