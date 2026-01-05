@@ -213,19 +213,60 @@ export function extractPricing(html: string): PricingData | null {
     const $ = cheerio.load(html);
     const tiers: PricingTier[] = [];
 
-    const selectors = ['[class*="pricing"] [class*="plan"]', '[class*="pricing"] [class*="card"]'];
+    // Method 1: CSS selectors for pricing cards
+    const selectors = [
+        '[class*="pricing"] [class*="plan"]',
+        '[class*="pricing"] [class*="card"]',
+        '[class*="pricing"] [class*="tier"]',
+        '[class*="plan-card"]',
+        '[class*="price-card"]',
+        'table[class*="pricing"] tr',
+    ];
+
     for (const selector of selectors) {
         $(selector).each((_, el) => {
-            const name = $(el).find('h2, h3, [class*="name"]').first().text().trim();
-            const price = $(el).find('[class*="price"]').first().text().trim();
+            const name = $(el).find('h2, h3, [class*="name"], th').first().text().trim();
+            const price = $(el).find('[class*="price"], td:has($)').first().text().trim();
             const targetText = $(el).text().toLowerCase();
             let targetAudience: string | undefined;
             if (targetText.includes('enterprise')) targetAudience = 'Enterprise';
             else if (targetText.includes('startup')) targetAudience = 'Startups';
-            else if (targetText.includes('small business')) targetAudience = 'Small Business';
+            else if (targetText.includes('small business') || targetText.includes('smb')) targetAudience = 'Small Business';
+            else if (targetText.includes('team')) targetAudience = 'Teams';
+            else if (targetText.includes('individual') || targetText.includes('personal')) targetAudience = 'Individual';
 
             if (name || price) tiers.push({ name: name || 'Unknown', price, targetAudience });
         });
+    }
+
+    // Method 2: Regex pattern matching for prices in text (fallback)
+    if (tiers.length === 0) {
+        const fullText = $('body').text();
+
+        // Pattern: $XX or $XX/month or $XX per month
+        const pricePatterns = [
+            /\$(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)\s*(?:\/|\s*per\s*)?(month|mo|year|yr|user|seat)?/gi,
+            /starting\s+(?:at\s+)?\$(\d+)/gi,
+            /from\s+\$(\d+)/gi,
+            /(\$\d+(?:,\d{3})*(?:\.\d{2})?)\s*(?:-|to)\s*(\$\d+(?:,\d{3})*(?:\.\d{2})?)/gi, // Price ranges
+        ];
+
+        const prices: string[] = [];
+        for (const pattern of pricePatterns) {
+            const matches = fullText.match(pattern);
+            if (matches) {
+                prices.push(...matches.slice(0, 5)); // Limit to 5 matches per pattern
+            }
+        }
+
+        // If we found prices, add them as tiers
+        const uniquePrices = Array.from(new Set(prices));
+        for (let i = 0; i < Math.min(uniquePrices.length, 4); i++) {
+            tiers.push({
+                name: `Tier ${i + 1}`,
+                price: uniquePrices[i],
+            });
+        }
     }
 
     if (tiers.length > 0) {
