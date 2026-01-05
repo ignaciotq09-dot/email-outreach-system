@@ -62,7 +62,9 @@ export const companyProfiles = pgTable("company_profiles", {
     // === METADATA ===
     dataSource: varchar("data_source", { length: 50 }).default('manual'), // 'ai_extracted', 'manual', 'hybrid'
     extractionConfidence: integer("extraction_confidence"), // 0-100 overall confidence
-    fieldConfidence: jsonb("field_confidence").$type<Record<string, number>>(), // Per-field confidence scores (0-100)
+    // NOTE: Per-field confidence is calculated in-memory during extraction via evidence-collector.ts
+    //       We don't store it in DB because the column doesn't exist and migration is problematic
+
 
     // Extraction gaps - fields that couldn't be found on the website
     extractionGaps: jsonb("extraction_gaps").$type<Array<{

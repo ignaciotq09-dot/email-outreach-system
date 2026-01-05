@@ -7,9 +7,8 @@ import { validateExtraction, calculateQualityScore, getQualityAssessment } from 
 import { validateExtractionEnhanced, calculateICPScore, getEnhancedAssessment } from './enhanced-validator';
 import { selfReviewExtraction, applyImprovements } from './self-review';
 import { fetchEnhancedWebContent, structuredDataToFields, extractJobTitlesFromTestimonials } from './enhanced-fetcher';
-// Evidence-based confidence system
-import { collectAllEvidence, getFieldsNeedingQuestions, type EvidenceCollection, type ConfidenceTier } from './evidence-collector';
-import { calculateAllConfidence, toLegacyConfidence, type ConfidenceResults } from './confidence-calculator';
+// Binary per-field confidence system
+import { calculatePerFieldConfidence, toNumericConfidence } from './evidence-collector';
 
 // Strategic paths to fetch for maximum info
 const STRATEGIC_PATHS = [
@@ -395,36 +394,28 @@ export async function extractFromOnlinePresence(
         console.log(`[Extraction] - Self-Review: ${selfReviewPerformed ? 'Performed' : 'Not needed'}`);
         console.log(`[Extraction] - Human Review: ${needsHumanReview ? 'NEEDED' : 'Not needed'}`);
         console.log(`[Extraction] - Gaps: ${gaps.length}`);
+        // Step 11: BINARY PER-FIELD CONFIDENCE SCORING
+        console.log('[Extraction] Step 11: Calculating per-field confidence...');
+        const perFieldConfidence = calculatePerFieldConfidence(reviewedData, websiteContent);
 
-        // Step 11: EVIDENCE-BASED CONFIDENCE SCORING
-        console.log('[Extraction] Step 11: Calculating evidence-based confidence...');
-        const evidenceCollection = collectAllEvidence(reviewedData, websiteContent);
-        const confidenceResults = calculateAllConfidence(evidenceCollection, reviewedData);
+        // Convert to numeric format for API response
+        const numericConfidence = toNumericConfidence(perFieldConfidence);
 
-        console.log(`[Extraction] Evidence-based tiers:`);
-        console.log(`  - Verified: ${confidenceResults.verifiedCount} fields`);
-        console.log(`  - Needs Review: ${confidenceResults.needsReviewCount} fields`);
-        console.log(`  - Ask Question: ${confidenceResults.askQuestionCount} fields`);
+        // Log individual field results
+        const verifiedFields = Object.entries(perFieldConfidence)
+            .filter(([_, data]) => data.tier === 'verified')
+            .map(([field, data]) => `${field} (${data.source})`);
+        const reviewFields = Object.entries(perFieldConfidence)
+            .filter(([_, data]) => data.tier === 'needs_review')
+            .map(([field]) => field);
 
-        // Convert to legacy confidence format for backward compatibility
-        const evidenceBasedConfidence = toLegacyConfidence(confidenceResults);
-
-        // Add ask_question fields to gaps (so SmartQuestions can generate questions)
-        for (const result of confidenceResults.askQuestion) {
-            const alreadyInGaps = gaps.some(g => g.field === result.field);
-            if (!alreadyInGaps) {
-                gaps.push({
-                    field: result.field,
-                    reason: result.value ? 'low_confidence' : 'not_found',
-                    searchedPages: STRATEGIC_PATHS.map(p => `${input.websiteUrl}${p}`),
-                });
-            }
-        }
+        console.log(`[Extraction] ✓ Verified (${verifiedFields.length}): ${verifiedFields.join(', ')}`);
+        console.log(`[Extraction] ⚠ Needs Review (${reviewFields.length}): ${reviewFields.join(', ')}`);
 
         return {
             success: true,
             data: reviewedData,
-            confidence: evidenceBasedConfidence as Record<keyof ExtractedCompanyData, number>,
+            confidence: numericConfidence as Record<keyof ExtractedCompanyData, number>,
             gaps,
             sources: {
                 website: {
@@ -435,12 +426,6 @@ export async function extractFromOnlinePresence(
             // Add quality metadata
             qualityScore: validation.score,
             needsReview: needsHumanReview,
-            // NEW: Evidence metadata for frontend
-            evidenceTiers: {
-                verified: confidenceResults.verified.map(r => r.field),
-                needsReview: confidenceResults.needsReview.map(r => r.field),
-                askQuestion: confidenceResults.askQuestion.map(r => r.field),
-            },
         } as ExtractionResult;
     } catch (error) {
         console.error('[Extraction] Error:', error);

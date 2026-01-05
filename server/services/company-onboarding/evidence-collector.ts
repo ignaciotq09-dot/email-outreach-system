@@ -1,430 +1,223 @@
-// Evidence-based confidence scoring system
-// Collects hard evidence for each extracted field to calculate reliable confidence scores
+// Binary Per-Field Evidence Scoring
+// Each field is individually scored: Verified if hard evidence, Needs Review if AI-inferred
 
 import * as cheerio from 'cheerio';
 import type { ExtractedCompanyData } from './types';
 
 // ============ TYPES ============
 
-export type EvidenceType = 'structured_data' | 'exact_match' | 'semantic' | 'external_api' | 'multiple_sources';
-export type ConfidenceTier = 'verified' | 'needs_review' | 'ask_question';
-
-export interface EvidenceSource {
-    type: EvidenceType;
-    location: string;      // e.g., "homepage <title>", "schema.org Organization.name"
-    rawText: string;       // Exact text found
-    points: number;        // Confidence points for this source
-}
+export type ConfidenceTier = 'verified' | 'needs_review';
 
 export interface FieldEvidence {
     field: keyof ExtractedCompanyData;
-    value: any;            // The extracted value
-    sources: EvidenceSource[];
-    totalPoints: number;
+    value: any;
     tier: ConfidenceTier;
+    source: string;  // Where we found it (for debugging/display)
 }
 
-export interface EvidenceCollection {
-    fields: Record<string, FieldEvidence>;
-    structuredData: StructuredDataResult;
-    metaTags: MetaTagsResult;
-}
-
-export interface StructuredDataResult {
-    organization?: {
-        name?: string;
-        description?: string;
-        industry?: string;
-        url?: string;
-        logo?: string;
-        foundingDate?: string;
-        numberOfEmployees?: string;
-        address?: any;
+export interface PerFieldConfidence {
+    [field: string]: {
+        score: number;  // 100 = verified, 50 = needs_review
+        tier: ConfidenceTier;
+        source: string;
     };
-    product?: {
-        name?: string;
-        description?: string;
-        offers?: any;
-    };
-    localBusiness?: any;
-    website?: any;
-    raw?: any[];
 }
 
-export interface MetaTagsResult {
+// ============ STRUCTURED DATA EXTRACTION ============
+
+interface StructuredData {
+    companyName?: string;
+    description?: string;
+    industry?: string;
+}
+
+interface MetaTags {
     title?: string;
     description?: string;
     ogTitle?: string;
     ogDescription?: string;
-    ogType?: string;
     ogSiteName?: string;
-    twitterTitle?: string;
-    twitterDescription?: string;
-    keywords?: string;
 }
 
-// ============ POINT VALUES ============
-
-const EVIDENCE_POINTS = {
-    STRUCTURED_DATA: 35,      // Schema.org JSON-LD
-    EXACT_MATCH: 40,          // Found verbatim in HTML
-    MULTIPLE_SOURCES: 15,     // Found on multiple pages
-    SEMANTIC: 10,             // AI inferred from context
-    EXTERNAL_API: 30,         // Apollo or other external source
-} as const;
-
-const TIER_THRESHOLDS = {
-    VERIFIED: 75,
-    NEEDS_REVIEW: 40,
-} as const;
-
-// ============ STRUCTURED DATA EXTRACTION ============
-
-/**
- * Extracts structured data (Schema.org JSON-LD) from HTML
- */
-export function extractStructuredData(html: string): StructuredDataResult {
+function extractStructuredData(html: string): StructuredData {
     const $ = cheerio.load(html);
-    const result: StructuredDataResult = { raw: [] };
+    const result: StructuredData = {};
 
-    // Find all JSON-LD scripts
+    // Find Schema.org JSON-LD
     $('script[type="application/ld+json"]').each((_, element) => {
         try {
-            const jsonText = $(element).html();
-            if (!jsonText) return;
-
-            const data = JSON.parse(jsonText);
-            result.raw!.push(data);
-
-            // Handle @graph structure
+            const data = JSON.parse($(element).html() || '');
             const items = data['@graph'] || [data];
 
             for (const item of items) {
-                const type = item['@type'];
-
-                if (type === 'Organization' || type === 'Corporation' || type === 'LocalBusiness') {
-                    result.organization = {
-                        name: item.name,
-                        description: item.description,
-                        industry: item.industry,
-                        url: item.url,
-                        logo: item.logo?.url || item.logo,
-                        foundingDate: item.foundingDate,
-                        numberOfEmployees: item.numberOfEmployees?.value,
-                        address: item.address,
-                    };
-                    if (type === 'LocalBusiness') {
-                        result.localBusiness = item;
-                    }
-                }
-
-                if (type === 'Product' || type === 'Service') {
-                    result.product = {
-                        name: item.name,
-                        description: item.description,
-                        offers: item.offers,
-                    };
-                }
-
-                if (type === 'WebSite') {
-                    result.website = item;
+                if (['Organization', 'Corporation', 'LocalBusiness'].includes(item['@type'])) {
+                    result.companyName = item.name;
+                    result.description = item.description;
+                    result.industry = item.industry;
                 }
             }
-        } catch (e) {
-            // Invalid JSON, skip
-        }
+        } catch (e) { /* ignore invalid JSON */ }
     });
 
     return result;
 }
 
-/**
- * Extracts meta tags (OG, Twitter, standard)
- */
-export function extractMetaTags(html: string): MetaTagsResult {
+function extractMetaTags(html: string): MetaTags {
     const $ = cheerio.load(html);
 
     return {
         title: $('title').text().trim() || undefined,
-        description: $('meta[name="description"]').attr('content')?.trim() || undefined,
-        ogTitle: $('meta[property="og:title"]').attr('content')?.trim() || undefined,
-        ogDescription: $('meta[property="og:description"]').attr('content')?.trim() || undefined,
-        ogType: $('meta[property="og:type"]').attr('content')?.trim() || undefined,
-        ogSiteName: $('meta[property="og:site_name"]').attr('content')?.trim() || undefined,
-        twitterTitle: $('meta[name="twitter:title"]').attr('content')?.trim() || undefined,
-        twitterDescription: $('meta[name="twitter:description"]').attr('content')?.trim() || undefined,
-        keywords: $('meta[name="keywords"]').attr('content')?.trim() || undefined,
+        description: $('meta[name="description"]').attr('content')?.trim(),
+        ogTitle: $('meta[property="og:title"]').attr('content')?.trim(),
+        ogDescription: $('meta[property="og:description"]').attr('content')?.trim(),
+        ogSiteName: $('meta[property="og:site_name"]').attr('content')?.trim(),
     };
 }
 
-// ============ EVIDENCE COLLECTION ============
+// ============ BINARY EVIDENCE CHECK ============
 
 /**
- * Collects evidence for a specific field from the HTML and structured data
+ * Check if a value has hard evidence (not just AI inference)
+ * Returns: { verified: boolean, source: string }
  */
-export function collectFieldEvidence(
+function checkHardEvidence(
     field: keyof ExtractedCompanyData,
     value: any,
     html: string,
-    structuredData: StructuredDataResult,
-    metaTags: MetaTagsResult,
+    structuredData: StructuredData,
+    metaTags: MetaTags,
     apolloData?: any
-): FieldEvidence {
-    const sources: EvidenceSource[] = [];
+): { verified: boolean; source: string } {
 
     if (!value) {
-        return {
-            field,
-            value: null,
-            sources: [],
-            totalPoints: 0,
-            tier: 'ask_question',
-        };
+        return { verified: false, source: 'No value' };
     }
 
     const valueStr = String(value).toLowerCase().trim();
     const htmlLower = html.toLowerCase();
 
-    // Check structured data first (highest trust)
-    const structuredEvidence = checkStructuredDataForField(field, value, structuredData);
-    if (structuredEvidence) {
-        sources.push(structuredEvidence);
-    }
-
-    // Check meta tags
-    const metaEvidence = checkMetaTagsForField(field, value, metaTags);
-    if (metaEvidence) {
-        sources.push(metaEvidence);
-    }
-
-    // Check for exact text match in HTML
-    if (valueStr.length >= 3 && htmlLower.includes(valueStr)) {
-        sources.push({
-            type: 'exact_match',
-            location: 'HTML body',
-            rawText: String(value).slice(0, 100),
-            points: EVIDENCE_POINTS.EXACT_MATCH,
-        });
-    }
-
-    // Check Apollo data
-    if (apolloData) {
-        const apolloEvidence = checkApolloForField(field, value, apolloData);
-        if (apolloEvidence) {
-            sources.push(apolloEvidence);
+    // ===== CHECK 1: Schema.org Structured Data =====
+    if (field === 'companyName' && structuredData.companyName) {
+        const schemaName = structuredData.companyName.toLowerCase();
+        if (schemaName.includes(valueStr) || valueStr.includes(schemaName)) {
+            return { verified: true, source: 'Schema.org Organization.name' };
         }
     }
-
-    // If no hard evidence found, mark as semantic (AI inference)
-    if (sources.length === 0 && value) {
-        sources.push({
-            type: 'semantic',
-            location: 'AI inference',
-            rawText: String(value).slice(0, 100),
-            points: EVIDENCE_POINTS.SEMANTIC,
-        });
-    }
-
-    const totalPoints = sources.reduce((sum, s) => sum + s.points, 0);
-
-    return {
-        field,
-        value,
-        sources,
-        totalPoints,
-        tier: calculateTier(totalPoints, sources),
-    };
-}
-
-/**
- * Check if structured data contains evidence for a field
- */
-function checkStructuredDataForField(
-    field: keyof ExtractedCompanyData,
-    value: any,
-    data: StructuredDataResult
-): EvidenceSource | null {
-    const org = data.organization;
-    const valueStr = String(value).toLowerCase().trim();
-
-    const fieldMappings: Record<string, { source: any; location: string }> = {
-        companyName: { source: org?.name, location: 'Schema.org Organization.name' },
-        businessDescription: { source: org?.description, location: 'Schema.org Organization.description' },
-        industry: { source: org?.industry, location: 'Schema.org Organization.industry' },
-        employeeCount: { source: org?.numberOfEmployees, location: 'Schema.org numberOfEmployees' },
-    };
-
-    const mapping = fieldMappings[field];
-    if (mapping?.source) {
-        const sourceStr = String(mapping.source).toLowerCase().trim();
-        // Check if values are similar (allow for slight differences)
-        if (sourceStr.includes(valueStr) || valueStr.includes(sourceStr)) {
-            return {
-                type: 'structured_data',
-                location: mapping.location,
-                rawText: String(mapping.source).slice(0, 100),
-                points: EVIDENCE_POINTS.STRUCTURED_DATA,
-            };
+    if (field === 'businessDescription' && structuredData.description) {
+        const schemaDesc = structuredData.description.toLowerCase();
+        if (schemaDesc.includes(valueStr.slice(0, 50)) || valueStr.includes(schemaDesc.slice(0, 50))) {
+            return { verified: true, source: 'Schema.org description' };
         }
     }
+    if (field === 'industry' && structuredData.industry) {
+        return { verified: true, source: 'Schema.org industry' };
+    }
 
-    return null;
-}
-
-/**
- * Check if meta tags contain evidence for a field
- */
-function checkMetaTagsForField(
-    field: keyof ExtractedCompanyData,
-    value: any,
-    meta: MetaTagsResult
-): EvidenceSource | null {
-    const valueStr = String(value).toLowerCase().trim();
-
-    const fieldMappings: Record<string, { source?: string; location: string }[]> = {
-        companyName: [
-            { source: meta.title, location: '<title>' },
-            { source: meta.ogTitle, location: 'og:title' },
-            { source: meta.ogSiteName, location: 'og:site_name' },
-        ],
-        businessDescription: [
-            { source: meta.description, location: '<meta description>' },
-            { source: meta.ogDescription, location: 'og:description' },
-        ],
-    };
-
-    const mappings = fieldMappings[field];
-    if (mappings) {
-        for (const mapping of mappings) {
-            if (mapping.source) {
-                const sourceStr = mapping.source.toLowerCase().trim();
-                if (sourceStr.includes(valueStr) || valueStr.includes(sourceStr.slice(0, 50))) {
-                    return {
-                        type: 'exact_match',
-                        location: mapping.location,
-                        rawText: mapping.source.slice(0, 100),
-                        points: EVIDENCE_POINTS.EXACT_MATCH,
-                    };
-                }
+    // ===== CHECK 2: Meta Tags =====
+    if (field === 'companyName') {
+        if (metaTags.title && metaTags.title.toLowerCase().includes(valueStr)) {
+            return { verified: true, source: '<title> tag' };
+        }
+        if (metaTags.ogTitle && metaTags.ogTitle.toLowerCase().includes(valueStr)) {
+            return { verified: true, source: 'og:title' };
+        }
+        if (metaTags.ogSiteName && metaTags.ogSiteName.toLowerCase().includes(valueStr)) {
+            return { verified: true, source: 'og:site_name' };
+        }
+    }
+    if (field === 'businessDescription') {
+        if (metaTags.description && metaTags.description.length > 20) {
+            const metaDesc = metaTags.description.toLowerCase();
+            if (metaDesc.includes(valueStr.slice(0, 30)) || valueStr.includes(metaDesc.slice(0, 30))) {
+                return { verified: true, source: '<meta description>' };
             }
         }
-    }
-
-    return null;
-}
-
-/**
- * Check if Apollo data confirms a field
- */
-function checkApolloForField(
-    field: keyof ExtractedCompanyData,
-    value: any,
-    apollo: any
-): EvidenceSource | null {
-    const fieldMappings: Record<string, string[]> = {
-        companyName: ['name', 'organization_name'],
-        industry: ['industry', 'industries'],
-        employeeCount: ['employees', 'employee_count', 'estimated_num_employees'],
-        headquarters: ['city', 'state', 'country'],
-    };
-
-    const keys = fieldMappings[field];
-    if (!keys) return null;
-
-    for (const key of keys) {
-        if (apollo[key]) {
-            return {
-                type: 'external_api',
-                location: `Apollo API: ${key}`,
-                rawText: String(apollo[key]).slice(0, 100),
-                points: EVIDENCE_POINTS.EXTERNAL_API,
-            };
+        if (metaTags.ogDescription && metaTags.ogDescription.length > 20) {
+            return { verified: true, source: 'og:description' };
         }
     }
 
-    return null;
-}
-
-/**
- * Calculate confidence tier from points and sources
- */
-function calculateTier(totalPoints: number, sources: EvidenceSource[]): ConfidenceTier {
-    // Auto-verify if we have structured data or external API
-    const hasHighTrustSource = sources.some(
-        s => s.type === 'structured_data' || s.type === 'external_api'
-    );
-
-    if (hasHighTrustSource || totalPoints >= TIER_THRESHOLDS.VERIFIED) {
-        return 'verified';
+    // ===== CHECK 3: Apollo API =====
+    if (apolloData) {
+        if (field === 'companyName' && apolloData.name) {
+            return { verified: true, source: 'Apollo API' };
+        }
+        if (field === 'industry' && (apolloData.industry || apolloData.industries)) {
+            return { verified: true, source: 'Apollo API' };
+        }
+        if (field === 'employeeCount' && apolloData.employees) {
+            return { verified: true, source: 'Apollo API' };
+        }
     }
 
-    if (totalPoints >= TIER_THRESHOLDS.NEEDS_REVIEW) {
-        return 'needs_review';
+    // ===== CHECK 4: Exact Text Match (for short values) =====
+    // Only for short, specific fields where exact match is meaningful
+    const exactMatchFields = ['companyName', 'industry', 'headquarters', 'employeeCount'];
+    if (exactMatchFields.includes(field) && valueStr.length >= 3 && valueStr.length <= 50) {
+        if (htmlLower.includes(valueStr)) {
+            return { verified: true, source: 'Exact text match in HTML' };
+        }
     }
 
-    return 'ask_question';
+    // ===== No hard evidence found =====
+    return { verified: false, source: 'AI inference' };
 }
 
-// ============ MAIN COLLECTION FUNCTION ============
+// ============ MAIN FUNCTION ============
 
 /**
- * Collects evidence for all extracted fields
+ * Calculate per-field confidence for all extracted data
+ * Each field gets its own score based on evidence
  */
-export function collectAllEvidence(
+export function calculatePerFieldConfidence(
     extractedData: ExtractedCompanyData,
     html: string,
     apolloData?: any
-): EvidenceCollection {
+): PerFieldConfidence {
+
     const structuredData = extractStructuredData(html);
     const metaTags = extractMetaTags(html);
 
-    const fields: Record<string, FieldEvidence> = {};
+    const result: PerFieldConfidence = {};
 
-    // Collect evidence for each field that has a value
+    // Check each field individually
     for (const [field, value] of Object.entries(extractedData)) {
-        if (value !== undefined && value !== null) {
-            fields[field] = collectFieldEvidence(
-                field as keyof ExtractedCompanyData,
-                value,
-                html,
-                structuredData,
-                metaTags,
-                apolloData
-            );
-        }
+        if (value === undefined || value === null || value === '') continue;
+        if (Array.isArray(value) && value.length === 0) continue;
+
+        const evidence = checkHardEvidence(
+            field as keyof ExtractedCompanyData,
+            value,
+            html,
+            structuredData,
+            metaTags,
+            apolloData
+        );
+
+        result[field] = {
+            score: evidence.verified ? 100 : 50,
+            tier: evidence.verified ? 'verified' : 'needs_review',
+            source: evidence.source,
+        };
     }
 
-    return {
-        fields,
-        structuredData,
-        metaTags,
-    };
+    // Log for debugging
+    const verifiedCount = Object.values(result).filter(r => r.tier === 'verified').length;
+    const reviewCount = Object.values(result).filter(r => r.tier === 'needs_review').length;
+    console.log(`[EvidenceCollector] Per-field results: ${verifiedCount} verified, ${reviewCount} needs_review`);
+
+    return result;
 }
 
 /**
- * Gets all fields that should trigger questions (ask_question tier or missing critical fields)
+ * Convert per-field confidence to legacy format (Record<string, number>)
  */
-export function getFieldsNeedingQuestions(
-    evidence: EvidenceCollection,
-    criticalFields: (keyof ExtractedCompanyData)[]
-): (keyof ExtractedCompanyData)[] {
-    const needsQuestions: (keyof ExtractedCompanyData)[] = [];
-
-    // Check for ask_question tier fields
-    for (const [field, ev] of Object.entries(evidence.fields)) {
-        if (ev.tier === 'ask_question') {
-            needsQuestions.push(field as keyof ExtractedCompanyData);
-        }
+export function toNumericConfidence(perField: PerFieldConfidence): Record<string, number> {
+    const result: Record<string, number> = {};
+    for (const [field, data] of Object.entries(perField)) {
+        result[field] = data.score;
     }
-
-    // Check for missing critical fields
-    for (const field of criticalFields) {
-        if (!evidence.fields[field]) {
-            needsQuestions.push(field);
-        }
-    }
-
-    return Array.from(new Set(needsQuestions)); // Deduplicate
+    return result;
 }
 
-console.log('[EvidenceCollector] Module loaded');
+console.log('[EvidenceCollector] Binary per-field module loaded');
