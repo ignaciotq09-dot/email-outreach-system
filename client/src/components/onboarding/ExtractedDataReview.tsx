@@ -182,10 +182,9 @@ export function ExtractedDataReview({ data, confidence, onComplete, onBack }: Ex
                                 const rawConfidence = confidence[field.key];
 
                                 // Tier logic:
-                                // - 90+ = Verified (green) - high evidence backing
-                                // - 0-89 OR undefined = Needs Review (yellow) - user should check
-                                // NO "Please Confirm" tier - fields with truly no evidence go to SmartQuestions
-                                const tier = rawConfidence !== undefined && rawConfidence >= 90
+                                // - 80+ = Verified (green) - AI extraction typically scores 70-90%
+                                // - Below 80 OR undefined = Needs Review (yellow) - user should check
+                                const tier = rawConfidence !== undefined && rawConfidence >= 80
                                     ? 'verified'
                                     : 'needs_review';
 

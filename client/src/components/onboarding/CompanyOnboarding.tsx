@@ -74,10 +74,28 @@ export function CompanyOnboarding({ onComplete }: CompanyOnboardingProps) {
                         formalityLevel: profile.formalityLevel,
                     };
 
+                    // Restore confidence: prefer per-field, fallback to overall extraction confidence
+                    let restoredConfidence: Record<string, number> = {};
+
+                    if (profile.fieldConfidence && Object.keys(profile.fieldConfidence).length > 0) {
+                        // Use per-field confidence if available
+                        restoredConfidence = profile.fieldConfidence;
+                    } else if (profile.extractionConfidence && profile.extractionConfidence > 0) {
+                        // Fallback: use overall extraction confidence for all fields
+                        // This ensures AI-extracted data shows proper confidence badges
+                        const overallScore = profile.extractionConfidence;
+                        Object.keys(restoredData).forEach(key => {
+                            if ((restoredData as any)[key]) {
+                                restoredConfidence[key] = overallScore;
+                            }
+                        });
+                        console.log('[CompanyOnboarding] Using overall extraction confidence:', overallScore);
+                    }
+
                     setExtractionResult({
                         success: true,
                         data: restoredData as any,
-                        confidence: profile.fieldConfidence || {}, // Restore per-field confidence
+                        confidence: restoredConfidence,
                         gaps: profile.extractionGaps || [],
                         sources: []
                     });
