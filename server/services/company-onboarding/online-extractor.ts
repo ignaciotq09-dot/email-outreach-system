@@ -7,8 +7,8 @@ import { validateExtraction, calculateQualityScore, getQualityAssessment } from 
 import { validateExtractionEnhanced, calculateICPScore, getEnhancedAssessment } from './enhanced-validator';
 import { selfReviewExtraction, applyImprovements } from './self-review';
 import { fetchEnhancedWebContent, structuredDataToFields, extractJobTitlesFromTestimonials } from './enhanced-fetcher';
-// Binary per-field confidence system
-import { calculatePerFieldConfidence, toNumericConfidence } from './evidence-collector';
+// Binary per-field confidence system with citation validation
+import { calculatePerFieldConfidence, toNumericConfidence, validateCitations, Citation } from './evidence-collector';
 
 // Strategic paths to fetch for maximum info
 const STRATEGIC_PATHS = [
@@ -183,26 +183,53 @@ Before finalizing, ask yourself:
 
 If you answered NO to any check, RE-READ the website and extract better information.
 
+=== MANDATORY SOURCE CITATIONS ===
+
+⚠️ CRITICAL: For EVERY field you extract, you MUST provide:
+1. The VALUE you extracted
+2. The SOURCE (which page/section)
+3. The EXACT QUOTE from the page that justifies this value
+
+If you cannot provide an exact quote → return NULL for that field.
+NEVER guess or infer without explicit text on the page.
+
 Return JSON:
 {
   "data": {
-    "companyName": "...",
-    "industry": "...",
-    "businessDescription": "...",
+    "companyName": "Stripe",
+    "industry": "Financial Technology",
+    "businessDescription": "Payment infrastructure for the internet...",
     ...
   },
   "confidence": {
-    "companyName": 95,
-    "industry": 80,
-    "businessDescription": 85,
-    // MUST provide confidence (0-100) for EVERY field in "data"
+    "companyName": 100,
+    "industry": 90,
+    "businessDescription": 95,
     ...
   },
   "citations": {
-    "businessDescription": "From homepage hero: '...'",
-    ...
+    "companyName": {
+      "source": "Schema.org JSON-LD",
+      "quote": "Stripe, Inc."
+    },
+    "industry": {
+      "source": "homepage hero section",
+      "quote": "Financial infrastructure for the internet"
+    },
+    "businessDescription": {
+      "source": "og:description meta tag",
+      "quote": "Stripe is a technology company that builds economic infrastructure..."
+    }
+    // EVERY field in "data" MUST have a corresponding citation
+    // If you cannot quote source text, set the field to null in "data"
   }
 }
+
+STRICT ANTI-HALLUCINATION RULES:
+1. If you cannot quote exact text from the page → return null
+2. Never say "likely", "probably", "appears to be"
+3. Never invent information that isn't explicitly stated
+4. If unsure, return null - it's better to ask the user than to guess
 
 REMEMBER: Prioritize hero/services sections. Avoid extracting from culture/safety/values pages for core business info.`;
 
@@ -396,7 +423,11 @@ export async function extractFromOnlinePresence(
         console.log(`[Extraction] - Gaps: ${gaps.length}`);
         // Step 11: BINARY PER-FIELD CONFIDENCE SCORING
         console.log('[Extraction] Step 11: Calculating per-field confidence...');
-        const perFieldConfidence = calculatePerFieldConfidence(reviewedData, websiteContent);
+        let perFieldConfidence = calculatePerFieldConfidence(reviewedData, websiteContent);
+
+        // Step 12: CITATION VALIDATION - Upgrade fields with validated quotes
+        console.log('[Extraction] Step 12: Validating AI citations...');
+        perFieldConfidence = validateCitations(perFieldConfidence, extractionResult.citations, websiteContent);
 
         // Convert to numeric format for API response
         const numericConfidence = toNumericConfidence(perFieldConfidence);
@@ -492,7 +523,7 @@ async function fetchMultiplePages(url: string): Promise<string> {
 }
 
 // Deep AI extraction: Comprehensive analysis with GPT-4o for maximum information
-async function deepAIExtraction(content: string): Promise<{ data: ExtractedCompanyData; confidence: Record<string, number> }> {
+async function deepAIExtraction(content: string): Promise<{ data: ExtractedCompanyData; confidence: Record<string, number>; citations: Record<string, Citation> }> {
     const openai = getOpenAI();
     const startTime = Date.now();
 
@@ -515,10 +546,11 @@ async function deepAIExtraction(content: string): Promise<{ data: ExtractedCompa
     const parsed = JSON.parse(result.choices[0]?.message?.content || '{}');
     const data = parsed.data || {};
     const confidence = parsed.confidence || {};
-    const citations = parsed.citations || {};
+    const citations: Record<string, Citation> = parsed.citations || {};
 
     console.log('[Extraction] Fields extracted:', Object.keys(data).length);
     console.log('[Extraction] Fields:', Object.keys(data).join(', '));
+    console.log('[Extraction] Citations provided:', Object.keys(citations).length);
 
     // FIX: Set default confidence (75%) for fields that have data but no confidence score
     // This prevents showing 0% when AI simply didn't include confidence for a field
@@ -550,7 +582,8 @@ async function deepAIExtraction(content: string): Promise<{ data: ExtractedCompa
         if (fieldValue !== null && fieldValue !== undefined) {
             const shouldReject =
                 !fieldCitation ||
-                fieldCitation.length < 20 ||
+                !fieldCitation.quote ||
+                fieldCitation.quote.length < 20 ||
                 fieldConfidence < 70 ||
                 (typeof fieldValue === 'string' && (
                     fieldValue.toLowerCase().includes('typically') ||
@@ -561,7 +594,7 @@ async function deepAIExtraction(content: string): Promise<{ data: ExtractedCompa
                 ));
 
             if (shouldReject) {
-                console.warn(`[AntiHallucination] Rejecting "${field}": conf=${fieldConfidence}, citation=${!!fieldCitation}`);
+                console.warn(`[AntiHallucination] Rejecting "${field}": conf=${fieldConfidence}, citation=${!!fieldCitation?.quote}`);
                 (data as any)[field] = null;
                 confidence[field] = 0;
                 rejectedCount++;
@@ -573,7 +606,7 @@ async function deepAIExtraction(content: string): Promise<{ data: ExtractedCompa
         console.log(`[AntiHallucination] Rejected ${rejectedCount} high-risk fields to prevent fabrication`);
     }
 
-    return { data, confidence };
+    return { data, confidence, citations };
 }
 
 // ICP-focused extraction: Second pass specifically for target customer information

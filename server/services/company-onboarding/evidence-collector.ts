@@ -381,4 +381,77 @@ export function toNumericConfidence(perField: PerFieldConfidence): Record<string
     return result;
 }
 
+// ============ CITATION VALIDATION ============
+// Validates AI citations by checking if the quoted text exists in HTML
+// If validated, upgrades field from needs_review to verified
+
+export interface Citation {
+    source: string;
+    quote: string;
+}
+
+export function validateCitations(
+    perFieldConfidence: PerFieldConfidence,
+    citations: Record<string, Citation> | undefined,
+    html: string
+): PerFieldConfidence {
+    if (!citations) {
+        console.log('[CitationValidator] No citations provided, skipping validation');
+        return perFieldConfidence;
+    }
+
+    const htmlLower = html.toLowerCase();
+    const result = { ...perFieldConfidence };
+    let validatedCount = 0;
+    let invalidCount = 0;
+
+    for (const [field, citation] of Object.entries(citations)) {
+        if (!citation?.quote || typeof citation.quote !== 'string') continue;
+        if (!result[field]) continue;
+
+        const quoteLower = citation.quote.toLowerCase().trim();
+
+        // Skip very short quotes (too easy to match accidentally)
+        if (quoteLower.length < 10) continue;
+
+        // Check if quote exists in HTML (fuzzy match - allow for whitespace differences)
+        const normalizedQuote = quoteLower.replace(/\s+/g, ' ').slice(0, 100); // First 100 chars
+        const normalizedHtml = htmlLower.replace(/\s+/g, ' ');
+
+        if (normalizedHtml.includes(normalizedQuote)) {
+            // Quote validated! Upgrade to verified if it was needs_review
+            if (result[field].tier === 'needs_review') {
+                result[field] = {
+                    score: 100,
+                    tier: 'verified',
+                    source: citation.source || result[field].source,
+                    reason: `Quote validated in HTML: "${citation.quote.slice(0, 50)}..."`
+                };
+                validatedCount++;
+                console.log(`  ✓ ${field}: Citation validated - UPGRADED to verified`);
+            }
+        } else {
+            // Quote NOT found - this might be hallucination
+            if (result[field].tier === 'verified') {
+                // Downgrade if it was marked verified but quote doesn't exist
+                // Only downgrade if the original source was "AI inference" type
+                if (result[field].source.includes('AI') || result[field].source.includes('inference')) {
+                    result[field] = {
+                        score: 50,
+                        tier: 'needs_review',
+                        source: result[field].source,
+                        reason: `Citation quote not found in HTML`
+                    };
+                    invalidCount++;
+                    console.log(`  ⚠ ${field}: Citation NOT validated - quote not found`);
+                }
+            }
+        }
+    }
+
+    console.log(`[CitationValidator] Validated: ${validatedCount}, Invalid: ${invalidCount}`);
+    return result;
+}
+
 console.log('[EvidenceCollector] Field-specific rules module loaded');
+
