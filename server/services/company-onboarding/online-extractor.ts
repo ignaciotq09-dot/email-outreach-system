@@ -310,7 +310,14 @@ export async function extractFromOnlinePresence(
 
         // Step 6: Optional Apollo enrichment for missing company metadata
         console.log('[Extraction] Step 6: Checking for Apollo enrichment needs...');
-        const enrichedData = await enrichWithApollo(finalData, input.websiteUrl);
+        const apolloResult = await enrichWithApollo(finalData, input.websiteUrl, finalConfidence as Record<string, number>);
+        const enrichedData = apolloResult.data;
+        // Merge Apollo confidence scores
+        for (const [key, value] of Object.entries(apolloResult.confidence)) {
+            if (value && value > ((finalConfidence as any)[key] || 0)) {
+                (finalConfidence as any)[key] = value;
+            }
+        }
 
         // Step 7: QUALITY VALIDATION - Check for generic phrases, action verbs, etc.
         console.log('[Extraction] Step 7: Validating extraction quality...');
@@ -535,13 +542,18 @@ async function deepAIExtraction(content: string): Promise<{ data: ExtractedCompa
 }
 
 // ICP-focused extraction: Second pass specifically for target customer information
-// Apollo enrichment for company data
-async function enrichWithApollo(data: ExtractedCompanyData, websiteUrl: string): Promise<ExtractedCompanyData> {
+// Apollo enrichment for company data - returns data AND confidence updates
+async function enrichWithApollo(
+    data: ExtractedCompanyData,
+    websiteUrl: string,
+    existingConfidence: Record<string, number>
+): Promise<{ data: ExtractedCompanyData; confidence: Record<string, number> }> {
     const needsEnrichment = !data.employeeCount || !data.industry;
+    const confidence = { ...existingConfidence };
 
     if (!needsEnrichment) {
         console.log('[Extraction] Apollo enrichment not needed');
-        return data;
+        return { data, confidence };
     }
 
     const domain = extractDomain(websiteUrl);
@@ -554,18 +566,34 @@ async function enrichWithApollo(data: ExtractedCompanyData, websiteUrl: string):
 
         if (result.found && result.data) {
             console.log('[Extraction] Apollo enrichment successful');
-            return {
+            const enrichedData = {
                 ...data,
-                employeeCount: data.employeeCount || result.data.size,  // Apollo returns 'size'
+                employeeCount: data.employeeCount || result.data.size,
                 industry: data.industry || result.data.industry,
                 businessDescription: data.businessDescription || result.data.description,
             };
+
+            // SET CONFIDENCE FOR ENRICHED FIELDS (Apollo data is typically high quality)
+            if (!data.employeeCount && result.data.size) {
+                confidence['employeeCount'] = 85;
+                console.log('[Extraction] Set employeeCount confidence to 85 (Apollo)');
+            }
+            if (!data.industry && result.data.industry) {
+                confidence['industry'] = 85;
+                console.log('[Extraction] Set industry confidence to 85 (Apollo)');
+            }
+            if (!data.businessDescription && result.data.description) {
+                confidence['businessDescription'] = 75;
+                console.log('[Extraction] Set businessDescription confidence to 75 (Apollo)');
+            }
+
+            return { data: enrichedData, confidence };
         }
     } catch (e) {
         console.warn('[Extraction] Apollo enrichment failed:', e);
     }
 
-    return data;
+    return { data, confidence };
 }
 
 // NOTE: searchForCompanyInsights was REMOVED - it was fabricating content
